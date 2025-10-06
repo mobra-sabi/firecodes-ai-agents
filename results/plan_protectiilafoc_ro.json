@@ -1,0 +1,52 @@
+{
+  "industry_analysis": {
+    "suspected_industry": "protecția împotriva incendiilor",
+    "target_pages": [
+      "/despre-noi",
+      "/servicii",
+      "/produse",
+      "/contact",
+      "/portofoliu"
+    ],
+    "competitor_research": {
+      "keywords_for_search": [
+        "protecție incendiu",
+        "sisteme de stingere",
+        "servicii de prevenire incendii"
+      ],
+      "potential_competitors": [
+        "protecțieincendiu.ro",
+        "stingereincendii.ro"
+      ]
+    },
+    "business_questions": [
+      "Ce servicii principale oferă compania?",
+      "Care sunt avantajele competitive?",
+      "Cine sunt clienții țintă?"
+    ]
+  },
+  "scraping_strategy": {
+    "max_pages": 150,
+    "max_depth": 4,
+    "priority_patterns": [
+      "/despre",
+      "/servicii",
+      "/produse",
+      "/solutii"
+    ],
+    "skip_patterns": [
+      "/wp-content",
+      "/wp-admin",
+      "/.jpg",
+      "/.pdf"
+    ]
+  },
+  "analysis_focus": [
+    "tehnologii",
+    "servicii",
+    "experienta",
+    "clienti",
+    "competitori"
+  ],
+  "chat_personality": "expert în industria identificată, răspunde profesional în română"
+}

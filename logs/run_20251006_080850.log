@@ -1,0 +1,4 @@
+✅ Qdrant collection OK (size=768)
+[SUP] PLAN: {"thought": "Initiating search for relevant resources related to fire safety and building codes.", "next_action": "search", "args": {"query": "fire safety building code standard permit inspection", "count": 10}}
+[SUP] SEARCH ok (5 urls) for: site:iccsafe.org code OR standard OR fire OR sprinkler
+[SUP] REPORT: {"site_agents_total": 63, "top_domains": [{"domain": "iccsafe.org", "pages": 5138}, {"domain": "nfpa.org", "pages": 103}, {"domain": "nfsa.org", "pages": 54}, {"domain": "nist.gov", "pages": 45}, {"domain": "permitsonoma.org", "pages": 35}, {"domain": "gulfshoresal.gov", "pages": 33}, {"domain": "amleo.com", "pages": 26}, {"domain": "codes.iccsafe.org", "pages": 26}, {"domain": "oklahoma.gov", "pages": 26}, {"domain": "ul.com", "pages": 24}, {"domain": "energy.gov", "pages": 22}, {"domain": "smokeguard.com", "pages": 19}], "session_new_domains": []}

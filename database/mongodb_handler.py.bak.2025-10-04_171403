@@ -1,0 +1,160 @@
+import pymongo
+from pymongo import MongoClient
+from typing import Dict, List, Optional
+import json
+from datetime import datetime
+
+class MongoDBHandler:
+    def __init__(self):
+        # Configurație directă fără import extern
+        self.MONGODB_URI = "mongodb://localhost:27017/"
+        self.MONGODB_DATABASE = "ai_agents_db"
+        self.MONGODB_COLLECTION = "site_content"
+        
+        self.client = MongoClient(self.MONGODB_URI)
+        self.db = self.client[self.MONGODB_DATABASE]
+        
+        # Test conexiunea
+        try:
+            self.client.admin.command('ping')
+            print("✅ Conectat la MongoDB")
+        except Exception as e:
+            print(f"❌ Eroare conexiune MongoDB: {e}")
+    
+    def save_site_content(self, content_data: Dict) -> bool:
+        """Salvează conținutul unui site în MongoDB"""
+        try:
+            collection = self.db[self.MONGODB_COLLECTION]
+            
+            # Adaugă timestamp dacă nu există
+            if 'timestamp' not in content_data:
+                content_data['timestamp'] = datetime.now().isoformat()
+            
+            # Upsert (update dacă există, insert dacă nu)
+            result = collection.replace_one(
+                {'url': content_data.get('url')},
+                content_data,
+                upsert=True
+            )
+            
+            if result.upserted_id or result.modified_count > 0:
+                print(f"✅ Conținut salvat pentru {content_data.get('url', 'unknown')}")
+                return True
+            else:
+                print(f"⚠️ Nu s-a salvat conținutul pentru {content_data.get('url', 'unknown')}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Eroare salvare MongoDB: {e}")
+            return False
+    
+    def get_site_content(self, site_url: str) -> Optional[Dict]:
+        """Obține conținutul unui site din MongoDB"""
+        try:
+            collection = self.db[self.MONGODB_COLLECTION]
+            
+            # Caută după URL
+            result = collection.find_one({'url': site_url})
+            
+            if result:
+                print(f"✅ Conținut găsit pentru {site_url}")
+                return result
+            else:
+                print(f"❌ Nu s-a găsit conținut pentru {site_url}")
+                return None
+                
+        except Exception as e:
+            print(f"❌ Eroare căutare MongoDB: {e}")
+            return None
+    
+    def list_all_sites(self) -> List[Dict]:
+        """Listează toate site-urile din baza de date"""
+        try:
+            collection = self.db[self.MONGODB_COLLECTION]
+            
+            sites = list(collection.find({}, {'url': 1, 'title': 1, 'timestamp': 1}))
+            
+            print(f"✅ Găsite {len(sites)} site-uri în baza de date")
+            return sites
+            
+        except Exception as e:
+            print(f"❌ Eroare listare site-uri: {e}")
+            return []
+    
+    def delete_site_content(self, site_url: str) -> bool:
+        """Șterge conținutul unui site"""
+        try:
+            collection = self.db[self.MONGODB_COLLECTION]
+            
+            result = collection.delete_one({'url': site_url})
+            
+            if result.deleted_count > 0:
+                print(f"✅ Conținut șters pentru {site_url}")
+                return True
+            else:
+                print(f"⚠️ Nu s-a găsit conținut de șters pentru {site_url}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Eroare ștergere MongoDB: {e}")
+            return False
+    
+    def get_database_stats(self) -> Dict:
+        """Returnează statistici despre baza de date"""
+        try:
+            stats = {}
+            
+            # Statistici generale
+            stats['database_name'] = self.MONGODB_DATABASE
+            stats['collections'] = self.db.list_collection_names()
+            stats['total_collections'] = len(stats['collections'])
+            
+            # Statistici pentru colecția principală
+            collection = self.db[self.MONGODB_COLLECTION]
+            stats['total_sites'] = collection.count_documents({})
+            
+            # Statistici pentru ființe digitale
+            if 'digital_beings_registry' in stats['collections']:
+                beings_collection = self.db['digital_beings_registry']
+                stats['total_beings'] = beings_collection.count_documents({})
+            else:
+                stats['total_beings'] = 0
+            
+            # Statistici pentru conversații
+            if 'being_conversations' in stats['collections']:
+                conv_collection = self.db['being_conversations']
+                stats['total_conversations'] = conv_collection.count_documents({})
+            else:
+                stats['total_conversations'] = 0
+                
+            stats['timestamp'] = datetime.now().isoformat()
+            
+            return stats
+            
+        except Exception as e:
+            return {'error': f'Eroare statistici: {e}'}
+    
+    def close_connection(self):
+        """Închide conexiunea la MongoDB"""
+        try:
+            self.client.close()
+            print("✅ Conexiune MongoDB închisă")
+        except Exception as e:
+            print(f"❌ Eroare închidere conexiune: {e}")
+
+# Test rapid
+if __name__ == "__main__":
+    handler = MongoDBHandler()
+    
+    # Test statistici
+    stats = handler.get_database_stats()
+    print("\n📊 Statistici baza de date:")
+    for key, value in stats.items():
+        print(f"  {key}: {value}")
+    
+    # Test listare site-uri
+    sites = handler.list_all_sites()
+    if sites:
+        print(f"\n📋 Primele 3 site-uri:")
+        for site in sites[:3]:
+            print(f"  • {site.get('url', 'N/A')} - {site.get('title', 'No title')}")

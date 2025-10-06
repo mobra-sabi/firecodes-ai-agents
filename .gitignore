@@ -1,0 +1,10 @@
+aienv/
+.venv/
+__pycache__/
+node_modules/
+.cache/
+.playwright/
+.pytest_cache/
+.secrets/*.key
+.env
+exports/

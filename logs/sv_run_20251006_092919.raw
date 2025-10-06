@@ -1,0 +1,63 @@
+✅ Qdrant collection OK (size=768)
+{
+  "ok": true,
+  "action": "stop",
+  "visited_urls": [],
+  "new_domains": [],
+  "report": {
+    "site_agents_total": 70,
+    "top_domains": [
+      {
+        "domain": "iccsafe.org",
+        "pages": 5159
+      },
+      {
+        "domain": "nfpa.org",
+        "pages": 126
+      },
+      {
+        "domain": "nist.gov",
+        "pages": 111
+      },
+      {
+        "domain": "nfsa.org",
+        "pages": 54
+      },
+      {
+        "domain": "permitsonoma.org",
+        "pages": 35
+      },
+      {
+        "domain": "energy.gov",
+        "pages": 33
+      },
+      {
+        "domain": "gulfshoresal.gov",
+        "pages": 33
+      },
+      {
+        "domain": "codes.iccsafe.org",
+        "pages": 33
+      },
+      {
+        "domain": "amleo.com",
+        "pages": 26
+      },
+      {
+        "domain": "oklahoma.gov",
+        "pages": 26
+      },
+      {
+        "domain": "ul.com",
+        "pages": 24
+      },
+      {
+        "domain": "smokeguard.com",
+        "pages": 19
+      }
+    ],
+    "session_new_domains": []
+  },
+  "visited_file": null,
+  "report_file": null
+}

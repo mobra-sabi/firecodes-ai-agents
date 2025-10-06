@@ -1,0 +1,5 @@
+/home/mobra/aienv/lib/python3.12/site-packages/transformers/utils/hub.py:111: FutureWarning: Using `TRANSFORMERS_CACHE` is deprecated and will be removed in v5 of Transformers. Use `HF_HOME` instead.
+  warnings.warn(
+[SUP] SEARCH ok (9 urls) for: (site:codes.iccsafe.org OR site:iccsafe.org) fire OR code OR standard OR sprinkler
+[SUP] REPORT: {"site_agents_total": 70, "top_domains": [{"domain": "iccsafe.org", "pages": 5159}, {"domain": "nfpa.org", "pages": 126}, {"domain": "nist.gov", "pages": 111}, {"domain": "nfsa.org", "pages": 54}, {"domain": "permitsonoma.org", "pages": 35}, {"domain": "energy.gov", "pages": 33}, {"domain": "gulfshoresal.gov", "pages": 33}, {"domain": "codes.iccsafe.org", "pages": 33}, {"domain": "amleo.com", "pages": 26}, {"domain": "oklahoma.gov", "pages": 26}, {"domain": "ul.com", "pages": 24}, {"domain": "smokeguard.com", "pages": 19}], "session_new_domains": []}
+[SUP] GRAPH ERROR: KeyError('__end__')

@@ -1,0 +1,59 @@
+from qdrant_client import QdrantClient
+from qdrant_client.models import Distance, VectorParams, PointStruct
+from config.database_config import QDRANT_HOST, QDRANT_PORT, QDRANT_COLLECTION
+import numpy as np
+from transformers import AutoTokenizer, AutoModel
+import torch
+
+class QdrantVectorizer:
+    def __init__(self):
+        self.client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
+        self.collection_name = QDRANT_COLLECTION
+        # Load Qwen model for embeddings
+        self.tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B")
+        self.model = AutoModel.from_pretrained("Qwen/Qwen2.5-7B")
+        
+    def create_collection(self):
+        """Create Qdrant collection for embeddings"""
+        try:
+            self.client.create_collection(
+                collection_name=self.collection_name,
+                vectors_config=VectorParams(size=4096, distance=Distance.COSINE)
+            )
+            print("✅ Qdrant collection created successfully")
+        except Exception as e:
+            print(f"ℹ️ Collection already exists or error: {e}")
+            
+    def vectorize_content(self, content_data):
+        """Vectorize content using Qwen 2.5"""
+        try:
+            # Combine relevant content for embedding
+            text_to_embed = f"{content_data['title']} {content_data['description']} {content_data['content'][:2000]}"
+            
+            # Tokenize and get embeddings
+            inputs = self.tokenizer(text_to_embed, return_tensors="pt", truncation=True, max_length=512)
+            with torch.no_grad():
+                outputs = self.model(**inputs)
+                # Use last hidden state mean as embedding
+                embedding = outputs.last_hidden_state.mean(dim=1).squeeze().numpy()
+                
+            return embedding.tolist()
+        except Exception as e:
+            print(f"⚠️ Using dummy vector due to error: {e}")
+            return np.random.rand(4096).tolist()
+        
+    def store_embedding(self, content_id, embedding, metadata):
+        """Store embedding in Qdrant"""
+        try:
+            point = PointStruct(
+                id=content_id,
+                vector=embedding,
+                payload=metadata
+            )
+            self.client.upsert(
+                collection_name=self.collection_name,
+                points=[point]
+            )
+            print("✅ Embedding stored in Qdrant")
+        except Exception as e:
+            print(f"❌ Error storing in Qdrant: {e}")

@@ -1,0 +1,46 @@
+{
+  "industry_analysis": {
+    "suspected_industry": "modă",
+    "target_pages": [
+      "/new-in",
+      "/women",
+      "/men",
+      "/kids"
+    ],
+    "competitor_research": {
+      "keywords_for_search": [
+        "modă",
+        "îmbrăcăminte",
+        "accesorii"
+      ],
+      "potential_competitors": [
+        "hm.com",
+        "mango.com",
+        "bershka.com"
+      ]
+    },
+    "business_questions": [
+      "Cum îmbunătățim experiența utilizatorului?",
+      "Care sunt tendințele actuale în modă?",
+      "Cum putem crește vânzările online?"
+    ]
+  },
+  "scraping_strategy": {
+    "max_pages": 150,
+    "max_depth": 4,
+    "priority_patterns": [
+      "/despre",
+      "/contact"
+    ],
+    "skip_patterns": [
+      "/wp-content",
+      "/.jpg"
+    ]
+  },
+  "analysis_focus": [
+    "servicii",
+    "produse",
+    "clienți"
+  ],
+  "chat_personality": "expert în industria modă"
+}

@@ -1,0 +1,43 @@
+{
+  "industry_analysis": {
+    "suspected_industry": "comerț electronic",
+    "target_pages": [
+      "/produse",
+      "/oferta"
+    ],
+    "competitor_research": {
+      "keywords_for_search": [
+        "electronică",
+        "produse",
+        "online"
+      ],
+      "potential_competitors": [
+        "altex.ro",
+        "flanco.ro"
+      ]
+    },
+    "business_questions": [
+      "Cum îmbunătățim experiența utilizatorului?",
+      "Care sunt cele mai vândute produse?",
+      "Ce strategii de marketing sunt eficiente?"
+    ]
+  },
+  "scraping_strategy": {
+    "max_pages": 150,
+    "max_depth": 4,
+    "priority_patterns": [
+      "/despre",
+      "/contact"
+    ],
+    "skip_patterns": [
+      "/wp-content",
+      "/.jpg"
+    ]
+  },
+  "analysis_focus": [
+    "servicii",
+    "produse",
+    "clienți"
+  ],
+  "chat_personality": "expert în comerț electronic"
+}

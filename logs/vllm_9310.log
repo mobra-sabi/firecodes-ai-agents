@@ -1,0 +1,51 @@
+INFO 10-03 08:12:20 [__init__.py:241] Automatically detected platform cuda.
+[1;36m(APIServer pid=2361436)[0;0m INFO 10-03 08:12:25 [api_server.py:1805] vLLM API server version 0.10.1.1
+[1;36m(APIServer pid=2361436)[0;0m INFO 10-03 08:12:25 [utils.py:326] non-default args: {'model_tag': 'Qwen/Qwen2.5-14B-Instruct', 'host': '0.0.0.0', 'port': 9310, 'model': 'Qwen/Qwen2.5-14B-Instruct', 'dtype': 'float16', 'max_model_len': 8192, 'tensor_parallel_size': 7}
+[1;36m(APIServer pid=2361436)[0;0m INFO 10-03 08:12:38 [__init__.py:711] Resolved architecture: Qwen2ForCausalLM
+[1;36m(APIServer pid=2361436)[0;0m WARNING 10-03 08:12:38 [__init__.py:2819] Casting torch.bfloat16 to torch.float16.
+[1;36m(APIServer pid=2361436)[0;0m INFO 10-03 08:12:38 [__init__.py:1750] Using max model len 8192
+[1;36m(APIServer pid=2361436)[0;0m INFO 10-03 08:12:38 [scheduler.py:222] Chunked prefill is enabled with max_num_batched_tokens=2048.
+[1;36m(APIServer pid=2361436)[0;0m Traceback (most recent call last):
+[1;36m(APIServer pid=2361436)[0;0m   File "/home/mobra/aienv/bin/vllm", line 7, in <module>
+[1;36m(APIServer pid=2361436)[0;0m     sys.exit(main())
+[1;36m(APIServer pid=2361436)[0;0m              ^^^^^^
+[1;36m(APIServer pid=2361436)[0;0m   File "/home/mobra/aienv/lib/python3.12/site-packages/vllm/entrypoints/cli/main.py", line 54, in main
+[1;36m(APIServer pid=2361436)[0;0m     args.dispatch_function(args)
+[1;36m(APIServer pid=2361436)[0;0m   File "/home/mobra/aienv/lib/python3.12/site-packages/vllm/entrypoints/cli/serve.py", line 50, in cmd
+[1;36m(APIServer pid=2361436)[0;0m     uvloop.run(run_server(args))
+[1;36m(APIServer pid=2361436)[0;0m   File "/home/mobra/aienv/lib/python3.12/site-packages/uvloop/__init__.py", line 109, in run
+[1;36m(APIServer pid=2361436)[0;0m     return __asyncio.run(
+[1;36m(APIServer pid=2361436)[0;0m            ^^^^^^^^^^^^^^
+[1;36m(APIServer pid=2361436)[0;0m   File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+[1;36m(APIServer pid=2361436)[0;0m     return runner.run(main)
+[1;36m(APIServer pid=2361436)[0;0m            ^^^^^^^^^^^^^^^^
+[1;36m(APIServer pid=2361436)[0;0m   File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+[1;36m(APIServer pid=2361436)[0;0m     return self._loop.run_until_complete(task)
+[1;36m(APIServer pid=2361436)[0;0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[1;36m(APIServer pid=2361436)[0;0m   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+[1;36m(APIServer pid=2361436)[0;0m   File "/home/mobra/aienv/lib/python3.12/site-packages/uvloop/__init__.py", line 61, in wrapper
+[1;36m(APIServer pid=2361436)[0;0m     return await main
+[1;36m(APIServer pid=2361436)[0;0m            ^^^^^^^^^^
+[1;36m(APIServer pid=2361436)[0;0m   File "/home/mobra/aienv/lib/python3.12/site-packages/vllm/entrypoints/openai/api_server.py", line 1850, in run_server
+[1;36m(APIServer pid=2361436)[0;0m     await run_server_worker(listen_address, sock, args, **uvicorn_kwargs)
+[1;36m(APIServer pid=2361436)[0;0m   File "/home/mobra/aienv/lib/python3.12/site-packages/vllm/entrypoints/openai/api_server.py", line 1870, in run_server_worker
+[1;36m(APIServer pid=2361436)[0;0m     async with build_async_engine_client(
+[1;36m(APIServer pid=2361436)[0;0m   File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+[1;36m(APIServer pid=2361436)[0;0m     return await anext(self.gen)
+[1;36m(APIServer pid=2361436)[0;0m            ^^^^^^^^^^^^^^^^^^^^^
+[1;36m(APIServer pid=2361436)[0;0m   File "/home/mobra/aienv/lib/python3.12/site-packages/vllm/entrypoints/openai/api_server.py", line 178, in build_async_engine_client
+[1;36m(APIServer pid=2361436)[0;0m     async with build_async_engine_client_from_engine_args(
+[1;36m(APIServer pid=2361436)[0;0m   File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+[1;36m(APIServer pid=2361436)[0;0m     return await anext(self.gen)
+[1;36m(APIServer pid=2361436)[0;0m            ^^^^^^^^^^^^^^^^^^^^^
+[1;36m(APIServer pid=2361436)[0;0m   File "/home/mobra/aienv/lib/python3.12/site-packages/vllm/entrypoints/openai/api_server.py", line 204, in build_async_engine_client_from_engine_args
+[1;36m(APIServer pid=2361436)[0;0m     vllm_config = engine_args.create_engine_config(usage_context=usage_context)
+[1;36m(APIServer pid=2361436)[0;0m                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[1;36m(APIServer pid=2361436)[0;0m   File "/home/mobra/aienv/lib/python3.12/site-packages/vllm/engine/arg_utils.py", line 1343, in create_engine_config
+[1;36m(APIServer pid=2361436)[0;0m     config = VllmConfig(
+[1;36m(APIServer pid=2361436)[0;0m              ^^^^^^^^^^^
+[1;36m(APIServer pid=2361436)[0;0m   File "/home/mobra/aienv/lib/python3.12/site-packages/pydantic/_internal/_dataclasses.py", line 123, in __init__
+[1;36m(APIServer pid=2361436)[0;0m     s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
+[1;36m(APIServer pid=2361436)[0;0m pydantic_core._pydantic_core.ValidationError: 1 validation error for VllmConfig
+[1;36m(APIServer pid=2361436)[0;0m   Value error, Total number of attention heads (40) must be divisible by tensor parallel size (7). [type=value_error, input_value=ArgsKwargs((), {'model_co...additional_config': {}}), input_type=ArgsKwargs]
+[1;36m(APIServer pid=2361436)[0;0m     For further information visit https://errors.pydantic.dev/2.11/v/value_error
