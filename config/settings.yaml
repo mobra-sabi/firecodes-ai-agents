@@ -1,0 +1,122 @@
+# Industrial Discovery Configuration
+# Global settings for the orchestrator and all services
+
+api:
+  # Service endpoints
+  orchestrator:
+    host: " 0.0.0.0\
+ port: 8100
+ 
+ qwen_runner:
+ host: \0.0.0.0\ 
+ port: 8101
+ 
+ crawler_service:
+ host: \0.0.0.0\
+ port: 8102
+ 
+ parser_service:
+ host: \0.0.0.0\
+ port: 8103
+
+# External services
+external:
+ mongodb:
+ host: \localhost\
+ port: 27017
+ database: \industrial_discovery\
+ 
+ qdrant:
+ host: \localhost\
+ port: 6333
+ 
+ openai:
+ api_key: \\\
+ model: \gpt-4o\
+ max_tokens: 4000
+ temperature: 0.1
+ 
+ serp:
+ provider: \serpapi\
+ api_key: \\\
+ 
+# Qwen configuration
+qwen:
+ model_name: \Qwen/Qwen2.5-72B-Instruct\
+ base_url: \http://localhost:9314/v1\ # vLLM OpenAI-compatible endpoint
+ api_key: \EMPTY\
+ max_tokens: 2048
+ temperature: 0.0
+ 
+ # Skill-specific prompts
+ skills:
+ SERP_QUERIES:
+ system_prompt: |
+ You are a search query specialist for industrial discovery. Generate targeted search queries to discover companies, regulations, and technologies in specific industries.
+ 
+ Focus on:
+ - B2B companies and manufacturers
+ - Industry standards and regulations 
+ - Professional associations
+ - Technical specifications
+ 
+ Return exactly 6 diverse search queries as a JSON array.
+ 
+ ENTITY_EXTRACT:
+ system_prompt: |
+ Extract named entities from industrial web content. Focus on:
+ 
+ COMPANIES: Company names, subsidiaries, divisions
+ PEOPLE: Key executives, engineers, researchers
+ PRODUCTS: Product names, model numbers, specifications
+ LOCATIONS: Manufacturing sites, offices, service areas
+ STANDARDS: Regulatory codes, certifications, compliance
+ TECHNOLOGIES: Technical terms, processes, methodologies
+ 
+ Return structured JSON with entity type and confidence.
+ 
+ CLASSIFY_TAXONOMY:
+ system_prompt: |
+ Classify industrial content into taxonomy categories. You will receive:
+ 1. Page content (text)
+ 2. Taxonomy structure (hierarchical categories)
+ 
+ Return the most specific applicable categories with confidence scores.
+ Format: [{\category\: \path/to/category\, \confidence\: 0.95}]
+ 
+ SUMMARIZE:
+ system_prompt: |
+ Create concise summaries of industrial web content. Focus on:
+ - Business model and core offerings
+ - Technical capabilities
+ - Market position and customers
+ - Geographic coverage
+ - Key differentiators
+ 
+ Keep summaries under 200 words, business-focused.
+
+# Discovery configuration
+discovery:
+ target_coverage: 0.85
+ novelty_threshold: 0.05
+ max_budget_pages: 50000
+ max_iterations: 100
+
+# Crawler configuration 
+crawler:
+ browser: \chromium\
+ headless: true
+ timeout: 30000
+ max_concurrent: 5
+ retry_attempts: 3
+ 
+# Rate limiting
+rate_limits:
+ default_domain_rps: 1.0
+ trusted_domain_rps: 2.0
+ global_rps: 10.0
+ 
+# Monitoring
+monitoring:
+ log_level: \INFO\
+ log_file: \./logs/industrial_discovery.log\

@@ -1,0 +1,98 @@
+# Industrial Discovery System - Policies Configuration
+# Orchestrator: ChatGPT | Executor: Qwen | Target: Full industry mapping
+
+discovery:
+  target_coverage: 0.85  # 85% taxonomy coverage required
+  novelty_threshold: 0.05  # Stop when <5% new info in 3 iterations
+  max_budget_pages: 50000  # Total page limit per discovery session
+  max_iterations: 100  # Safety limit
+
+crawling:
+  politeness_delay: 1.0  # Seconds between requests per domain
+  max_depth: 3  # Maximum crawl depth per site
+  timeout: 30  # Request timeout in seconds
+  respect_robots: true
+  user_agent: 'IndustrialDiscovery/1.0'
+  
+  # Global deny patterns (applied to all domains)
+  global_deny_patterns:
+    - 'login'
+    - 'register' 
+    - 'checkout'
+    - 'cart'
+    - '/wp-admin/'
+    - '/admin/'
+    - '\\?sort='
+    - '\\?page='
+    - '/search\\?'
+    - '\\.pdf$'
+    - '\\.doc$'
+
+# Authority scoring for domain prioritization
+authority:
+  weights:
+    semantic_similarity: 0.5  # Cosine similarity to industry centroid
+    domain_authority: 0.3     # PageRank-like scoring
+    diversity_boost: 0.2      # Encourage domain class diversity
+  
+  # Domain authority by type (higher = more authoritative)
+  domain_types:
+    standards_bodies: 1.0     # NFPA, ISO, ANSI, etc.
+    professional_associations: 0.9  # Industry associations
+    government: 0.9           # .gov domains
+    education: 0.8            # .edu domains
+    established_companies: 0.7 # Known industry players
+    marketplaces: 0.6         # B2B marketplaces
+    news_media: 0.5           # Industry publications
+    blogs: 0.3                # Individual blogs
+    forums: 0.2               # Discussion forums
+
+# Taxonomy structure (expandable)
+taxonomy:
+  Fire_Protection:
+    Detection_Systems:
+      - 'Smoke Detectors'
+      - 'Heat Detectors' 
+      - 'Gas Detection'
+    
+    Suppression_Systems:
+      - 'Sprinkler Systems'
+      - 'Foam Systems'
+      - 'Gas Suppression'
+    
+    Equipment:
+      - 'Fire Extinguishers'
+      - 'Hose Reels'
+      - 'Emergency Lighting'
+    
+    Services:
+      - 'Installation'
+      - 'Maintenance'
+      - 'Inspection'
+      - 'Training'
+    
+    Standards:
+      - 'NFPA'
+      - 'EN Standards'
+      - 'Local Codes'
+
+# Legal compliance
+legal:
+  respect_robots_txt: true
+  honor_crawl_delay: true
+  avoid_login_required: true
+  skip_terms_violations: true
+  
+  # Domains to avoid entirely
+  blacklisted_domains:
+    - 'facebook.com'
+    - 'twitter.com'
+    - 'linkedin.com'  # Social media (low industry content)
+  
+  # Trusted domains (skip some checks)
+  whitelisted_domains:
+    - 'nfpa.org'
+    - 'iso.org'
+    - 'ansi.org'
+    - '*.gov'
+    - '*.edu'
