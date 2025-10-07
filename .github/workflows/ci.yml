@@ -1,0 +1,48 @@
+name: FireCodes_CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  run-pipeline:
+    runs-on: [self-hosted, viezure, python]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install deps
+        run: |
+          python -m pip install -U pip
+          pip install qdrant-client pymongo langchain-openai requests trafilatura playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Run fallback crawl
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
+        run: |
+          export INCLUDE_DOMAINS="iccsafe.org,codes.iccsafe.org"
+          export EXCLUDE_DOMAINS="shop.iccsafe.org"
+          export INCLUDE_TLDS="org"
+          export PER_SITE_PAGES=12 MAX_PER_DOMAIN=12 CRAWL_DELAY=0.6
+          TS=$(date +'%Y%m%d_%H%M%S')
+          python -m tools.fallback_firecode_mapper | tee logs/fallback_${TS}.log
+
+      - name: Build site agents
+        run: |
+          QDRANT_COLLECTION="site_embeddings" PYTHONPATH=. python tools/build_site_agents.py || true
+
+      - name: Upload logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: firecodes-logs
+          path: |
+            logs/*.log
+            logs/report_fb_*.json
+            logs/visited_fb_*.txt
