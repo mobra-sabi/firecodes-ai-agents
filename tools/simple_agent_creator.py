@@ -21,9 +21,15 @@ from tools.orchestrator_advisor import analyze_website
 
 # Import advanced scraper system
 try:
-    from industrial_discovery.adapters.scraper_adapter import smart_fetch
+    import os
+    import sys
+    # Add project root to path for imports
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.insert(0, project_root)
+    from adapters.scraper_adapter import smart_fetch
     USE_ADVANCED_SCRAPER = True
-except ImportError:
+except ImportError as e:
+    print(f"Warning: Could not import advanced scraper: {e}")
     USE_ADVANCED_SCRAPER = False
 
 LOG = bool(int(os.getenv("SUP_LOG","0")))
