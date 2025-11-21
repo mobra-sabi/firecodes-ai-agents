@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Control Panel - Working</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        .header h1 {
+            color: #1e3c72;
+            font-size: 32px;
+        }
+        .main-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        .section-title {
+            color: #1e3c72;
+            font-size: 24px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #4facfe;
+        }
+        .agent-card {
+            border: 2px solid #4facfe;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 12px;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .agent-domain {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1e3c72;
+            margin-bottom: 10px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+        .badge-master { background: #4facfe; }
+        .badge-slave { background: #6c757d; }
+        .badge-status { background: #28a745; float: right; }
+        .agent-info {
+            color: #666;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+        .btn {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .btn-primary { background: #4facfe; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .loading {
+            text-align: center;
+            padding: 60px;
+            font-size: 18px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h1><i class="fas fa-robot"></i> Master Control Panel</h1>
+            <div>
+                <button class="btn btn-success" onclick="window.open('/static/production_dashboard.html', '_blank')" style="margin-right: 10px;">
+                    <i class="fas fa-tachometer-alt"></i> Production Dashboard
+                        </button>
+                <button class="btn btn-primary" onclick="createNewAgent()">
+                    <i class="fas fa-plus-circle"></i> Create New Agent
+                        </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="section-title">
+            <i class="fas fa-users"></i> Active Agents
+        </div>
+        <div id="agentList" class="loading">Se încarcă agenții...</div>
+    </div>
+
+    <script>
+        console.log('▶️ Script START');
+        const API_BASE = window.location.origin;
+
+        async function loadAgents() {
+            console.log('🔍 loadAgents() called');
+            const container = document.getElementById('agentList');
+            
+            try {
+                console.log('📡 Fetching:', API_BASE + '/api/agents');
+                const response = await fetch(API_BASE + '/api/agents');
+                console.log('📥 Response status:', response.status);
+                
+                const agents = await response.json();
+                console.log('✅ Agents received:', agents.length);
+            
+            if (agents.length === 0) {
+                    container.innerHTML = '<p>Niciun agent găsit</p>';
+                return;
+            }
+
+                const html = agents.map(agent => {
+                    const domain = agent.domain || 'Unknown';
+                    const agentId = agent._id || '';
+                    const status = agent.status || 'ready';
+                    const siteUrl = agent.site_url || 'N/A';
+                    const agentType = agent.agent_type === 'slave' ? 'Slave' : 'Master';
+                    const badgeClass = agent.agent_type === 'slave' ? 'badge-slave' : 'badge-master';
+                    
+                    return `
+                        <div class="agent-card">
+                            <div>
+                                <div class="agent-domain">${domain}</div>
+                                <span class="badge ${badgeClass}">${agentType}</span>
+                                <span class="badge badge-status">${status}</span>
+                            </div>
+                    <div class="agent-info">
+                                <div>📌 ID: ${agentId}</div>
+                                <div>🔗 URL: ${siteUrl}</div>
+                    </div>
+                            <div>
+                                <button class="btn btn-primary" onclick="window.open('/static/chat.html?agent_id=${agentId}', '_blank')">
+                                    <i class="fas fa-comments"></i> Chat
+                                </button>
+                                <button class="btn btn-secondary" onclick="window.open('/static/competitive_dashboard.html?agent=${agentId}', '_blank')">
+                                    <i class="fas fa-chart-line"></i> Dashboard
+                                </button>
+                                <button class="btn btn-success" onclick="runFullAnalysis('${agentId}')">
+                                    <i class="fas fa-brain"></i> DeepSeek
+                                </button>
+                                <button class="btn btn-primary" onclick="discoverCompetitors('${agentId}')">
+                                    <i class="fas fa-search"></i> Discovery
+                                </button>
+                                <button class="btn btn-secondary" onclick="generateReport('${agentId}')">
+                                    <i class="fas fa-file-alt"></i> Report
+                                </button>
+                                <button class="btn btn-success" onclick="runPlaybook('${agentId}')">
+                                    <i class="fas fa-tasks"></i> Playbook
+                                </button>
+                    </div>
+                </div>
+                    `;
+                }).join('');
+                
+                console.log('🔨 Inserting HTML, length:', html.length);
+                container.innerHTML = html;
+                console.log('✅ DONE! Agents displayed:', agents.length);
+                
+            } catch (error) {
+                console.error('❌ ERROR:', error);
+                container.innerHTML = '<p style="color: red;">Eroare: ' + error.message + '</p>';
+            }
+        }
+
+        // Utilitate: DeepSeek Analysis
+        async function runFullAnalysis(agentId) {
+            if (!confirm('Pornesc analiza DeepSeek completă?')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/industry/${agentId}/start-competitor-analysis`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.ok) {
+                    alert('✅ Analiza DeepSeek a fost pornită! Check Dashboard pentru rezultate.');
+                } else {
+                    alert('❌ Eroare: ' + (data.error || 'Unknown'));
+                }
+            } catch (error) {
+                alert('❌ Eroare: ' + error.message);
+            }
+        }
+
+        // Utilitate: Competitor Discovery
+        async function discoverCompetitors(agentId) {
+            if (!confirm('Pornesc descoperirea competitorilor?')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/agents/${agentId}/discover-competitors`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ limit: 15 })
+                });
+                const data = await response.json();
+
+                if (data.competitors) {
+                    alert(`✅ Găsiți ${data.competitors.length} competitori!\n\nTop 3:\n${data.competitors.slice(0, 3).map(c => `- ${c.domain} (${c.score}/100)`).join('\n')}`);
+                } else {
+                    alert('❌ Eroare: ' + (data.error || 'Unknown'));
+                }
+            } catch (error) {
+                alert('❌ Eroare: ' + error.message);
+            }
+        }
+
+        // Utilitate: Generate Report
+        async function generateReport(agentId) {
+            if (!confirm('Generez raport competitiv complet?')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/agents/${agentId}/dual-report`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.report) {
+                    // Deschide raportul într-o fereastră nouă
+                    const reportWindow = window.open('', '_blank');
+                    reportWindow.document.write(`
+                        <html>
+                        <head><title>Competitive Report - ${agentId}</title></head>
+                        <body style="font-family: Arial; padding: 20px; max-width: 800px; margin: 0 auto;">
+                            <h1>📊 Competitive Report</h1>
+                            <pre style="white-space: pre-wrap; background: #f5f5f5; padding: 20px; border-radius: 8px;">${data.report}</pre>
+                        </body>
+                        </html>
+                    `);
+                } else {
+                    alert('❌ Eroare: ' + (data.error || 'Unknown'));
+                }
+            } catch (error) {
+                alert('❌ Eroare: ' + error.message);
+            }
+        }
+
+        // Create New Agent
+        function createNewAgent() {
+            const url = prompt('Introdu URL-ul website-ului pentru agentul nou:\n(ex: https://example.com)');
+            
+            if (!url) return;
+            
+            // Validare URL simplă
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                alert('❌ URL invalid! Trebuie să înceapă cu http:// sau https://');
+                return;
+            }
+
+            // Confirmă crearea
+            if (!confirm(`Creez agent pentru: ${url}\n\nAcest proces include:\n✅ Scraping multi-page\n✅ GPU Embeddings\n✅ Qdrant Storage\n✅ LangChain Integration\n\nDurează 2-5 minute. Continuăm?`)) return;
+            
+            // Redirect la Production Dashboard cu URL
+            window.open(`/static/production_dashboard.html?create=${encodeURIComponent(url)}`, '_blank');
+        }
+
+        // Utilitate: Run Playbook
+        function runPlaybook(agentId) {
+            const playbooks = [
+                'google_ads_30d',
+                'content_3m',
+                'competitor_attack',
+                'seo_optimization',
+                'social_media'
+            ];
+            
+            const choice = prompt(`Selectează playbook:\n\n${playbooks.map((p, i) => `${i+1}. ${p}`).join('\n')}\n\nIntroduci numărul (1-5):`);
+            
+            if (!choice) return;
+            
+            const index = parseInt(choice) - 1;
+            if (index < 0 || index >= playbooks.length) {
+                alert('Selecție invalidă!');
+                return;
+            }
+            
+            const playbook = playbooks[index];
+            
+            // Deschide task executor într-o fereastră nouă
+            window.open(`/static/task_execution.html?agent_id=${agentId}&strategy=${playbook}`, '_blank');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 DOM ready, loading agents...');
+            loadAgents();
+        });
+
+        console.log('✅ Script loaded');
+    </script>
+</body>
+</html>

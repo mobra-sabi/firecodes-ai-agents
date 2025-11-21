@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+"""Test creare agent pentru ropaintsolutions.ro"""
+
+import asyncio
+from site_agent_creator import create_agent_logic
+
+async def test_create():
+    print("🧪 TESTEZ CREARE AGENT pentru ropaintsolutions.ro")
+    print("="*70)
+    
+    try:
+        url = "https://www.ropaintsolutions.ro"
+        
+        result = await create_agent_logic(
+            url=url,
+            api_key="test",
+            loop=None,
+            websocket=None
+        )
+        
+        print("\n" + "="*70)
+        print("✅ AGENT CREAT CU SUCCES!")
+        print("="*70)
+        print(f"   Agent ID: {result.get('agent_id')}")
+        print(f"   Nume: {result.get('name')}")
+        print(f"   Domain: {result.get('domain')}")
+        print(f"   Status: {result.get('status')}")
+        print(f"   Validare: {'✅ PASSED' if result.get('validation_passed') else '❌ FAILED'}")
+        print()
+        print("📊 DETALII:")
+        summary = result.get('summary', {})
+        print(f"   Caractere extrase: {summary.get('content_extracted', 0):,}")
+        print(f"   Vectori salvați: {summary.get('vectors_saved', 0)}")
+        print(f"   Memorie configurată: {'✅' if summary.get('memory_configured') else '❌'}")
+        print(f"   Qwen integrat: {'✅' if summary.get('qwen_integrated') else '❌'}")
+        print(f"   Long Chain integrat: {'✅' if summary.get('long_chain_integrated') else '❌'}")
+        print(f"   Servicii: {result.get('services_count', 0)}")
+        print("="*70)
+        
+        return result
+        
+    except Exception as e:
+        print(f"\n❌ EROARE: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+if __name__ == "__main__":
+    result = asyncio.run(test_create())
+    
+    if result and result.get('validation_passed'):
+        print("\n🎉🎉🎉 TEST REUȘIT! Agentul e complet și funcțional!")
+    else:
+        print("\n⚠️  TEST INCOMPLET - verifică logurile")

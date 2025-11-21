@@ -1,0 +1,55 @@
+{
+  "timestamp": "2025-11-06T19:00:35.384090+00:00",
+  "summary": {
+    "total_agents": 7,
+    "compliant_count": 2,
+    "non_compliant_count": 5,
+    "recreated_count": 5,
+    "deleted_count": 0
+  },
+  "results": {
+    "compliant": [
+      {
+        "agent_id": "690a19bda55790fced125e48",
+        "domain": "rezistentlafoc.ro",
+        "qdrant_count": 0,
+        "mongodb_count": 2
+      },
+      {
+        "agent_id": "690a3230a55790fced1272cb",
+        "domain": "tehnica-antifoc.ro",
+        "qdrant_count": 0,
+        "mongodb_count": 1062
+      }
+    ],
+    "non_compliant": [],
+    "recreated": [
+      {
+        "agent_id": "690a33ffa55790fced127469",
+        "domain": "matari-antifoc.ro",
+        "site_url": "https://matari-antifoc.ro/"
+      },
+      {
+        "agent_id": "690a39e8a55790fced1279a8",
+        "domain": "ng-network.ro",
+        "site_url": "https://www.ng-network.ro/"
+      },
+      {
+        "agent_id": "690cd15ca55790fced157c7e",
+        "domain": "terrageneralcontractor.ro",
+        "site_url": "https://terrageneralcontractor.ro/"
+      },
+      {
+        "agent_id": "690cd9fda55790fced15833e",
+        "domain": "protectiilafoc.ro",
+        "site_url": "https://protectiilafoc.ro/"
+      },
+      {
+        "agent_id": "690ce8caa55790fced158e22",
+        "domain": "romfire.ro",
+        "site_url": "https://www.romfire.ro/"
+      }
+    ],
+    "deleted": []
+  }
+}

@@ -1,5 +1,5 @@
 import os, argparse, urllib.parse, requests, time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from orchestrator.orchestrator_loop import Orchestrator
 
 # -------------------- helpers --------------------
@@ -50,7 +50,7 @@ def _cache_get(provider: str, q: str, count: int):
         return None
     try:
         doc = _serp_col.find_one({"key": _cache_key(provider, q, count)}, {"_id": 0, "urls": 1, "expires_at": 1})
-        if doc and doc.get("expires_at") and doc["expires_at"] > datetime.utcnow():
+        if doc and doc.get("expires_at") and doc["expires_at"] > datetime.now(timezone.utc):
             return doc.get("urls") or None
     except Exception:
         return None
@@ -62,7 +62,7 @@ def _cache_put(provider: str, q: str, count: int, urls):
     try:
         _serp_col.update_one(
             {"key": _cache_key(provider, q, count)},
-            {"$set": {"urls": list(urls) if urls else [], "expires_at": datetime.utcnow() + timedelta(seconds=_SERP_CACHE_TTL)}},
+            {"$set": {"urls": list(urls) if urls else [], "expires_at": datetime.now(timezone.utc) + timedelta(seconds=_SERP_CACHE_TTL)}},
             upsert=True,
         )
     except Exception:

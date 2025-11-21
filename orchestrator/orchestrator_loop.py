@@ -8,6 +8,23 @@ from orchestrator.frontier_manager import FrontierManager
 from database.qdrant_vectorizer import QdrantVectorizer
 from adapters.scraper_adapter import smart_fetch
 
+# Importă integrarea LangChain (opțional)
+try:
+    from orchestrator.langchain_integration import (
+        get_langchain_executor,
+        run_chain_task,
+        orchestrate_and_execute
+    )
+    LANGCHAIN_INTEGRATION_AVAILABLE = True
+except ImportError:
+    LANGCHAIN_INTEGRATION_AVAILABLE = False
+    def get_langchain_executor():
+        return None
+    def run_chain_task(*args, **kwargs):
+        return {"error": "LangChain integration not available"}
+    def orchestrate_and_execute(*args, **kwargs):
+        return {"error": "LangChain integration not available"}
+
 try:
     from orchestrator.qwen_runner import propose_queries
 except Exception:
@@ -100,6 +117,11 @@ class Orchestrator:
             self.col.create_index([("domain",1), ("text_hash",1)], unique=True, name="uniq_domain_text")
         except Exception:
             pass
+        
+        # Inițializează LangChain executor dacă este disponibil
+        self.langchain_executor = get_langchain_executor() if LANGCHAIN_INTEGRATION_AVAILABLE else None
+        if self.langchain_executor:
+            print("[orchestrator] ✅ LangChain integration enabled")
 
     def upsert_doc(self, url: str, title: str, text: str, vec: list[float] | None):
         th = text_hash(text)
@@ -215,3 +237,55 @@ class Orchestrator:
                 pass
 
         return processed
+    
+    async def run_chain_task(self, chain_name: str, params: dict, task_id: str | None = None, progress_callback=None):
+        """
+        Execută un task LangChain prin orchestrator
+        
+        Args:
+            chain_name: Numele lanțului (ex: "site_analysis", "industry_strategy")
+            params: Parametrii pentru lanț
+            task_id: ID-ul task-ului (opțional)
+            progress_callback: Callback pentru progres (opțional)
+        
+        Returns:
+            Rezultatul executării lanțului
+        """
+        if not self.langchain_executor:
+            return {
+                "error": "LangChain integration not available",
+                "status": "error"
+            }
+        
+        return await self.langchain_executor.run_chain_task(
+            chain_name=chain_name,
+            params=params,
+            task_id=task_id,
+            progress_callback=progress_callback
+        )
+    
+    async def orchestrate_request(self, user_request: str, context: dict | None = None, task_id: str | None = None, progress_callback=None):
+        """
+        Orchestrează o cerere și execută lanțul corespunzător
+        
+        Args:
+            user_request: Cererea utilizatorului (text natural)
+            context: Context suplimentar
+            task_id: ID-ul task-ului (opțional)
+            progress_callback: Callback pentru progres (opțional)
+        
+        Returns:
+            Rezultatul complet al orchestrării și executării
+        """
+        if not self.langchain_executor:
+            return {
+                "error": "LangChain integration not available",
+                "status": "error"
+            }
+        
+        return await self.langchain_executor.orchestrate_and_execute(
+            user_request=user_request,
+            context=context,
+            task_id=task_id,
+            progress_callback=progress_callback
+        )

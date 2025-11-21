@@ -1,0 +1,73 @@
+{
+  "timestamp": "2025-11-06T19:44:30.716001+00:00",
+  "summary": {
+    "total_agents": 7,
+    "success_count": 0,
+    "skipped_count": 0,
+    "failed_count": 7,
+    "total_vectors": 0
+  },
+  "results": {
+    "total": 7,
+    "success": [],
+    "failed": [
+      {
+        "agent_id": "690a19bda55790fced125e48",
+        "collection_name": "agent_690a19bda55790fced125e48",
+        "chunks_processed": 0,
+        "vectors_saved": 0,
+        "success": false,
+        "error": "illegal request line"
+      },
+      {
+        "agent_id": "690a3230a55790fced1272cb",
+        "collection_name": "agent_690a3230a55790fced1272cb",
+        "chunks_processed": 0,
+        "vectors_saved": 0,
+        "success": false,
+        "error": "illegal request line"
+      },
+      {
+        "agent_id": "690ceb65a55790fced159040",
+        "collection_name": "agent_690ceb65a55790fced159040",
+        "chunks_processed": 0,
+        "vectors_saved": 0,
+        "success": false,
+        "error": "illegal request line"
+      },
+      {
+        "agent_id": "690ceb76a55790fced159066",
+        "collection_name": "agent_690ceb76a55790fced159066",
+        "chunks_processed": 0,
+        "vectors_saved": 0,
+        "success": false,
+        "error": "illegal request line"
+      },
+      {
+        "agent_id": "690cec4ba55790fced15917d",
+        "collection_name": "agent_690cec4ba55790fced15917d",
+        "chunks_processed": 0,
+        "vectors_saved": 0,
+        "success": false,
+        "error": "illegal request line"
+      },
+      {
+        "agent_id": "690cec68a55790fced1591b6",
+        "collection_name": "agent_690cec68a55790fced1591b6",
+        "chunks_processed": 0,
+        "vectors_saved": 0,
+        "success": false,
+        "error": "illegal request line"
+      },
+      {
+        "agent_id": "690cefa5a55790fced159562",
+        "collection_name": "agent_690cefa5a55790fced159562",
+        "chunks_processed": 0,
+        "vectors_saved": 0,
+        "success": false,
+        "error": "illegal request line"
+      }
+    ],
+    "skipped": []
+  }
+}

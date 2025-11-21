@@ -1,0 +1,103 @@
+{
+  "sol_20251022_192109": {
+    "id": "sol_20251022_192109",
+    "problem": "Agenții nu apar în API - eroare de colecții MongoDB",
+    "solution": "Corectat agents_collection = db.site_agents în loc de db.agents și MONGODB_URI port 27017 în loc de 9308.",
+    "status": "sealed",
+    "created_at": "2025-10-22T19:21:09.624441+00:00",
+    "sealed_at": "2025-10-22T19:21:09.626032+00:00",
+    "test_results": [
+      {
+        "test": "MongoDB API test",
+        "result": "SUCCESS",
+        "details": "Agents appear in /api/agents endpoint"
+      }
+    ],
+    "files_modified": [
+      "agent_api.py",
+      "config/database_config.py"
+    ],
+    "notes": "MongoDB collections funcționează corect"
+  },
+  "sol_20251022_192120": {
+    "id": "sol_20251022_192120",
+    "problem": "Agentul nu folosește GPT-5 și dă răspunsuri generice",
+    "solution": "Configurat LLM_MODEL=gpt-5-chat-latest în .env și actualizat toate apelurile API pentru a folosi max_completion_tokens în loc de max_tokens și fără temperature parameter.",
+    "status": "sealed",
+    "created_at": "2025-10-22T19:21:20.060817+00:00",
+    "sealed_at": "2025-10-22T19:21:23.066901+00:00",
+    "test_results": [
+      {
+        "test": "Test soluție 2",
+        "result": "SUCCESS",
+        "details": "Soluția funcționează corect"
+      }
+    ],
+    "files_modified": [
+      ".env",
+      "site_specific_intelligence.py",
+      "gpt5_qwen_architecture.py"
+    ],
+    "notes": "Soluția 2 este funcțională și testată"
+  },
+  "sol_20251022_192121": {
+    "id": "sol_20251022_192121",
+    "problem": "Agentul nu păstrează contextul conversației și dă răspunsuri generice",
+    "solution": "Implementat conversation_history în API calls și prompts. Modificat agent_api.py, site_specific_intelligence.py și static/chat.html pentru a transmite și folosi istoricul conversației.",
+    "status": "sealed",
+    "created_at": "2025-10-22T19:21:21.061643+00:00",
+    "sealed_at": "2025-10-22T19:21:23.067929+00:00",
+    "test_results": [
+      {
+        "test": "Test soluție 3",
+        "result": "SUCCESS",
+        "details": "Soluția funcționează corect"
+      }
+    ],
+    "files_modified": [
+      "agent_api.py",
+      "site_specific_intelligence.py",
+      "static/chat.html"
+    ],
+    "notes": "Soluția 3 este funcțională și testată"
+  },
+  "sol_20251022_192122": {
+    "id": "sol_20251022_192122",
+    "problem": "Agentul inventează informații de contact în loc să le extragă din site",
+    "solution": "Implementat _extract_real_contact_info() care extrage automat telefon, email și numele companiei din conținutul site-ului folosind regex patterns.",
+    "status": "sealed",
+    "created_at": "2025-10-22T19:21:22.062632+00:00",
+    "sealed_at": "2025-10-22T19:21:23.068990+00:00",
+    "test_results": [
+      {
+        "test": "Test soluție 4",
+        "result": "SUCCESS",
+        "details": "Soluția funcționează corect"
+      }
+    ],
+    "files_modified": [
+      "site_specific_intelligence.py"
+    ],
+    "notes": "Soluția 4 este funcțională și testată"
+  },
+  "sol_20251022_192123": {
+    "id": "sol_20251022_192123",
+    "problem": "Agenții nu apar în API - eroare de colecții MongoDB",
+    "solution": "Corectat agents_collection = db.site_agents în loc de db.agents și MONGODB_URI port 27017 în loc de 9308.",
+    "status": "sealed",
+    "created_at": "2025-10-22T19:21:23.064145+00:00",
+    "sealed_at": "2025-10-22T19:21:23.070137+00:00",
+    "test_results": [
+      {
+        "test": "Test soluție 5",
+        "result": "SUCCESS",
+        "details": "Soluția funcționează corect"
+      }
+    ],
+    "files_modified": [
+      "agent_api.py",
+      "config/database_config.py"
+    ],
+    "notes": "Soluția 5 este funcțională și testată"
+  }
+}

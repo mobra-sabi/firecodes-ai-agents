@@ -1,0 +1,312 @@
+{
+  "passed": [
+    {
+      "name": "Get Competitive Analysis",
+      "endpoint": "/api/agents/691a19dd2772e8833c819084/competitive-analysis",
+      "duration": 0.005178689956665039,
+      "response": {
+        "agent_id": "691a19dd2772e8833c819084",
+        "exists": false,
+        "message": "No competitive analysis found. Run analysis first."
+      }
+    },
+    {
+      "name": "Get Competitors List",
+      "endpoint": "/api/agents/691a19dd2772e8833c819084/competitors",
+      "duration": 0.0032196044921875,
+      "response": {
+        "agent_id": "691a19dd2772e8833c819084",
+        "competitors": [],
+        "count": 0,
+        "message": "No competitors discovered yet. Run SERP discovery first."
+      }
+    },
+    {
+      "name": "Get Competitive Strategy",
+      "endpoint": "/api/agents/691a19dd2772e8833c819084/strategy",
+      "duration": 0.0032308101654052734,
+      "response": {
+        "agent_id": "691a19dd2772e8833c819084",
+        "exists": false,
+        "message": "No strategy generated yet."
+      }
+    },
+    {
+      "name": "Get SERP Rankings",
+      "endpoint": "/api/agents/691a19dd2772e8833c819084/serp-rankings",
+      "duration": 0.0033452510833740234,
+      "response": {
+        "agent_id": "691a19dd2772e8833c819084",
+        "rankings": [],
+        "message": "No SERP data available"
+      }
+    },
+    {
+      "name": "Get SERP History",
+      "endpoint": "/api/agents/691a19dd2772e8833c819084/serp/history?keyword=mentenanta",
+      "duration": 0.003337383270263672,
+      "response": {
+        "agent_id": "691a19dd2772e8833c819084",
+        "days": 30,
+        "history": [],
+        "data_points": 0
+      }
+    },
+    {
+      "name": "Start Competitive Analysis Workflow",
+      "endpoint": "/api/workflows/start-competitive-analysis",
+      "duration": 0.013629674911499023,
+      "response": {
+        "workflow_id": "691a1ecbe5c98eda80190dd0",
+        "status": "started",
+        "message": "Competitive analysis workflow started for agent 691a19dd2772e8833c819084"
+      }
+    },
+    {
+      "name": "Get Active Workflows",
+      "endpoint": "/api/workflows/active",
+      "duration": 0.004395246505737305,
+      "response": {
+        "workflows": [
+          {
+            "_id": "691a1ecbe5c98eda80190dd0",
+            "workflow_id": "691a1ecbe5c98eda80190dd0",
+            "type": "competitive_analysis",
+            "params": {
+              "agent_id": "691a19dd2772e8833c819084"
+            },
+            "user_id": null,
+            "status": "running",
+            "created_at": "2025-11-16T18:58:19.154000",
+            "started_at": "2025-11-16T18:58:19.157000",
+            "completed_at": null,
+            "progress": 20.0,
+            "current_step": "Loading agent context",
+            "steps": [],
+            "logs": [
+              {
+                "timestamp": "2025-11-16T18:58:19.158040+00:00",
+                "level": "INFO",
+                "message": "\ud83d\ude80 Starting competitive analysis for agent 691a19dd2772e8833c819084"
+              },
+              {
+                "timestamp": "2025-11-16T18:58:19.159486+00:00",
+                "level": "INFO",
+                "message": "Loading agent context from MongoDB and Qdrant..."
+              }
+            ],
+            "result": null,
+            "error": null,
+            "updated_at": "2025-11-16T18:58:19.158000"
+          }
+        ],
+        "count": 1
+      }
+    },
+    {
+      "name": "Start SERP Discovery Workflow",
+      "endpoint": "/api/workflows/start-serp-discovery",
+      "duration": 0.002324342727661133,
+      "response": {
+        "workflow_id": "691a1ecbe5c98eda80190dd1",
+        "status": "started",
+        "message": "SERP discovery workflow started for agent 691a19dd2772e8833c819084"
+      }
+    },
+    {
+      "name": "Get Learning Statistics",
+      "endpoint": "/api/learning/stats",
+      "duration": 0.003542184829711914,
+      "response": {
+        "total_interactions": 0,
+        "unprocessed": 0,
+        "processed": 0,
+        "latest_training": null,
+        "dataset_ready": false,
+        "error": "name 'client' is not defined"
+      }
+    },
+    {
+      "name": "Get Training Status",
+      "endpoint": "/api/learning/training-status",
+      "duration": 0.0026810169219970703,
+      "response": {
+        "is_training": false,
+        "message": "No training in progress"
+      }
+    },
+    {
+      "name": "Get Google Rankings Map",
+      "endpoint": "/api/agents/691a19dd2772e8833c819084/google-rankings-map",
+      "duration": 0.002937793731689453,
+      "response": {
+        "agent_id": "691a19dd2772e8833c819084",
+        "exists": false,
+        "total_keywords": 0,
+        "rankings": [],
+        "message": "No rankings data. Run SERP discovery first."
+      }
+    },
+    {
+      "name": "Get Google Ads Strategy",
+      "endpoint": "/api/agents/691a19dd2772e8833c819084/google-ads-strategy",
+      "duration": 0.0029001235961914062,
+      "response": {
+        "agent_id": "691a19dd2772e8833c819084",
+        "exists": false,
+        "message": "No Google Ads strategy generated yet. Run SERP discovery with slaves first."
+      }
+    },
+    {
+      "name": "Get Slave Agents",
+      "endpoint": "/api/agents/691a19dd2772e8833c819084/slave-agents",
+      "duration": 0.003063678741455078,
+      "response": {
+        "agent_id": "691a19dd2772e8833c819084",
+        "total_slaves": 1,
+        "slaves": [
+          {
+            "_id": "691a1e1b3ebace026c45ce62",
+            "domain": "test-competitor.ro",
+            "url": "https://test-competitor.ro/page",
+            "name": "Test Competitor - Services",
+            "description": "Professional services",
+            "type": "slave",
+            "master_ids": [
+              "691a19dd2772e8833c819084"
+            ],
+            "status": "created",
+            "scraped_content": "",
+            "content_length": 0,
+            "serp_position": 1,
+            "created_at": "2025-11-16T18:55:23.546000",
+            "updated_at": "2025-11-16T18:55:23.546000",
+            "metadata": {
+              "source": "serp_discovery",
+              "scraping_method": "basic",
+              "has_embeddings": false
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Get Rankings Summary",
+      "endpoint": "/api/agents/691a19dd2772e8833c819084/rankings-summary",
+      "duration": 0.002725839614868164,
+      "response": {
+        "agent_id": "691a19dd2772e8833c819084",
+        "has_data": false,
+        "total_keywords": 0
+      }
+    },
+    {
+      "name": "Start SERP Discovery with Slaves",
+      "endpoint": "/api/workflows/start-serp-discovery-with-slaves",
+      "duration": 0.0029327869415283203,
+      "response": {
+        "workflow_id": "691a1ecbe5c98eda80190dd2",
+        "status": "started",
+        "agent_id": "691a19dd2772e8833c819084",
+        "num_keywords": 3,
+        "message": "SERP discovery with slave creation started"
+      }
+    },
+    {
+      "name": "System Health Check",
+      "endpoint": "/health",
+      "duration": 5.880526065826416,
+      "response": {
+        "overall_status": "unhealthy",
+        "total_services": 5,
+        "healthy_services": 3,
+        "degraded_services": 1,
+        "unhealthy_services": 1,
+        "health_percentage": 60.0,
+        "timestamp": "2025-11-16T18:58:25.065746+00:00",
+        "services": {
+          "qdrant": {
+            "status": "healthy",
+            "response_time": 5.017129,
+            "error": null,
+            "details": {
+              "status_code": 200
+            }
+          },
+          "qwen": {
+            "status": "healthy",
+            "response_time": 5.016733,
+            "error": null,
+            "details": {
+              "status_code": 200
+            }
+          },
+          "openai": {
+            "status": "degraded",
+            "response_time": 5.265604,
+            "error": "HTTP 401",
+            "details": {
+              "status_code": 401
+            }
+          },
+          "brave": {
+            "status": "healthy",
+            "response_time": 5.694988,
+            "error": null,
+            "details": {
+              "status_code": 200
+            }
+          },
+          "mongodb": {
+            "status": "unhealthy",
+            "response_time": 5.009207,
+            "error": "localhost:9308: [Errno 111] Connection refused (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 5.0s, Topology Description: <TopologyDescription id: 691a1ecbe5c98eda80190dd5, topology_type: Unknown, servers: [<ServerDescription ('localhost', 9308) server_type: Unknown, rtt: None, error=AutoReconnect('localhost:9308: [Errno 111] Connection refused (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>",
+            "details": null
+          }
+        }
+      }
+    }
+  ],
+  "failed": [
+    {
+      "name": "Get Agent Details",
+      "endpoint": "/api/agents/691a19dd2772e8833c819084",
+      "status": 404,
+      "error": "{\"detail\":\"Not Found\"}"
+    },
+    {
+      "name": "Get Agent Content",
+      "endpoint": "/api/agents/691a19dd2772e8833c819084/content",
+      "status": 404,
+      "error": "{\"detail\":\"Not Found\"}"
+    },
+    {
+      "name": "Get Agents Statistics",
+      "endpoint": "/api/agents/stats",
+      "status": 404,
+      "error": "{\"detail\":\"Not Found\"}"
+    }
+  ],
+  "warnings": [
+    {
+      "name": "Get Competitive Analysis",
+      "issue": "Missing keys: ['analysis']"
+    },
+    {
+      "name": "Get Competitors List",
+      "issue": "Missing keys: ['total']"
+    },
+    {
+      "name": "Get Competitive Strategy",
+      "issue": "Missing keys: ['strategy']"
+    },
+    {
+      "name": "Get SERP History",
+      "issue": "Missing keys: ['keyword']"
+    },
+    {
+      "name": "System Health Check",
+      "issue": "Missing keys: ['status']"
+    }
+  ]
+}

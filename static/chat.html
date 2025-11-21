@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agents Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .agent-selector {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .agent-selector select {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            background: white;
+            font-size: 1rem;
+            min-width: 300px;
+        }
+
+        .agent-info {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 1rem;
+        }
+
+        .chat-messages {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .message {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .message.user .message-avatar {
+            background: #4CAF50;
+        }
+
+        .message.assistant .message-avatar {
+            background: #2196F3;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            line-height: 1.5;
+        }
+
+        .message.user .message-content {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .message.assistant .message-content {
+            background: #f5f5f5;
+            color: #333;
+            border: 1px solid #e0e0e0;
+        }
+
+        .message-sources {
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .message-sources a {
+            color: #2196F3;
+            text-decoration: none;
+        }
+
+        .message-sources a:hover {
+            text-decoration: underline;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 1rem;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .chat-input input:focus {
+            border-color: #2196F3;
+        }
+
+        .chat-input button {
+            padding: 0.75rem 1.5rem;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .chat-input button:hover {
+            background: #1976D2;
+        }
+
+        .chat-input button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            margin: 1rem 0;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border-left: 4px solid #c62828;
+        }
+
+        .confidence {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+
+        .confidence.high {
+            color: #4CAF50;
+        }
+
+        .confidence.medium {
+            color: #FF9800;
+        }
+
+        .confidence.low {
+            color: #f44336;
+        }
+        
+        .web-sources {
+            color: #0066cc;
+            font-weight: 500;
+        }
+        
+        .web-sources a {
+            color: #0066cc;
+            text-decoration: underline;
+        }
+        
+        .web-sources a:hover {
+            color: #004499;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 AI Agents Chat</h1>
+        <div class="agent-selector">
+            <select id="agentSelect">
+                <option value="">Selectează un agent...</option>
+            </select>
+            <div class="agent-info" id="agentInfo"></div>
+        </div>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+            <div class="message assistant">
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                    Salut! Sunt asistentul AI pentru site-ul selectat. Selectează un agent din dropdown-ul de sus pentru a începe conversația!
+                </div>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            Agentul îți pregătește răspunsul... ⏳
+        </div>
+
+        <div class="chat-input">
+            <input type="text" id="messageInput" placeholder="Scrie întrebarea ta aici..." disabled>
+            <button id="sendButton" disabled>Trimite</button>
+        </div>
+    </div>
+
+    <script>
+        let selectedAgent = null;
+        let agents = [];
+
+        // Încarcă lista de agenți
+        async function loadAgents() {
+            try {
+                const response = await fetch('/api/agents');
+                agents = await response.json();
+                
+                const select = document.getElementById('agentSelect');
+                select.innerHTML = '<option value="">Selectează un agent...</option>';
+                
+                agents.forEach(agent => {
+                    const option = document.createElement('option');
+                    option.value = agent._id;
+                    option.textContent = `${agent.name} (${agent.domain})`;
+                    select.appendChild(option);
+                });
+                
+                // Încearcă să selecteze automat agentul din URL
+                autoSelectAgent();
+            } catch (error) {
+                console.error('Eroare la încărcarea agenților:', error);
+            }
+        }
+
+        // Selectează agent
+        document.getElementById('agentSelect').addEventListener('change', function(e) {
+            selectedAgent = e.target.value;
+            const agent = agents.find(a => a._id === selectedAgent);
+            
+            if (agent) {
+                document.getElementById('agentInfo').textContent = 
+                    `Agent selectat: ${agent.name} - ${agent.site_url}`;
+                document.getElementById('messageInput').disabled = false;
+                document.getElementById('sendButton').disabled = false;
+                
+                // Adaugă mesaj de bun venit
+                addMessage('assistant', `Salut! Sunt asistentul pentru ${agent.domain}. Cu ce te pot ajuta?`);
+            } else {
+                document.getElementById('agentInfo').textContent = '';
+                document.getElementById('messageInput').disabled = true;
+                document.getElementById('sendButton').disabled = true;
+            }
+        });
+
+        // Trimite mesaj
+        document.getElementById('sendButton').addEventListener('click', sendMessage);
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        function getConversationHistory() {
+            const messages = document.querySelectorAll('.message');
+            const history = [];
+            
+            for (let i = 0; i < messages.length; i++) {
+                const message = messages[i];
+                const isUser = message.classList.contains('user-message');
+                const content = message.querySelector('.message-content').textContent;
+                
+                history.push({
+                    role: isUser ? 'user' : 'assistant',
+                    content: content
+                });
+            }
+            
+            return history;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message || !selectedAgent) return;
+            
+            // Adaugă mesajul utilizatorului
+            addMessage('user', message);
+            input.value = '';
+            
+            // Afișează loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('sendButton').disabled = true;
+            
+            try {
+                const response = await fetch('/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: message,
+                        agent_id: selectedAgent,
+                        conversation_history: getConversationHistory()
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    // Adaugă răspunsul agentului
+                    let responseText = data.response;
+                    
+                    // Adaugă indicator pentru web search dacă a fost folosit
+                    if (data.web_search_used) {
+                        responseText += '\n\n🌐 *Informații actualizate de pe internet*';
+                    }
+                    
+                    // Adaugă sursele dacă există
+                    if (data.sources && data.sources.length > 0) {
+                        responseText += '\n\n📚 Surse:';
+                        data.sources.forEach((source, index) => {
+                            responseText += `\n${index + 1}. ${source.url} (scor: ${source.score.toFixed(2)})`;
+                        });
+                    }
+                    
+                    // Adaugă sursele de pe internet dacă există
+                    if (data.web_sources && data.web_sources.length > 0) {
+                        responseText += '\n\n🌐 Surse de pe internet:';
+                        data.web_sources.forEach((source, index) => {
+                            responseText += `\n${index + 1}. ${source.title} - ${source.url}`;
+                        });
+                    }
+                    
+                    addMessage('assistant', responseText, data.confidence, data.sources, data.web_sources);
+                } else {
+                    addMessage('assistant', `Eroare: ${data.error || 'Răspuns indisponibil'}`, 0);
+                }
+            } catch (error) {
+                console.error('Eroare la trimiterea mesajului:', error);
+                addMessage('assistant', 'Eroare la conectarea la server. Te rog să încerci din nou.', 0);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('sendButton').disabled = false;
+            }
+        }
+
+        function addMessage(type, content, confidence = null, sources = null, webSources = null) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = type === 'user' ? '👤' : '🤖';
+            
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            messageContent.textContent = content;
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(messageContent);
+            
+            // Adaugă confidence dacă există
+            if (confidence !== null) {
+                const confidenceDiv = document.createElement('div');
+                confidenceDiv.className = `confidence ${getConfidenceClass(confidence)}`;
+                confidenceDiv.textContent = `Încredere: ${(confidence * 100).toFixed(1)}%`;
+                messageContent.appendChild(confidenceDiv);
+            }
+            
+            // Adaugă sursele dacă există
+            if (sources && sources.length > 0) {
+                const sourcesDiv = document.createElement('div');
+                sourcesDiv.className = 'message-sources';
+                sourcesDiv.innerHTML = '📚 Surse: ' + sources.map((source, index) => 
+                    `<a href="${source.url}" target="_blank">${index + 1}</a>`
+                ).join(', ');
+                messageContent.appendChild(sourcesDiv);
+            }
+            
+            // Adaugă sursele de pe internet dacă există
+            if (webSources && webSources.length > 0) {
+                const webSourcesDiv = document.createElement('div');
+                webSourcesDiv.className = 'message-sources web-sources';
+                webSourcesDiv.innerHTML = '🌐 Surse internet: ' + webSources.map((source, index) => 
+                    `<a href="${source.url}" target="_blank" title="${source.title}">${index + 1}</a>`
+                ).join(', ');
+                messageContent.appendChild(webSourcesDiv);
+            }
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function getConfidenceClass(confidence) {
+            if (confidence >= 0.7) return 'high';
+            if (confidence >= 0.4) return 'medium';
+            return 'low';
+        }
+
+        // Încarcă agenții la pornirea paginii
+        loadAgents();
+
+        // Verifică dacă există un agent_id în URL
+        function getAgentIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('agent_id');
+        }
+
+        // Selectează automat agentul dacă este specificat în URL
+        function autoSelectAgent() {
+            const agentId = getAgentIdFromUrl();
+            if (agentId && agents.length > 0) {
+                const select = document.getElementById('agentSelect');
+                select.value = agentId;
+                
+                // Trigger change event pentru a activa agentul
+                const changeEvent = new Event('change');
+                select.dispatchEvent(changeEvent);
+            }
+        }
+    </script>
+</body>
+</html>

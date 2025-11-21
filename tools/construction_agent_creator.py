@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 import os, sys, json, argparse, re, time
+from langchain_ollama import OllamaEmbeddings
 from urllib.parse import urlparse, urljoin
 from typing import List, Dict, Set, Optional
 import openai
 import tldextract
+from dotenv import load_dotenv
+load_dotenv()  # Încarcă variabilele de mediu din .env
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from llm_orchestrator import get_orchestrator
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue
 from pymongo import MongoClient
@@ -18,6 +23,12 @@ from sentence_transformers import SentenceTransformer
 from datetime import datetime
 import asyncio
 
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL","nomic-embed-text")
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL","http://127.0.0.1:11434")
+def get_embedder():
+    return OllamaEmbeddings(model=EMBEDDING_MODEL, base_url=OLLAMA_BASE_URL)
+
+
 @dataclass
 class ConstructionService:
     name: str
@@ -29,25 +40,59 @@ class ConstructionService:
     opportunities: List[str]
 
 class ConstructionAgentCreator:
+    # Executor partajat pentru toate instanțele - NU crea unul nou pentru fiecare task
+    _shared_executor = None
+    
+    @classmethod
+    def get_executor(cls):
+        """Obține executor-ul partajat pentru toate task-urile"""
+        if cls._shared_executor is None:
+            import concurrent.futures
+            cls._shared_executor = concurrent.futures.ThreadPoolExecutor(max_workers=20)
+        return cls._shared_executor
+    
     def __init__(self):
-        # AI Models
-        self.gpt4 = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        self.qwen = openai.OpenAI(base_url="http://localhost:9301/v1", api_key="local-vllm")
+        # AI Models - 🎭 Orchestrator cu DeepSeek + fallback
+        self.llm = get_orchestrator()
+        self.gpt4 = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))  # Kept for legacy
+        self.qwen = openai.OpenAI(base_url="http://localhost:9301/v1", api_key="local-vllm")  # Kept for legacy
+        
+        # ScraperAPI pentru scraping robust
+        # Încarcă din .env dacă nu este setat în mediu
+        self.scraperapi_key = os.getenv("SCRAPERAPI_KEY", "")
+        if not self.scraperapi_key:
+            # Încearcă să încarce din .env manual
+            env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+            if os.path.exists(env_path):
+                with open(env_path, 'r') as f:
+                    for line in f:
+                        if line.startswith("SCRAPERAPI_KEY="):
+                            self.scraperapi_key = line.split("=", 1)[1].strip().strip('"').strip("'")
+                            break
+        self.use_scraperapi = bool(self.scraperapi_key)
+        if self.use_scraperapi:
+            print(f"✅ ScraperAPI activat (key length: {len(self.scraperapi_key)})")
         
         # Databases
-        self.qdrant = QdrantClient("localhost", port=6333)
-        self.mongo = MongoClient("mongodb://localhost:27017/")
-        self.db = self.mongo.construction_intelligence
+        self.qdrant = QdrantClient("localhost", port=9306,)
+        # Folosește configurația din config.database_config
+        from config.database_config import MONGODB_URI, MONGODB_DATABASE
+        self.mongo = MongoClient(MONGODB_URI)
+        self.db = self.mongo[MONGODB_DATABASE]
         
         # Collections
         self.sites_collection = self.db.company_sites
         self.services_collection = self.db.construction_services
         self.competitors_collection = self.db.competitors
         self.regulations_collection = self.db.regulations
-        self.agents_collection = self.db.site_agents
+        self.agents_collection = self.db.site_agents  # ✅ Va salva în ai_agents_db.site_agents
         
-        # Embeddings
-        self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+        # Embeddings - va fi creat per GPU când este necesar
+        # IMPORTANT: Fiecare instance de ConstructionAgentCreator are propriul model
+        # Dar trebuie să fie thread-safe pentru paralelism
+        self.embedding_models = {}  # Dict: {gpu_id: model} pentru a suporta multiple GPU-uri simultan
+        self.embedding_model = None  # Backward compatibility
+        self.embedding_model_gpu = None
         
         # Construcții subdominii România
         self.construction_domains = {
@@ -125,20 +170,79 @@ class ConstructionAgentCreator:
         except Exception as e:
             print(f"⚠️ Eroare inițializare baze de date: {e}")
 
+    def analyze_construction_site_internal(self, site_url: str, site_data: Dict) -> Dict:
+        """Analizează site-ul de construcții folosind datele deja scraped (internal method)"""
+        print(f"🔍 Analizez site-ul de construcții: {site_url}")
+        
+        # Verifică dacă scraping-ul a returnat pagini
+        if site_data.get('total_pages', 0) == 0 or len(site_data.get('pages', [])) == 0:
+            print(f"⚠️ Scraping-ul nu a returnat pagini pentru {site_url}. Folosesc analiză minimă.")
+            # Creează analiză minimă bazată pe domain
+            domain = site_data.get('domain', tldextract.extract(site_url).top_domain_under_public_suffix.lower())
+            services_analysis = self.default_construction_analysis()
+            services_analysis['site_content'] = site_data
+            services_analysis['embeddings_created'] = 0
+        else:
+            # GPT-4 analizează și categorisează serviciile doar dacă există conținut
+            try:
+                services_analysis = self.gpt4_analyze_construction_services(site_data, site_url)
+            except Exception as e:
+                print(f"⚠️ Eroare la analiza GPT-4: {e}. Folosesc analiză default.")
+                services_analysis = self.default_construction_analysis()
+            
+            # Adaugă site_data în analysis
+            services_analysis['site_content'] = site_data
+        
+        return services_analysis
+
     def analyze_construction_site(self, site_url: str) -> Dict:
         """Analizează un site de construcții și identifică serviciile"""
         print(f"🔍 Analizez site-ul de construcții: {site_url}")
         
-        # Scraping complet site
-        site_data = self.scrape_construction_site(site_url)
+        # Scraping complet site cu error handling
+        try:
+            site_data = self.scrape_construction_site(site_url)
+        except Exception as e:
+            print(f"⚠️ Eroare la scraping {site_url}: {e}")
+            # Creează site_data minim dacă scraping-ul eșuează
+            domain = tldextract.extract(site_url).top_domain_under_public_suffix.lower()
+            site_data = {
+                "domain": domain,
+                "total_pages": 0,
+                "pages": [],
+                "scraped_at": datetime.now().isoformat()
+            }
         
-        # GPT-4 analizează și categorisează serviciile
-        services_analysis = self.gpt4_analyze_construction_services(site_data, site_url)
-        
-        # Salvează în baza de date
-        self.save_site_analysis(site_url, site_data, services_analysis)
+        # Verifică dacă scraping-ul a returnat pagini
+        if site_data.get('total_pages', 0) == 0 or len(site_data.get('pages', [])) == 0:
+            print(f"⚠️ Scraping-ul nu a returnat pagini pentru {site_url}. Folosesc analiză minimă.")
+            # Creează analiză minimă bazată pe domain
+            domain = site_data.get('domain', tldextract.extract(site_url).top_domain_under_public_suffix.lower())
+            services_analysis = self.default_construction_analysis()
+            services_analysis['site_content'] = site_data
+            services_analysis['embeddings_created'] = 0
+        else:
+            # GPT-4 analizează și categorisează serviciile doar dacă există conținut
+            try:
+                services_analysis = self.gpt4_analyze_construction_services(site_data, site_url)
+            except Exception as e:
+                print(f"⚠️ Eroare la analiza GPT-4: {e}. Folosesc analiză default.")
+                services_analysis = self.default_construction_analysis()
+            
+            # Adaugă site_data în analysis
+            services_analysis['site_content'] = site_data
+            
+            # Salvează în baza de date (va fi salvat separat în create_agent_from_url)
+            # Nu mai salvăm aici pentru a nu bloca
         
         return services_analysis
+    
+    def analyze_construction_site(self, site_url: str) -> Dict:
+        """Analizează site-ul de construcții și creează strategia (legacy method - păstrat pentru compatibilitate)"""
+        # Scrape site-ul
+        site_data = self.scrape_construction_site(site_url)
+        # Analizează
+        return self.analyze_construction_site_internal(site_url, site_data)
 
     def scrape_construction_site(self, site_url: str) -> Dict:
         """Scraping specializat pentru site-uri de construcții"""
@@ -208,11 +312,67 @@ class ConstructionAgentCreator:
             "scraped_at": datetime.now().isoformat()
         }
 
-    def scrape_single_page(self, url: str, headers: dict) -> Optional[Dict]:
+    def scrape_single_page(self, url: str, headers: dict, max_retries: int = 3) -> Optional[Dict]:
         """Scraping pentru o singură pagină cu focus pe construcții"""
+        resp = None
+        
+        # Folosește ScraperAPI dacă este disponibil
+        if self.use_scraperapi:
+            try:
+                scraperapi_url = f"http://api.scraperapi.com?api_key={self.scraperapi_key}&url={requests.utils.quote(url)}"
+                print(f"  🔧 Folosind ScraperAPI pentru {url[:60]}...")
+                resp = requests.get(scraperapi_url, timeout=30, allow_redirects=True)
+                if resp.status_code == 200:
+                    # ScraperAPI a reușit, continuă cu procesarea
+                    print(f"  ✅ ScraperAPI success pentru {url[:60]} (status: {resp.status_code})")
+                    pass
+                else:
+                    print(f"  ⚠️ ScraperAPI returned status {resp.status_code} pentru {url[:60]}, încerc direct...")
+                    resp = None  # Forțează fallback
+            except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+                print(f"  ⚠️ ScraperAPI timeout/error pentru {url[:60]}: {type(e).__name__}, încerc direct...")
+                resp = None  # Fallback la requests direct
+            except Exception as e:
+                print(f"  ⚠️ Eroare ScraperAPI pentru {url[:60]}: {e}, încerc direct...")
+                resp = None  # Fallback la requests direct
+        
+        # Fallback la requests direct dacă ScraperAPI nu a funcționat
+        if resp is None:
+            for attempt in range(max_retries):
+                try:
+                    resp = requests.get(url, headers=headers, timeout=15, allow_redirects=True)
+                    if resp.status_code == 200:
+                        break
+                    elif resp.status_code in [301, 302, 303, 307, 308]:
+                        # Follow redirects
+                        url = resp.headers.get('Location', url)
+                        continue
+                    else:
+                        if attempt < max_retries - 1:
+                            time.sleep(1 * (attempt + 1))  # Exponential backoff
+                            continue
+                        return None
+                except (requests.exceptions.ConnectionError, requests.exceptions.Timeout, 
+                        requests.exceptions.SSLError, requests.exceptions.TooManyRedirects) as e:
+                    if attempt < max_retries - 1:
+                        print(f"  ⚠️ Retry {attempt + 1}/{max_retries} pentru {url[:60]}...")
+                        time.sleep(1 * (attempt + 1))  # Exponential backoff
+                        continue
+                    else:
+                        print(f"  ❌ Eroare finală la {url[:60]}: {type(e).__name__}")
+                        return None
+                except Exception as e:
+                    print(f"  ⚠️ Eroare neașteptată la {url[:60]}: {e}")
+                    return None
+        
+        # Verifică dacă avem un răspuns valid
+        if resp is None or resp.status_code != 200:
+            return None
+        
         try:
-            resp = requests.get(url, headers=headers, timeout=15)
-            if resp.status_code != 200:
+                
+            # Verifică dacă răspunsul este valid HTML
+            if not resp.content or len(resp.content) < 100:
                 return None
                 
             soup = BeautifulSoup(resp.content, 'html.parser')
@@ -376,23 +536,26 @@ Creează o analiză JSON cu această structură exactă:
 Analizează în profunzime piața de construcții din România și oferă insights strategice."""
 
         try:
-            resp = self.gpt4.chat.completions.create(
-                model="gpt-4o-mini",
+            # 🎭 Folosim Orchestrator cu DeepSeek + fallback
+            resp = self.llm.chat(
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.2,
                 max_tokens=2000
             )
             
-            content = resp.choices[0].message.content.strip()
+            if not resp.get("success"):
+                raise Exception(f"LLM failed: {resp.get('error', 'Unknown')}")
+            
+            content = resp["content"].strip()
             content = re.sub(r'^```[a-z]*\n?', '', content)
             content = re.sub(r'\n?```$', '', content)
             
             analysis = json.loads(content)
-            print("✅ GPT-4 a analizat serviciile de construcții")
+            print(f"✅ {resp['provider']} a analizat serviciile de construcții")
             return analysis
             
         except Exception as e:
-            print(f"⚠️ Eroare GPT-4 analiză: {e}")
+            print(f"⚠️ Eroare LLM analiză: {e}")
             return self.default_construction_analysis()
 
     def build_gpt4_context(self, site_data: Dict) -> str:
@@ -492,63 +655,314 @@ CONȚINUT: {content}
                 
                 self.services_collection.insert_one(service_record)
             
-            # Creează embeddings pentru Qdrant
-            self.create_site_embeddings(domain, site_data, analysis)
+            # Creează embeddings pentru Qdrant (folosește GPU specificat sau implicit)
+            gpu_id = getattr(self, '_current_gpu_id', None)
+            embeddings_count = self.create_site_embeddings(domain, site_data, analysis, gpu_id=gpu_id)
+            
+            # ✅ IMPORTANT: Salvează numărul de embeddings în analysis pentru validare
+            analysis['embeddings_created'] = embeddings_count
             
             print(f"✅ Analiză salvată pentru {domain}")
             
         except Exception as e:
             print(f"⚠️ Eroare salvare analiză: {e}")
 
-    def create_site_embeddings(self, domain: str, site_data: Dict, analysis: Dict):
-        """Creează embeddings pentru site și analiză"""
+    def get_embedding_model(self, gpu_id: Optional[int] = None):
+        """Obține modelul de embeddings pentru GPU-ul specificat"""
+        import torch
+        
+        # Dacă nu este specificat GPU, folosește GPU 0
+        if gpu_id is None:
+            gpu_id = 0
+        
+        # Verifică dacă avem deja modelul pentru acest GPU în dict
+        if gpu_id in self.embedding_models:
+            return self.embedding_models[gpu_id]
+        
+        # Creează model nou pentru GPU-ul specificat
+        # IMPORTANT: Creează modelul pe CPU mai întâi, apoi mută-l pe GPU pentru a evita eroarea "meta tensor"
+        print(f"🔧 Creând embedding model (instance: {id(self)})")
+        model = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')
+        
+        # Mută modelul pe GPU dacă este disponibil
+        if torch.cuda.is_available() and gpu_id < torch.cuda.device_count():
+            device = f"cuda:{gpu_id}"
+            print(f"🔧 Mutând embedding model pe {device}")
+            model = model.to(device)
+        else:
+            device = "cpu"
+            print(f"⚠️ GPU {gpu_id} nu este disponibil, folosesc CPU")
+        self.embedding_models[gpu_id] = model
+        
+        # Backward compatibility
+        self.embedding_model = model
+        self.embedding_model_gpu = gpu_id
+        
+        return model
+    
+    def create_site_embeddings(self, domain: str, site_data: Dict, analysis: Dict, gpu_id: Optional[int] = None) -> int:
+        """Creează embeddings cu GPU pentru FIECARE pagină. Returnează numărul de embeddings create."""
+        embeddings_created = 0
+        
+        # Obține modelul pentru GPU-ul specificat
+        embedding_model = self.get_embedding_model(gpu_id)
+        
+        # Creează collection per agent pentru chunks
+        collection_name = f"construction_{domain.replace('.', '_')}"
+        
         try:
-            # Text pentru embedding
-            embedding_text = f"""
+            # 1. Asigură-te că există collection pentru chunks
+            try:
+                self.qdrant.get_collection(collection_name)
+            except:
+                from qdrant_client.models import Distance, VectorParams
+                self.qdrant.create_collection(
+                    collection_name=collection_name,
+                    vectors_config=VectorParams(size=384, distance=Distance.COSINE)
+                )
+                print(f"📦 Colecție Qdrant creată: {collection_name}")
+            
+            # 2. Creează chunks pentru FIECARE pagină
+            pages = site_data.get('pages', [])
+            print(f"🧩 Creez chunks pentru {len(pages)} pagini pe GPU {gpu_id if gpu_id is not None else 0}...")
+            
+            points = []
+            chunk_id = 0
+            
+            for page_idx, page in enumerate(pages):
+                page_content = page.get('content', '')
+                page_url = page.get('url', '')
+                
+                if not page_content or len(page_content) < 100:
+                    continue
+                
+                # Split în chunks de ~500 caractere
+                chunk_size = 500
+                overlap = 50
+                
+                for i in range(0, len(page_content), chunk_size - overlap):
+                    chunk_text = page_content[i:i + chunk_size]
+                    
+                    if len(chunk_text) < 100:  # Skip chunks prea mici
+                        continue
+                    
+                    # Generează embedding cu GPU (SentenceTransformer)
+                    embedding = embedding_model.encode(chunk_text).tolist()
+                    
+                    # Creează point pentru Qdrant
+                    point = PointStruct(
+                        id=chunk_id,
+                        vector=embedding,
+                        payload={
+                            "domain": domain,
+                            "url": page_url,
+                            "chunk_text": chunk_text[:500],  # First 500 chars
+                            "chunk_index": chunk_id,
+                            "page_index": page_idx,
+                            "timestamp": time.time()
+                        }
+                    )
+                    points.append(point)
+                    chunk_id += 1
+                    
+                    # Upsert în batch-uri de 100
+                    if len(points) >= 100:
+                        self.qdrant.upsert(collection_name=collection_name, points=points)
+                        embeddings_created += len(points)
+                        print(f"   ✅ {embeddings_created} chunks procesate cu GPU...")
+                        points = []
+            
+            # Upsert ultimele chunks
+            if points:
+                self.qdrant.upsert(collection_name=collection_name, points=points)
+                embeddings_created += len(points)
+            
+            print(f"✅ Total {embeddings_created} embeddings create cu GPU pentru {domain}")
+            
+            # 3. Creează și embedding pentru summary (backward compatibility)
+            summary_text = f"""
             {analysis.get('company_analysis', {}).get('company_name', '')}
             {' '.join([s.get('service_name', '') for s in analysis.get('services_identified', [])])}
-            {' '.join([s.get('description', '') for s in analysis.get('services_identified', [])])}
             {analysis.get('company_analysis', {}).get('main_location', '')}
             """
             
-            # Generează embedding
-            embedding = self.embedding_model.encode(embedding_text).tolist()
-            
-            # Salvează în Qdrant
-            point = PointStruct(
+            summary_embedding = embedding_model.encode(summary_text).tolist()
+            summary_point = PointStruct(
                 id=hash(domain) % (2**63),
-                vector=embedding,
+                vector=summary_embedding,
                 payload={
                     "domain": domain,
                     "company_name": analysis.get('company_analysis', {}).get('company_name', ''),
                     "services": [s.get('service_name', '') for s in analysis.get('services_identified', [])],
-                    "categories": [s.get('category', '') for s in analysis.get('services_identified', [])],
                     "location": analysis.get('company_analysis', {}).get('main_location', ''),
                     "timestamp": time.time()
                 }
             )
-            
-            self.qdrant.upsert(collection_name="construction_sites", points=[point])
-            print(f"✅ Embeddings create pentru {domain}")
+            self.qdrant.upsert(collection_name="construction_sites", points=[summary_point])
             
         except Exception as e:
             print(f"⚠️ Eroare creare embeddings: {e}")
-
-    def create_site_agent(self, site_url: str) -> Dict:
-        """Creează agentul AI specializat pentru site-ul de construcții"""
-        print(f"🤖 Creez agent AI pentru site-ul: {site_url}")
+            import traceback
+            traceback.print_exc()
         
-        # Analizează site-ul
+        return embeddings_created
+
+    def create_site_agent(self, site_url: str, gpu_id: Optional[int] = None) -> Dict:
+        """Creează agentul AI specializat pentru site-ul de construcții"""
+        print(f"🤖 Creez agent AI pentru site-ul: {site_url} (GPU {gpu_id if gpu_id is not None else 0})")
+        
+        # Salvează GPU ID pentru a-l folosi în create_site_embeddings
+        self._current_gpu_id = gpu_id
+        
+        # Analizează site-ul (returnează analysis care conține toate datele)
         analysis = self.analyze_construction_site(site_url)
+        
+        # Extrage statistici din analysis pentru validation
+        site_content = analysis.get('site_content', {})
+        if isinstance(site_content, dict):
+            pages_scraped = len(site_content.get('pages', []))
+        else:
+            pages_scraped = 0
+        embeddings_count = analysis.get('embeddings_created', 0)
         
         # Creează personalitatea agentului
         agent_config = self.create_agent_personality(analysis)
         
-        # Salvează agentul
+        # ✅ IMPORTANT: Adaugă statistici pentru validation
+        agent_config['pages_scraped'] = pages_scraped
+        agent_config['embeddings_count'] = embeddings_count
+        
+        # Salvează agentul (va seta validation_passed based pe aceste valori)
         self.save_agent_config(site_url, agent_config)
         
         print(f"✅ Agent AI creat pentru {site_url}")
+        print(f"   Pages scraped: {pages_scraped}")
+        print(f"   Embeddings: {embeddings_count}")
         return agent_config
+    
+    async def create_agent_from_url(self, site_url: str, industry: str = "", master_agent_id: str = None, gpu_id: Optional[int] = None) -> Dict:
+        """Creează agentul AI pentru un site URL (async wrapper pentru integrare cu API)"""
+        try:
+            # Salvează GPU ID temporar pentru a-l folosi în create_site_embeddings
+            self._current_gpu_id = gpu_id
+            
+            # IMPORTANT: Rulează fiecare operație blocking în executor separat pentru paralelism real
+            # Altfel, toate task-urile blochează și rulează secvențial
+            import asyncio
+            loop = asyncio.get_event_loop()
+            executor = self.get_executor()
+            
+            # Log pentru debugging
+            if gpu_id is not None:
+                print(f"🚀 Pornind task pentru {site_url[:50]}... pe GPU {gpu_id} în executor")
+            
+            # Rulează fiecare operație blocking în executor separat pentru paralelism real
+            # 1. Scraping (operație blocking I/O)
+            site_data = await loop.run_in_executor(
+                executor,
+                self.scrape_construction_site,
+                site_url
+            )
+            
+            # 2. Analiză (operație blocking I/O + LLM)
+            analysis = await loop.run_in_executor(
+                executor,
+                lambda: self.analyze_construction_site_internal(site_url, site_data)
+            )
+            
+            # 3. Salvează analiza în baza de date (operație blocking I/O)
+            await loop.run_in_executor(
+                executor,
+                self.save_site_analysis,
+                site_url,
+                site_data,
+                analysis
+            )
+            
+            # 4. Creare embeddings (operație blocking GPU)
+            # IMPORTANT: Trebuie să pasez gpu_id ca keyword argument
+            domain = tldextract.extract(site_url).top_domain_under_public_suffix.lower()
+            
+            # Folosește functools.partial pentru a pasa gpu_id ca keyword argument
+            from functools import partial
+            embeddings_count = await loop.run_in_executor(
+                executor,
+                partial(self.create_site_embeddings, domain, site_data, analysis, gpu_id=gpu_id)
+            )
+            
+            # 5. Creează personalitatea agentului (operație non-blocking)
+            agent_config = self.create_agent_personality(analysis)
+            
+            # 6. Extrage statistici
+            site_content = analysis.get('site_content', {})
+            if isinstance(site_content, dict):
+                pages_scraped = len(site_content.get('pages', []))
+            else:
+                pages_scraped = 0
+            
+            agent_config['pages_scraped'] = pages_scraped
+            agent_config['embeddings_count'] = embeddings_count
+            
+            # 7. Salvează agentul (operație blocking I/O)
+            await loop.run_in_executor(
+                executor,
+                self.save_agent_config,
+                site_url,
+                agent_config
+            )
+            
+            print(f"✅ Agent AI creat pentru {site_url}")
+            print(f"   Pages scraped: {pages_scraped}")
+            print(f"   Embeddings: {embeddings_count}")
+            
+            # Returnează agent_config pentru compatibilitate
+            return agent_config
+            
+            # Log pentru debugging
+            if gpu_id is not None:
+                print(f"✅ GPU {gpu_id} folosit pentru {site_url}")
+            
+            # Extrage domain-ul
+            domain = tldextract.extract(site_url).domain + '.' + tldextract.extract(site_url).suffix
+            
+            # Găsește agentul creat în MongoDB
+            agent_record = self.agents_collection.find_one({"domain": domain})
+            
+            if agent_record:
+                agent_id = str(agent_record.get("_id"))
+                
+                # Actualizează cu master_agent_id dacă este furnizat
+                if master_agent_id:
+                    self.agents_collection.update_one(
+                        {"_id": agent_record["_id"]},
+                        {
+                            "$set": {
+                                "master_agent_id": master_agent_id,
+                                "agent_type": "slave",
+                                "last_updated": datetime.now()
+                            }
+                        }
+                    )
+                
+                return {
+                    "ok": True,
+                    "agent_id": agent_id,
+                    "domain": domain,
+                    "message": f"Agent created successfully for {domain}"
+                }
+            else:
+                return {
+                    "ok": False,
+                    "error": "Agent record not found after creation"
+                }
+        except Exception as e:
+            import traceback
+            print(f"❌ Error creating agent from URL {site_url}: {e}")
+            traceback.print_exc()
+            return {
+                "ok": False,
+                "error": str(e)
+            }
 
     def create_agent_personality(self, analysis: Dict) -> Dict:
         """Creează personalitatea agentului bazată pe analiză"""
@@ -624,12 +1038,22 @@ CONȚINUT: {content}
         domain = tldextract.extract(site_url).top_domain_under_public_suffix.lower()
         
         try:
+            # Verifică dacă agentul are embeddings și content
+            has_embeddings = agent_config.get('embeddings_count', 0) > 0
+            has_content = agent_config.get('pages_scraped', 0) > 0
+            
             agent_record = {
                 "domain": domain,
                 "site_url": site_url,
                 "agent_config": agent_config,
-                "agent_type": "construction_specialist",
-                "status": "active",
+                "agent_type": "master",  # ✅ Marchează ca master agent
+                "status": "validated" if has_embeddings else "created",  # ✅ validated dacă are embeddings
+                "validation_passed": has_embeddings,  # ✅ IMPORTANT: Pentru a apărea în listă
+                "has_content": has_content,  # ✅ Pentru filtrare
+                "has_embeddings": has_embeddings,  # ✅ Pentru filtrare
+                "pages_indexed": agent_config.get('pages_scraped', 0),
+                "chunks_indexed": agent_config.get('embeddings_count', 0),
+                "vector_collection": f"construction_{domain.replace('.', '_')}",  # ✅ Referință la Qdrant
                 "created_at": datetime.now(),
                 "last_updated": datetime.now()
             }
@@ -641,6 +1065,9 @@ CONȚINUT: {content}
             )
             
             print(f"✅ Configurație agent salvată pentru {domain}")
+            print(f"   Has embeddings: {has_embeddings}")
+            print(f"   Has content: {has_content}")
+            print(f"   Status: {agent_record['status']}")
             
         except Exception as e:
             print(f"⚠️ Eroare salvare agent: {e}")

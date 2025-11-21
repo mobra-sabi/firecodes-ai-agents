@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os, sys, json, argparse, re, time
+from langchain_ollama import OllamaEmbeddings
 from urllib.parse import urlparse, urljoin
 from typing import List, Dict, Set, Optional
 import openai
@@ -15,6 +16,12 @@ from dataclasses import dataclass
 import hashlib
 import numpy as np
 from sentence_transformers import SentenceTransformer
+
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL","nomic-embed-text")
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL","http://127.0.0.1:11434")
+def get_embedder():
+    return OllamaEmbeddings(model=EMBEDDING_MODEL, base_url=OLLAMA_BASE_URL)
+
 
 @dataclass
 class LLMEndpoint:
@@ -37,7 +44,7 @@ class UltraOptimizedPipeline:
         ]
         
         self.gpt4 = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        self.qdrant = QdrantClient("localhost", port=6333)
+        self.qdrant = QdrantClient("localhost", port=6333,)
         self.init_qdrant_collections()
         
         self.mongo = MongoClient("mongodb://localhost:27017/")
@@ -479,7 +486,8 @@ RĂSPUNS:"""
             start_time = time.time()
             info = self.qdrant.get_collection("website_embeddings")
             qdrant_time = time.time() - start_time
-            print(f"🔍 Qdrant: {info.points_count} puncte, info în {qdrant_time:.3f}s")
+            points = getattr(info, "points_count", getattr(info, "vectors_count", 0))
+            print(f"🔍 Qdrant: {points} puncte, info în {qdrant_time:.3f}s")
         except:
             print("🔍 Qdrant: Colecția nu există")
 

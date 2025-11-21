@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏭 Live Industry Indexing Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0e27;
+            color: #00ff41;
+            padding: 20px;
+            font-size: 14px;
+        }
+        
+        .terminal {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #000;
+            border: 2px solid #00ff41;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 30px rgba(0,255,65,0.3);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #00ff41;
+        }
+        
+        .header h1 {
+            font-size: 2em;
+            text-shadow: 0 0 10px #00ff41;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 0 0 5px #00ff41, 0 0 10px #00ff41; }
+            to { text-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41, 0 0 30px #00ff41; }
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .stat-box {
+            flex: 1;
+            min-width: 200px;
+            background: #001a0a;
+            border: 1px solid #00ff41;
+            padding: 15px;
+            text-align: center;
+            border-radius: 5px;
+        }
+        
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #00ff41;
+            text-shadow: 0 0 10px #00ff41;
+        }
+        
+        .stat-label {
+            margin-top: 5px;
+            opacity: 0.8;
+        }
+        
+        .progress-section {
+            margin: 30px 0;
+        }
+        
+        .progress-bar {
+            height: 40px;
+            background: #001a0a;
+            border: 1px solid #00ff41;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff41, #00cc33);
+            transition: width 1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        .section {
+            margin: 30px 0;
+            border: 1px solid #00ff41;
+            border-radius: 5px;
+            padding: 20px;
+            background: #001a0a;
+        }
+        
+        .section-title {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: #00ff41;
+            text-shadow: 0 0 5px #00ff41;
+        }
+        
+        .log-entry {
+            padding: 8px;
+            margin: 5px 0;
+            background: #000;
+            border-left: 3px solid #00ff41;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .log-entry.success { border-left-color: #00ff41; color: #00ff41; }
+        .log-entry.warning { border-left-color: #ffaa00; color: #ffaa00; }
+        .log-entry.error { border-left-color: #ff0000; color: #ff0000; }
+        .log-entry.info { border-left-color: #00aaff; color: #00aaff; }
+        
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .agent-card {
+            background: #000;
+            border: 1px solid #00ff41;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+        
+        .agent-card.active {
+            border-color: #ffaa00;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { border-color: #ffaa00; }
+            50% { border-color: #ff6600; }
+        }
+        
+        .timestamp {
+            color: #888;
+            font-size: 0.9em;
+        }
+        
+        .blinking {
+            animation: blink 1s ease-in-out infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.3; }
+        }
+        
+        .coverage-analysis {
+            background: #001a0a;
+            border: 2px solid #00ff41;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .missing-segments {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .segment-tag {
+            background: #ff6600;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+        
+        #refresh-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #00ff41;
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        #refresh-indicator.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal">
+        <div class="header">
+            <h1>🏭 LIVE INDUSTRY INDEXING MONITOR</h1>
+            <div class="timestamp" id="currentTime"></div>
+            <div style="margin-top: 10px;">
+                <span class="blinking">●</span> LIVE • Auto-refresh every 5s
+            </div>
+        </div>
+        
+        <div class="status-bar">
+            <div class="stat-box">
+                <div class="stat-value" id="agentsCreated">0</div>
+                <div class="stat-label">Agents Created</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="sitesDiscovered">0</div>
+                <div class="stat-label">Sites Discovered</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="sitesIndexed">0</div>
+                <div class="stat-label">Sites Indexed</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="subdomainsFound">0</div>
+                <div class="stat-label">Subdomains</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="keywordsDiscovered">0</div>
+                <div class="stat-label">Keywords</div>
+            </div>
+        </div>
+        
+        <div class="progress-section">
+            <div class="section-title">📊 Coverage Progress</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar" style="width: 0%">0%</div>
+            </div>
+            <div style="text-align: center; margin-top: 10px; font-size: 1.2em;">
+                <span id="currentPhase">Initializing...</span>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">🔥 Active Agents (In Progress)</div>
+            <div class="agents-grid" id="activeAgents">
+                <div class="log-entry info">Waiting for agents...</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">✅ Recently Completed</div>
+            <div class="agents-grid" id="completedAgents">
+                <div class="log-entry success">No agents completed yet</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">🤖 DeepSeek Coverage Analysis</div>
+            <div class="coverage-analysis" id="coverageAnalysis">
+                <div class="log-entry info">Waiting for first analysis...</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">📝 Activity Log (Live)</div>
+            <div id="activityLog" style="max-height: 400px; overflow-y: auto;">
+                <div class="log-entry info"><span class="timestamp">[--:--:--]</span> System initializing...</div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="refresh-indicator">Refreshing...</div>
+    
+    <script>
+        let lastLogCount = 0;
+        
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleString('ro-RO');
+        }
+        
+        async function fetchStats() {
+            try {
+                // Show refresh indicator
+                const indicator = document.getElementById('refresh-indicator');
+                indicator.classList.add('show');
+                
+                // Fetch from log file (we'll write stats to a JSON file)
+                const response = await fetch('/static/indexing_stats.json?t=' + Date.now());
+                
+                if (!response.ok) {
+                    throw new Error('Stats not available yet');
+                }
+                
+                const stats = await response.json();
+                
+                // Update counters
+                document.getElementById('agentsCreated').textContent = stats.total_agents_created || 0;
+                document.getElementById('sitesDiscovered').textContent = stats.total_sites_discovered || 0;
+                document.getElementById('sitesIndexed').textContent = (stats.indexed_sites || []).length;
+                document.getElementById('subdomainsFound').textContent = stats.total_subdomains_identified || 0;
+                document.getElementById('keywordsDiscovered').textContent = stats.total_keywords_discovered || 0;
+                
+                // Update progress bar
+                const coverage = stats.coverage_percentage || 0;
+                const progressBar = document.getElementById('progressBar');
+                progressBar.style.width = coverage + '%';
+                progressBar.textContent = coverage.toFixed(1) + '%';
+                
+                // Update phase
+                document.getElementById('currentPhase').textContent = stats.current_phase || 'Running...';
+                
+                // Update active agents
+                const activeAgents = document.getElementById('activeAgents');
+                if (stats.agents_in_progress && stats.agents_in_progress.length > 0) {
+                    activeAgents.innerHTML = stats.agents_in_progress.slice(-8).map(agent => 
+                        `<div class="agent-card active">⚡ ${agent}</div>`
+                    ).join('');
+                } else {
+                    activeAgents.innerHTML = '<div class="log-entry info">No active agents</div>';
+                }
+                
+                // Update completed agents
+                const completedAgents = document.getElementById('completedAgents');
+                if (stats.completed_agents && stats.completed_agents.length > 0) {
+                    completedAgents.innerHTML = stats.completed_agents.slice(-8).map(agent => 
+                        `<div class="agent-card">✅ ${agent}</div>`
+                    ).join('');
+                } else {
+                    completedAgents.innerHTML = '<div class="log-entry success">No agents completed yet</div>';
+                }
+                
+                // Update coverage analysis
+                if (stats.last_coverage_analysis) {
+                    const analysis = stats.last_coverage_analysis;
+                    const coverageDiv = document.getElementById('coverageAnalysis');
+                    
+                    let html = `
+                        <div class="log-entry success">
+                            Coverage: ${analysis.coverage_percentage}%
+                        </div>
+                        <div class="log-entry ${analysis.is_complete ? 'success' : 'warning'}">
+                            Status: ${analysis.is_complete ? '✅ COMPLETE' : '🔄 In Progress'}
+                        </div>
+                        <div class="log-entry info">
+                            Recommendation: ${analysis.recommendation}
+                        </div>
+                        <div class="log-entry info">
+                            ${analysis.reasoning}
+                        </div>
+                    `;
+                    
+                    if (analysis.missing_segments && analysis.missing_segments.length > 0) {
+                        html += '<div style="margin-top: 15px;"><strong>Missing Segments:</strong></div>';
+                        html += '<div class="missing-segments">';
+                        analysis.missing_segments.forEach(seg => {
+                            html += `<span class="segment-tag">${seg}</span>`;
+                        });
+                        html += '</div>';
+                    }
+                    
+                    coverageDiv.innerHTML = html;
+                }
+                
+                // Add new log entries
+                const activityLog = document.getElementById('activityLog');
+                const currentLogCount = stats.activity_log ? stats.activity_log.length : 0;
+                
+                if (currentLogCount > lastLogCount) {
+                    const newEntries = stats.activity_log.slice(lastLogCount);
+                    newEntries.forEach(entry => {
+                        const logEntry = document.createElement('div');
+                        logEntry.className = `log-entry ${entry.type || 'info'}`;
+                        logEntry.innerHTML = `<span class="timestamp">[${entry.time}]</span> ${entry.message}`;
+                        activityLog.insertBefore(logEntry, activityLog.firstChild);
+                    });
+                    lastLogCount = currentLogCount;
+                }
+                
+                // Hide refresh indicator
+                setTimeout(() => {
+                    indicator.classList.remove('show');
+                }, 500);
+                
+            } catch (error) {
+                console.log('Stats not available yet:', error);
+            }
+        }
+        
+        // Initial load
+        updateTime();
+        fetchStats();
+        
+        // Auto-refresh
+        setInterval(updateTime, 1000);
+        setInterval(fetchStats, 5000);  // Every 5 seconds
+    </script>
+</body>
+</html>
+

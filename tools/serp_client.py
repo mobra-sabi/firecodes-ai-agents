@@ -1,5 +1,5 @@
-# tools/serp_client.py
 from __future__ import annotations
+# tools/serp_client.py
 import os, json, time
 import requests
 from typing import List, Dict, Any
@@ -120,6 +120,106 @@ def _brave_search(query: str, count: int = 10) -> list[str]:
 
 def search(query: str, count: int = 10) -> list[str]:
     return _brave_search(query, count=count)
+
+
+class BraveSerpClient:
+    """
+    Client OOP pentru Brave Search API
+    Folosit în competitive intelligence workflows
+    """
+    
+    def __init__(self, api_key: str = None):
+        """
+        Initialize Brave SERP client
+        
+        Args:
+            api_key: Brave API key (optional, will try to load from env/file)
+        """
+        self.api_key = api_key or _load_brave_key()
+        if not self.api_key:
+            raise SerpError("BRAVE_API_KEY lipsește. Set env var sau .secrets/brave.key")
+        
+        self.endpoint = BRAVE_ENDPOINT
+        self.ui_lang = BRAVE_UI_LANG
+        self.country = BRAVE_COUNTRY
+        self.safesearch = BRAVE_SAFESEARCH
+    
+    def search(self, query: str, count: int = 10) -> List[str]:
+        """
+        Search using Brave API
+        
+        Args:
+            query: Search query
+            count: Number of results (1-20)
+        
+        Returns:
+            List of URLs
+        """
+        return _brave_search(query, count=count)
+    
+    def search_with_details(self, query: str, count: int = 10) -> Dict[str, Any]:
+        """
+        Search and return full details (not just URLs)
+        
+        Returns:
+            {
+                "query": "...",
+                "results": [
+                    {
+                        "url": "...",
+                        "title": "...",
+                        "description": "..."
+                    }
+                ],
+                "count": 10
+            }
+        """
+        if not self.api_key:
+            raise SerpError("BRAVE_API_KEY lipsește")
+        
+        q = (query or "").strip()
+        if not q:
+            return {"query": "", "results": [], "count": 0}
+        
+        count = max(1, min(int(count or 10), 20))
+        
+        params = {
+            "q": q,
+            "count": count,
+            "ui_lang": self.ui_lang,
+            "country": self.country,
+            "safesearch": self.safesearch,
+        }
+        headers = {
+            "Accept": "application/json",
+            "X-Subscription-Token": self.api_key,
+        }
+        
+        r = _get_with_retries(self.endpoint, params=params, headers=headers, timeout=30, tries=2)
+        
+        try:
+            data = r.json()
+        except Exception as e:
+            raise SerpError(f"Brave JSON parse error: {e}") from e
+        
+        # Extract detailed results
+        results = []
+        web = (data or {}).get("web") or {}
+        for item in web.get("results") or []:
+            results.append({
+                "url": item.get("url", ""),
+                "title": item.get("title", ""),
+                "description": item.get("description", ""),
+                "age": item.get("age", "")
+            })
+        
+        return {
+            "query": q,
+            "results": results[:count],
+            "count": len(results[:count]),
+            "total_found": len(results)
+        }
+
 
 # ---- CLI: python -m tools.serp_client "q" 5 [--debug]
 if __name__ == "__main__":

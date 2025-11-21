@@ -1,0 +1,191 @@
+# Agent Manifest - Site to AI Agent Transformation
+version: "1.0"
+created_at: "2025-10-20T18:50:00Z"
+
+# IDENTITATE & SCOP
+identity:
+  name: "Site AI Agent"
+  role: "Reprezentant oficial al site-ului web"
+  domain: "auto-detected"
+  purpose: "Transformă orice site web într-un agent AI competent"
+  
+  capabilities:
+    - "Răspunde la întrebări despre servicii și produse"
+    - "Oferă consultanță și recomandări"
+    - "Caută informații în conținutul site-ului"
+    - "Comunică ca reprezentant oficial"
+    - "Escalează la om când este necesar"
+  
+  limitations:
+    - "Nu poate accesa informații din afara site-ului"
+    - "Nu poate face tranzacții financiare"
+    - "Nu poate accesa conturi personale"
+    - "Nu poate modifica conținutul site-ului"
+
+# CONTRACT DE CAPABILITĂȚI
+contract:
+  knows:
+    - "Toate serviciile și produsele site-ului"
+    - "Informații despre companie și echipă"
+    - "Politici și proceduri"
+    - "FAQ și ghiduri"
+  
+  doesnt_know:
+    - "Informații personale ale clienților"
+    - "Detalii financiare confidențiale"
+    - "Informații din afara site-ului"
+    - "Starea în timp real a stocurilor"
+  
+  escalation_triggers:
+    - "Întrebări despre prețuri specifice"
+    - "Probleme tehnice complexe"
+    - "Cereri de modificări pe site"
+    - "Informații confidențiale"
+
+# PERCEPȚIE (Ingest & Înțelegere)
+perception:
+  crawler:
+    max_pages: 20
+    timeout: 30
+    rate_limit: 1  # secunde între request-uri
+    user_agent: "Mozilla/5.0 (compatible; SiteAI/1.0)"
+    
+  content_processing:
+    chunk_size: 1000
+    chunk_overlap: 200
+    min_chunk_size: 100
+    max_chunk_size: 2000
+    
+  normalization:
+    remove_scripts: true
+    remove_styles: true
+    remove_navigation: true
+    clean_whitespace: true
+    extract_metadata: true
+
+# MEMORIE
+memory:
+  working_memory:
+    max_conversation_turns: 10
+    context_window: 4000
+    
+  long_term_memory:
+    vector_db: "qdrant"
+    collection_name: "site_content"
+    embedding_model: "BAAI/bge-large-en-v1.5"
+    
+  retention_policy:
+    conversation_ttl: "7 days"
+    content_ttl: "30 days"
+    max_storage_size: "1GB"
+
+# RAȚIONARE (LLM)
+reasoning:
+  llm:
+    model: "qwen2.5:7b"
+    temperature: 0.7
+    max_tokens: 1000
+    timeout: 60
+    
+  planning:
+    max_steps: 3
+    reflection_enabled: true
+    source_citation: true
+    
+  verification:
+    confidence_threshold: 0.7
+    auto_verify: true
+    fallback_response: "Nu știu răspunsul exact. Vă pot conecta cu echipa noastră de specialiști."
+
+# ACȚIUNE (Tools)
+tools:
+  search_index:
+    description: "Caută informații în conținutul site-ului"
+    max_results: 5
+    similarity_threshold: 0.7
+    
+  fetch_url:
+    description: "Descarcă conținut de pe o pagină specifică"
+    allowed_domains: ["same_as_site"]
+    max_size: "1MB"
+    
+  calculate:
+    description: "Efectuează calcule simple"
+    sandbox: true
+    timeout: 10
+
+# INTERFEȚE
+interfaces:
+  api:
+    endpoints:
+      - "/ask"
+      - "/search"
+      - "/status"
+    methods: ["POST", "GET"]
+    
+  ui:
+    type: "chat_interface"
+    features:
+      - "conversație în timp real"
+      - "căutare în conținut"
+      - "istoric conversații"
+      - "feedback utilizator"
+    
+  webhooks:
+    events:
+      - "conversation_started"
+      - "escalation_triggered"
+      - "error_occurred"
+
+# SECURITATE & CONFORMITATE
+security:
+  rate_limiting:
+    requests_per_minute: 60
+    burst_limit: 10
+    
+  authentication:
+    api_key_required: false
+    session_based: true
+    
+  privacy:
+    pii_detection: true
+    pii_scrubbing: true
+    audit_logging: true
+    
+  compliance:
+    gdpr_compliant: true
+    data_retention: "30 days"
+    right_to_deletion: true
+
+# EVALUARE & MONITORIZARE
+monitoring:
+  metrics:
+    - "response_time"
+    - "accuracy_rate"
+    - "escalation_rate"
+    - "user_satisfaction"
+    
+  alerts:
+    - "high_error_rate"
+    - "slow_response"
+    - "escalation_spike"
+    
+  evaluation:
+    test_questions: 50
+    evaluation_frequency: "weekly"
+    a_b_testing: true
+
+# CONFIGURAȚII SPECIFICE
+config:
+  language: "romanian"
+  timezone: "Europe/Bucharest"
+  currency: "RON"
+  date_format: "DD/MM/YYYY"
+  
+  fallback_responses:
+    no_answer: "Îmi pare rău, nu am găsit informația în conținutul site-ului nostru. Vă pot conecta cu echipa noastră de specialiști."
+    error: "A apărut o problemă tehnică. Te rog încearcă din nou sau contactează-ne direct."
+    escalation: "Pentru această întrebare, vă recomand să contactați echipa noastră de specialiști la [contact_info]."
+
+
+

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔴 LIVE Production Dashboard - AI Agents Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            color: #667eea;
+            font-size: 36px;
+        }
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #ff4444;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
+        .icon-purple { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .icon-green { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
+        .icon-pink { background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%); color: white; }
+        .icon-blue { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
+        .stat-value {
+            font-size: 42px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .stat-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-info { background: #d1ecf1; color: #0c5460; }
+        .health-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .health-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .health-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        .health-success { background: #d4edda; color: #155724; }
+        .health-warning { background: #fff3cd; color: #856404; }
+        .health-error { background: #f8d7da; color: #721c24; }
+        .refresh-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .refresh-btn:hover {
+            transform: scale(1.05);
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1><i class="fas fa-chart-line"></i> Production Dashboard</h1>
+            <p>Monitorizare sistem AI Agents în timp real</p>
+        </div>
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <div class="live-indicator">
+                <i class="fas fa-circle"></i>
+                <span>LIVE</span>
+            </div>
+            <button class="refresh-btn" onclick="loadData()">
+                <i class="fas fa-sync-alt"></i>
+                Refresh
+            </button>
+        </div>
+    </div>
+
+    <div id="content">
+        <div class="loading">
+            <i class="fas fa-spinner fa-spin"></i> Se încarcă datele...
+        </div>
+    </div>
+
+    <script>
+        // API Endpoint - folosește tunnel-ul Cloudflare
+        const API_BASE = 'https://holders-holding-know-weapon.trycloudflare.com';
+
+        async function loadData() {
+            try {
+                document.getElementById('content').innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Se actualizează datele...</div>';
+                
+                // Fetch data from API
+                const response = await fetch(`${API_BASE}/api/agents`);
+                const agents = await response.json();
+                
+                // Calculate statistics
+                const totalAgents = agents.length;
+                const masterAgents = agents.filter(a => a.agent_type === 'master' || !a.agent_type).length;
+                const slaveAgents = agents.filter(a => a.agent_type === 'slave').length;
+                const validated = agents.filter(a => a.status === 'validated').length;
+                const withContent = agents.filter(a => a.has_content).length;
+                const withEmbeddings = agents.filter(a => a.has_embeddings).length;
+                
+                // Check health
+                let healthResponse;
+                try {
+                    healthResponse = await fetch(`${API_BASE}/health`);
+                    var healthData = await healthResponse.json();
+                } catch(e) {
+                    var healthData = null;
+                }
+                
+                // Render dashboard
+                document.getElementById('content').innerHTML = `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon icon-purple">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="stat-value">${totalAgents}</div>
+                            <div class="stat-label">TOTAL AGENȚI</div>
+                            <div class="stat-badge badge-success">+${totalAgents - 145} recent</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon icon-green">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-value">${masterAgents}</div>
+                            <div class="stat-label">MASTER AGENTS</div>
+                            <div class="stat-badge badge-success">Active</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon icon-pink">
+                                <i class="fas fa-sitemap"></i>
+                            </div>
+                            <div class="stat-value">${slaveAgents}</div>
+                            <div class="stat-label">SLAVE AGENTS</div>
+                            <div class="stat-badge badge-info">Connected</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon icon-blue">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-value">${validated}</div>
+                            <div class="stat-label">VALIDAȚI</div>
+                            <div class="stat-badge badge-success">${Math.round(validated/totalAgents*100)}%</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon icon-purple">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div class="stat-value">${withContent}</div>
+                            <div class="stat-label">CU CONȚINUT</div>
+                            <div class="stat-badge badge-info">${Math.round(withContent/totalAgents*100)}%</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon icon-green">
+                                <i class="fas fa-brain"></i>
+                            </div>
+                            <div class="stat-value">${withEmbeddings}</div>
+                            <div class="stat-label">CU EMBEDDINGS</div>
+                            <div class="stat-badge badge-success">${Math.round(withEmbeddings/totalAgents*100)}%</div>
+                        </div>
+                    </div>
+                    
+                    ${healthData ? `
+                    <div style="margin-bottom: 20px;">
+                        <h2 style="color: white; margin-bottom: 15px;"><i class="fas fa-heartbeat"></i> System Health</h2>
+                        <div class="health-grid">
+                            ${renderHealthItem('API', healthData.services?.mongodb?.status || 'unknown')}
+                            ${renderHealthItem('MongoDB', healthData.services?.mongodb?.status || 'unknown')}
+                            ${renderHealthItem('Qdrant', healthData.services?.qdrant?.status || 'unknown')}
+                            ${renderHealthItem('LLM', healthData.services?.qwen?.status || 'unknown')}
+                            ${renderHealthItem('Brave Search', healthData.services?.brave?.status || 'unknown')}
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    <div style="background: white; padding: 20px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+                        <h3 style="margin-bottom: 15px;"><i class="fas fa-info-circle"></i> Ultimii agenți creați</h3>
+                        <div style="max-height: 300px; overflow-y: auto;">
+                            ${agents.slice(-10).reverse().map(agent => `
+                                <div style="padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <strong>${agent.domain}</strong>
+                                        <div style="font-size: 12px; color: #666;">${agent.site_url}</div>
+                                    </div>
+                                    <div>
+                                        ${agent.status === 'validated' ? '<span class="stat-badge badge-success">✓ Validat</span>' : ''}
+                                        ${agent.has_embeddings ? '<span class="stat-badge badge-info">🧠 Embeddings</span>' : ''}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                document.getElementById('content').innerHTML = `
+                    <div style="background: white; padding: 40px; border-radius: 16px; text-align: center;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #ff6b6b; margin-bottom: 20px;"></i>
+                        <h2 style="color: #333; margin-bottom: 10px;">Eroare la încărcarea datelor</h2>
+                        <p style="color: #666;">${error.message}</p>
+                        <button class="refresh-btn" onclick="loadData()" style="margin: 20px auto;">
+                            <i class="fas fa-sync-alt"></i>
+                            Încearcă din nou
+                        </button>
+                    </div>
+                `;
+            }
+        }
+        
+        function renderHealthItem(name, status) {
+            const statusMap = {
+                'healthy': { class: 'health-success', icon: 'fa-check-circle' },
+                'degraded': { class: 'health-warning', icon: 'fa-exclamation-triangle' },
+                'unhealthy': { class: 'health-error', icon: 'fa-times-circle' },
+                'unknown': { class: 'health-warning', icon: 'fa-question-circle' }
+            };
+            const statusInfo = statusMap[status] || statusMap.unknown;
+            
+            return `
+                <div class="health-item">
+                    <div class="health-icon ${statusInfo.class}">
+                        <i class="fas ${statusInfo.icon}"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: bold;">${name}</div>
+                        <div style="font-size: 12px; color: #666;">${status}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Auto-refresh every 10 seconds
+        loadData();
+        setInterval(loadData, 10000);
+    </script>
+</body>
+</html>
+

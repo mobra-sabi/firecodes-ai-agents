@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto-Learning Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+        }
+
+        .stat-card .value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .label {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #3494E6 0%, #EC6EAD 100%);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #f8f9fa;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online {
+            background: #38ef7d;
+        }
+
+        .status-offline {
+            background: #f5576c;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin: 2px;
+        }
+
+        .badge-info {
+            background: #3494E6;
+            color: white;
+        }
+
+        .badge-success {
+            background: #38ef7d;
+            color: #333;
+        }
+
+        .badge-warning {
+            background: #f5576c;
+            color: white;
+        }
+
+        .log-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .chart-container {
+            margin-top: 20px;
+            height: 300px;
+        }
+
+        .learning-section {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border: 2px solid #667eea;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .learning-section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .learning-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .learning-stat {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .learning-stat .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .learning-stat .label {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧠 Auto-Learning Dashboard</h1>
+            <p>Monitorizare și control pentru sistemul de învățare automată</p>
+        </div>
+
+        <!-- Learning Section -->
+        <div class="learning-section">
+            <h2>🔄 Învățare Continuă - Qwen Local</h2>
+            <p style="margin-bottom: 20px; color: #666;">
+                Toate diagnosticile, rutele de execuție, rezultatele și interacțiunile sunt trimise către Qwen local pentru învățare continuă.
+            </p>
+            
+            <div class="learning-stats" id="learning-stats">
+                <div class="learning-stat">
+                    <div class="value" id="learning-diagnostics">-</div>
+                    <div class="label">Diagnosticuri procesate</div>
+                </div>
+                <div class="learning-stat">
+                    <div class="value" id="learning-routes">-</div>
+                    <div class="label">Rute de execuție</div>
+                </div>
+                <div class="learning-stat">
+                    <div class="value" id="learning-interactions">-</div>
+                    <div class="label">Interacțiuni Qwen</div>
+                </div>
+                <div class="learning-stat">
+                    <div class="value" id="learning-processed">-</div>
+                    <div class="label">Total procesate</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <button class="btn btn-primary" onclick="processLearning()">
+                    🔄 Procesează Date pentru Învățare
+                </button>
+                <button class="btn btn-success" onclick="testQwenLocal()">
+                    🧠 Testează Qwen Local
+                </button>
+            </div>
+
+            <div id="learning-output" class="log-output" style="display: none; margin-top: 20px;"></div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Interacțiuni Totale</h3>
+                <div class="value" id="stat-total">-</div>
+                <div class="label">În MongoDB</div>
+            </div>
+            <div class="stat-card">
+                <h3>Interacțiuni Astăzi</h3>
+                <div class="value" id="stat-today">-</div>
+                <div class="label">Ultimele 24h</div>
+            </div>
+            <div class="stat-card">
+                <h3>Dataset JSONL</h3>
+                <div class="value" id="stat-dataset">-</div>
+                <div class="label" id="stat-dataset-label">Nu există</div>
+            </div>
+            <div class="stat-card">
+                <h3>Qdrant Points</h3>
+                <div class="value" id="stat-qdrant">-</div>
+                <div class="label">În colecție</div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="section">
+            <h2>⚡ Acțiuni</h2>
+            <button class="btn btn-primary" onclick="testOrchestrator()">
+                ✅ Test Orchestrator
+            </button>
+            <button class="btn btn-success" onclick="buildJSONL()">
+                📊 Build JSONL
+            </button>
+            <button class="btn btn-info" onclick="updateQdrant()">
+                🔄 Update Qdrant
+            </button>
+            <button class="btn btn-warning" onclick="refreshAll()">
+                🔄 Refresh All
+            </button>
+        </div>
+
+        <!-- Status Systems -->
+        <div class="section">
+            <h2>📊 Status Sisteme</h2>
+            <div id="status-container">
+                <p>Loading...</p>
+            </div>
+        </div>
+
+        <!-- Recent Interactions -->
+        <div class="section">
+            <h2>💬 Interacțiuni Recente</h2>
+            <div id="interactions-container">
+                <p>Loading...</p>
+            </div>
+        </div>
+
+        <!-- Orchestrator Statistics -->
+        <div class="section">
+            <h2>🎭 Orchestrator Statistics</h2>
+            <div id="orchestrator-stats-container">
+                <p>Loading...</p>
+            </div>
+        </div>
+
+        <!-- System Nodes -->
+        <div class="section">
+            <h2>🖥️ Noduri Sistem & Procese</h2>
+            <div id="system-nodes-container">
+                <p>Loading...</p>
+            </div>
+        </div>
+
+        <!-- Processes -->
+        <div class="section">
+            <h2>⚙️ Procese Active</h2>
+            <div id="processes-container">
+                <p>Loading...</p>
+            </div>
+        </div>
+
+        <!-- MongoDB Status -->
+        <div class="section">
+            <h2>🗄️ MongoDB Status</h2>
+            <div id="mongodb-status-container">
+                <p>Loading...</p>
+            </div>
+        </div>
+
+        <!-- Qdrant Status -->
+        <div class="section">
+            <h2>🔍 Qdrant Vector DB Status</h2>
+            <div id="qdrant-status-container">
+                <p>Loading...</p>
+            </div>
+        </div>
+
+        <!-- GPU Status -->
+        <div class="section">
+            <h2>⚡ GPU Status</h2>
+            <div id="gpu-status-container">
+                <p>Loading...</p>
+            </div>
+        </div>
+
+        <!-- SERP App Status -->
+        <div class="section">
+            <h2>🎯 SERP Monitoring App Status</h2>
+            <div id="serp-app-container">
+                <p>Loading...</p>
+            </div>
+        </div>
+
+        <!-- Ports Status -->
+        <div class="section">
+            <h2>🔌 Porturi & Servicii</h2>
+            <div id="ports-container">
+                <p>Loading...</p>
+            </div>
+        </div>
+
+        <!-- vLLM Status -->
+        <div class="section">
+            <h2>🚀 vLLM Services</h2>
+            <div id="vllm-container">
+                <p>Loading...</p>
+            </div>
+        </div>
+
+        <!-- Diagnostic Section -->
+        <div class="section">
+            <h2>🔍 Diagnostic Complet</h2>
+            <button class="btn btn-primary" onclick="loadDiagnostic()" style="margin-bottom: 20px;">
+                🔄 Refresh Diagnostic
+            </button>
+            <div id="diagnostic-container">
+                <p>Click pe buton pentru diagnostic complet</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        // Refresh all data
+        async function refreshAll() {
+            await Promise.all([
+                loadStats(),
+                loadInteractions(),
+                loadStatus(),
+                loadOrchestratorStats(),
+                loadSystemNodes(),
+                loadProcesses(),
+                loadMongoDB(),
+                loadQdrant(),
+                loadGPU(),
+                loadSERPApp(),
+                loadPorts(),
+                loadVLLM(),
+                loadLearningStats()
+            ]);
+        }
+
+        // Load learning stats
+        async function loadLearningStats() {
+            try {
+                const res = await fetch(`${API_BASE}/api/stats/interactions`);
+                const data = await res.json();
+                
+                // Count by type
+                const mongoRes = await fetch(`${API_BASE}/api/interactions?limit=1000`);
+                const mongoData = await mongoRes.json();
+                
+                let diagnostics = 0, routes = 0, qwenInteractions = 0, processed = 0;
+                
+                if (mongoData.interactions) {
+                    mongoData.interactions.forEach(item => {
+                        if (item.type === "diagnostic") {
+                            diagnostics++;
+                            if (item.processed) processed++;
+                        } else if (item.type === "execution_route") {
+                            routes++;
+                            if (item.processed) processed++;
+                        } else if (item.provider && item.provider.includes("qwen")) {
+                            qwenInteractions++;
+                            if (item.processed) processed++;
+                        }
+                    });
+                }
+                
+                document.getElementById('learning-diagnostics').textContent = diagnostics;
+                document.getElementById('learning-routes').textContent = routes;
+                document.getElementById('learning-interactions').textContent = qwenInteractions;
+                document.getElementById('learning-processed').textContent = processed;
+            } catch (e) {
+                console.error('Error loading learning stats:', e);
+            }
+        }
+
+        // Process learning data
+        async function processLearning() {
+            const output = document.getElementById('learning-output');
+            output.style.display = 'block';
+            output.innerHTML = '<p class="loading"></p> Processing learning data...';
+            
+            try {
+                const res = await fetch(`${API_BASE}/api/actions/process_learning`, {
+                    method: 'POST'
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    output.innerHTML = `
+                        <h3>✅ Processing Complete</h3>
+                        <p><strong>Processed:</strong> ${data.stats.processed || 0} documents</p>
+                        <p><strong>Diagnostics:</strong> ${data.stats.diagnostics || 0}</p>
+                        <p><strong>Routes:</strong> ${data.stats.routes || 0}</p>
+                        <p><strong>Interactions:</strong> ${data.stats.interactions || 0}</p>
+                        <p style="margin-top: 15px; color: #38ef7d;">${data.message || 'Success'}</p>
+                    `;
+                    loadLearningStats();
+                } else {
+                    output.innerHTML = `<p style="color: #f5576c;">❌ Error: ${data.error || 'Unknown error'}</p>`;
+                }
+            } catch (e) {
+                output.innerHTML = `<p style="color: #f5576c;">❌ Error: ${e.message}</p>`;
+            }
+        }
+
+        // Test Qwen local
+        async function testQwenLocal() {
+            const output = document.getElementById('learning-output');
+            output.style.display = 'block';
+            output.innerHTML = '<p class="loading"></p> Testing Qwen local...';
+            
+            try {
+                const res = await fetch(`${API_BASE}/api/actions/query_qwen_local`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        prompt: "Analizează statusul sistemului și oferă recomandări pentru optimizare.",
+                        context: {
+                            gpu_usage: "1%",
+                            vllm_status: "restarting",
+                            timestamp: new Date().toISOString()
+                        }
+                    })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    output.innerHTML = `
+                        <h3>✅ Qwen Local Response</h3>
+                        <p><strong>Model:</strong> ${data.model || 'N/A'}</p>
+                        <p><strong>Port:</strong> ${data.port || 'N/A'}</p>
+                        <p><strong>Tokens:</strong> ${data.tokens || 0}</p>
+                        <div style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                            <strong>Response:</strong><br>
+                            ${data.content || 'No content'}
+                        </div>
+                    `;
+                    loadLearningStats();
+                } else {
+                    output.innerHTML = `<p style="color: #f5576c;">❌ Error: ${data.error || 'Unknown error'}</p>`;
+                }
+            } catch (e) {
+                output.innerHTML = `<p style="color: #f5576c;">❌ Error: ${e.message}</p>`;
+            }
+        }
+
+        // Load statistics
+        async function loadStats() {
+            try {
+                const res = await fetch(`${API_BASE}/api/stats/interactions`);
+                const data = await res.json();
+                
+                document.getElementById('stat-total').textContent = data.total || 0;
+                document.getElementById('stat-today').textContent = data.today || 0;
+                
+                const datasetRes = await fetch(`${API_BASE}/api/dataset/status`);
+                const datasetData = await datasetRes.json();
+                
+                if (datasetData.exists) {
+                    document.getElementById('stat-dataset').textContent = datasetData.lines || 0;
+                    document.getElementById('stat-dataset-label').textContent = `${datasetData.size_mb || 0} MB`;
+                } else {
+                    document.getElementById('stat-dataset').textContent = "0";
+                    document.getElementById('stat-dataset-label').textContent = "Nu există";
+                }
+                
+                const qdrantRes = await fetch(`${API_BASE}/api/qdrant/status`);
+                const qdrantData = await qdrantRes.json();
+                
+                if (qdrantData.connected) {
+                    document.getElementById('stat-qdrant').textContent = qdrantData.points_count || 0;
+                } else {
+                    document.getElementById('stat-qdrant').textContent = "Offline";
+                }
+            } catch (e) {
+                console.error('Error loading stats:', e);
+            }
+        }
+
+        // Load interactions
+        async function loadInteractions() {
+            try {
+                const res = await fetch(`${API_BASE}/api/interactions?limit=10`);
+                const data = await res.json();
+                
+                let html = '<table><tr><th>Timestamp</th><th>Provider</th><th>Topic</th><th>Prompt</th><th>Response</th></tr>';
+                
+                if (data.interactions && data.interactions.length > 0) {
+                    data.interactions.forEach(item => {
+                        html += `<tr>
+                            <td>${new Date(item.timestamp).toLocaleString()}</td>
+                            <td><span class="badge badge-info">${item.provider || 'N/A'}</span></td>
+                            <td>${item.topic || 'N/A'}</td>
+                            <td>${(item.prompt || '').substring(0, 50)}...</td>
+                            <td>${(item.response || '').substring(0, 50)}...</td>
+                        </tr>`;
+                    });
+                } else {
+                    html += '<tr><td colspan="5" style="text-align: center;">No interactions yet</td></tr>';
+                }
+                
+                html += '</table>';
+                document.getElementById('interactions-container').innerHTML = html;
+            } catch (e) {
+                console.error('Error loading interactions:', e);
+            }
+        }
+
+        // Load status
+        async function loadStatus() {
+            try {
+                const datasetRes = await fetch(`${API_BASE}/api/dataset/status`);
+                const datasetData = await datasetRes.json();
+                
+                const finetuningRes = await fetch(`${API_BASE}/api/finetuning/status`);
+                const finetuningData = await finetuningRes.json();
+                
+                const qdrantRes = await fetch(`${API_BASE}/api/qdrant/status`);
+                const qdrantData = await qdrantRes.json();
+                
+                let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">';
+                
+                html += `<div style="padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                    <h3>📊 Dataset JSONL</h3>
+                    <p><span class="status-indicator ${datasetData.exists ? 'status-online' : 'status-offline'}"></span>
+                    ${datasetData.exists ? 'Exists' : 'Not found'}</p>
+                    ${datasetData.exists ? `<p>Lines: ${datasetData.lines || 0}</p><p>Size: ${datasetData.size_mb || 0} MB</p>` : ''}
+                </div>`;
+                
+                html += `<div style="padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                    <h3>🎯 Fine-Tuning</h3>
+                    <p><span class="status-indicator ${finetuningData.model_exists ? 'status-online' : 'status-offline'}"></span>
+                    ${finetuningData.model_exists ? 'Model exists' : 'No model'}</p>
+                </div>`;
+                
+                html += `<div style="padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                    <h3>🔍 Qdrant</h3>
+                    <p><span class="status-indicator ${qdrantData.connected ? 'status-online' : 'status-offline'}"></span>
+                    ${qdrantData.connected ? 'Connected' : 'Offline'}</p>
+                    ${qdrantData.connected ? `<p>Points: ${qdrantData.points_count || 0}</p>` : ''}
+                </div>`;
+                
+                html += '</div>';
+                document.getElementById('status-container').innerHTML = html;
+            } catch (e) {
+                console.error('Error loading status:', e);
+            }
+        }
+
+        // Load orchestrator stats
+        async function loadOrchestratorStats() {
+            try {
+                const res = await fetch(`${API_BASE}/api/orchestrator/stats`);
+                const data = await res.json();
+                
+                let html = `<p><strong>Total Calls:</strong> ${data.total_calls || 0}</p>`;
+                html += `<p><strong>Success Rate:</strong> ${data.success_rate || 0}%</p>`;
+                html += `<p><strong>Primary Provider:</strong> ${data.primary_provider || 'N/A'}</p>`;
+                html += `<p><strong>DeepSeek:</strong> ${data.deepseek_successes || 0} success, ${data.deepseek_failures || 0} failures</p>`;
+                html += `<p><strong>Together:</strong> ${data.together_successes || 0} success, ${data.together_failures || 0} failures</p>`;
+                html += `<p><strong>Kimi:</strong> ${data.kimi_successes || 0} success, ${data.kimi_failures || 0} failures</p>`;
+                html += `<p><strong>Qwen:</strong> ${data.qwen_successes || 0} success</p>`;
+                
+                document.getElementById('orchestrator-stats-container').innerHTML = html;
+            } catch (e) {
+                console.error('Error loading orchestrator stats:', e);
+            }
+        }
+
+        // Load system nodes
+        async function loadSystemNodes() {
+            try {
+                const res = await fetch(`${API_BASE}/api/system/all`);
+                const data = await res.json();
+                
+                let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">';
+                
+                // MongoDB
+                if (data.mongodb?.connected) {
+                    html += `<div style="padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                        <h3>🗄️ MongoDB</h3>
+                        <p><span class="status-indicator status-online"></span>Conectat</p>
+                        <p>Database: ${data.mongodb.database || 'N/A'}</p>
+                        <p>Collections: ${data.mongodb.collections || 0}</p>
+                        <p>Data Size: ${(data.mongodb.data_size / 1024 / 1024).toFixed(2) || 0} MB</p>
+                    </div>`;
+                } else {
+                    html += `<div style="padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                        <h3>🗄️ MongoDB</h3>
+                        <p><span class="status-indicator status-offline"></span>Offline</p>
+                    </div>`;
+                }
+                
+                // Qdrant
+                if (data.qdrant?.connected) {
+                    html += `<div style="padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                        <h3>🔍 Qdrant</h3>
+                        <p><span class="status-indicator status-online"></span>Conectat (port ${data.qdrant.port})</p>
+                        <p>Points: ${data.qdrant.mem_auto?.points_count || 0}</p>
+                    </div>`;
+                } else {
+                    html += `<div style="padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                        <h3>🔍 Qdrant</h3>
+                        <p><span class="status-indicator status-offline"></span>Offline</p>
+                    </div>`;
+                }
+                
+                // GPU
+                if (data.gpu?.available) {
+                    html += `<div style="padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                        <h3>⚡ GPU</h3>
+                        <p><span class="status-indicator status-online"></span>Disponibil (${data.gpu.count || 0} GPU-uri)</p>
+                        <p>Memory: ${data.gpu.total_memory_percent || 0}% folosit</p>
+                    </div>`;
+                }
+                
+                // SERP App
+                if (data.serp_app?.api_running) {
+                    html += `<div style="padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                        <h3>📊 SERP App</h3>
+                        <p><span class="status-indicator status-online"></span>API Running</p>
+                        <p>Scheduler: <span class="status-indicator ${data.serp_app.scheduler_running ? 'status-online' : 'status-offline'}"></span>${data.serp_app.scheduler_running ? 'Running' : 'Stopped'}</p>
+                    </div>`;
+                }
+                
+                // Processes
+                html += `<div style="padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                    <h3>⚙️ Procese</h3>
+                    <p>Total: ${data.processes?.count || 0} procese active</p>
+                </div>`;
+                
+                // Ports
+                const openPorts = Object.values(data.ports?.ports || {}).filter(p => p.open).length;
+                html += `<div style="padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                    <h3>🔌 Porturi</h3>
+                    <p>${openPorts} porturi deschise</p>
+                </div>`;
+                
+                html += '</div>';
+                document.getElementById('system-nodes-container').innerHTML = html;
+            } catch (e) {
+                console.error('Error loading system nodes:', e);
+            }
+        }
+
+        // Load processes
+        async function loadProcesses() {
+            try {
+                const res = await fetch(`${API_BASE}/api/system/processes`);
+                const data = await res.json();
+                
+                if (data.processes && data.processes.length > 0) {
+                    let html = '<table><tr><th>PID</th><th>CPU %</th><th>MEM %</th><th>Status</th><th>Command</th></tr>';
+                    data.processes.slice(0, 20).forEach(proc => {
+                        html += `<tr>
+                            <td>${proc.pid}</td>
+                            <td>${proc.cpu || 0}%</td>
+                            <td>${proc.memory || 0}%</td>
+                            <td><span class="badge badge-${proc.status === 'running' ? 'success' : 'info'}">${proc.status || 'unknown'}</span></td>
+                            <td>${(proc.cmdline || proc.name || '').substring(0, 80)}</td>
+                        </tr>`;
+                    });
+                    html += '</table>';
+                    document.getElementById('processes-container').innerHTML = html;
+                } else {
+                    document.getElementById('processes-container').innerHTML = '<p>No processes found</p>';
+                }
+            } catch (e) {
+                console.error('Error loading processes:', e);
+            }
+        }
+
+        // Load MongoDB
+        async function loadMongoDB() {
+            try {
+                const res = await fetch(`${API_BASE}/api/system/mongodb`);
+                const data = await res.json();
+                
+                if (data.connected) {
+                    let html = `<p><strong>Database:</strong> ${data.database}</p>`;
+                    html += `<p><strong>Collections:</strong> ${data.collections}</p>`;
+                    html += `<p><strong>Data Size:</strong> ${(data.data_size / 1024 / 1024).toFixed(2)} MB</p>`;
+                    html += `<p><strong>Storage Size:</strong> ${(data.storage_size / 1024 / 1024).toFixed(2)} MB</p>`;
+                    
+                    if (data.collection_counts) {
+                        html += '<h3 style="margin-top: 20px;">Collection Counts:</h3><ul>';
+                        for (const [name, count] of Object.entries(data.collection_counts)) {
+                            html += `<li>${name}: ${count}</li>`;
+                        }
+                        html += '</ul>';
+                    }
+                    
+                    document.getElementById('mongodb-status-container').innerHTML = html;
+                } else {
+                    document.getElementById('mongodb-status-container').innerHTML = `<p style="color: red;">❌ ${data.error || 'Not connected'}</p>`;
+                }
+            } catch (e) {
+                console.error('Error loading MongoDB:', e);
+            }
+        }
+
+        // Load Qdrant
+        async function loadQdrant() {
+            try {
+                const res = await fetch(`${API_BASE}/api/system/qdrant`);
+                const data = await res.json();
+                
+                if (data.connected) {
+                    let html = `<p><strong>Port:</strong> ${data.port}</p>`;
+                    html += `<p><strong>Collections:</strong> ${data.collections?.length || 0}</p>`;
+                    html += `<p><strong>mem_auto Points:</strong> ${data.mem_auto?.points_count || 0}</p>`;
+                    html += `<p><strong>mem_auto Vectors:</strong> ${data.mem_auto?.vectors_count || 0}</p>`;
+                    
+                    if (data.collections && data.collections.length > 0) {
+                        html += '<h3 style="margin-top: 20px;">Collections:</h3><ul>';
+                        data.collections.slice(0, 10).forEach(coll => {
+                            html += `<li>${coll.name || coll}</li>`;
+                        });
+                        html += '</ul>';
+                    }
+                    
+                    document.getElementById('qdrant-status-container').innerHTML = html;
+                } else {
+                    document.getElementById('qdrant-status-container').innerHTML = `<p style="color: red;">❌ ${data.error || 'Not connected'}</p>`;
+                }
+            } catch (e) {
+                console.error('Error loading Qdrant:', e);
+            }
+        }
+
+        // Load GPU
+        async function loadGPU() {
+            try {
+                const res = await fetch(`${API_BASE}/api/system/gpu`);
+                const data = await res.json();
+                
+                if (data.available && data.gpus) {
+                    let html = `<p><strong>Total GPU-uri:</strong> ${data.count}</p>`;
+                    html += '<table><tr><th>Index</th><th>Name</th><th>Memory Used</th><th>Memory Total</th><th>Utilization</th><th>Temperature</th></tr>';
+                    
+                    data.gpus.forEach(gpu => {
+                        html += `<tr>
+                            <td>${gpu.index}</td>
+                            <td>${gpu.name}</td>
+                            <td>${gpu.memory_used} MB</td>
+                            <td>${gpu.memory_total} MB</td>
+                            <td>${gpu.utilization}%</td>
+                            <td>${gpu.temperature}°C</td>
+                        </tr>`;
+                    });
+                    
+                    html += '</table>';
+                    document.getElementById('gpu-status-container').innerHTML = html;
+                } else {
+                    document.getElementById('gpu-status-container').innerHTML = `<p style="color: red;">❌ ${data.error || 'Not available'}</p>`;
+                }
+            } catch (e) {
+                console.error('Error loading GPU:', e);
+            }
+        }
+
+        // Load SERP App
+        async function loadSERPApp() {
+            try {
+                const res = await fetch(`${API_BASE}/api/system/serp_app`);
+                const data = await res.json();
+                
+                let html = `<p><strong>API Status:</strong> <span class="status-indicator ${data.api_running ? 'status-online' : 'status-offline'}"></span>${data.api_running ? 'Running' : 'Stopped'}</p>`;
+                html += `<p><strong>Port:</strong> ${data.api_port || 'N/A'}</p>`;
+                html += `<p><strong>Scheduler:</strong> <span class="status-indicator ${data.scheduler_running ? 'status-online' : 'status-offline'}"></span>${data.scheduler_running ? 'Running' : 'Stopped'}</p>`;
+                if (data.dashboard_url) {
+                    html += `<p><strong>Dashboard:</strong> <a href="${data.dashboard_url}" target="_blank">${data.dashboard_url}</a></p>`;
+                }
+                
+                document.getElementById('serp-app-container').innerHTML = html;
+            } catch (e) {
+                console.error('Error loading SERP app:', e);
+            }
+        }
+
+        // Load ports
+        async function loadPorts() {
+            try {
+                const res = await fetch(`${API_BASE}/api/system/ports`);
+                const data = await res.json();
+                
+                if (data.ports) {
+                    let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">';
+                    
+                    for (const [port, info] of Object.entries(data.ports)) {
+                        html += `<div style="padding: 15px; background: ${info.open ? '#d4edda' : '#f8d7da'}; border-radius: 8px;">
+                            <p><strong>Port ${port}</strong> (${info.name})</p>
+                            <p><span class="status-indicator ${info.open ? 'status-online' : 'status-offline'}"></span>${info.open ? 'Open' : 'Closed'}</p>
+                        </div>`;
+                    }
+                    
+                    html += '</div>';
+                    document.getElementById('ports-container').innerHTML = html;
+                }
+            } catch (e) {
+                console.error('Error loading ports:', e);
+            }
+        }
+
+        // Load vLLM status
+        async function loadVLLM() {
+            try {
+                const res = await fetch(`${API_BASE}/api/system/vllm`);
+                const data = await res.json();
+                
+                if (data.error) {
+                    document.getElementById('vllm-container').innerHTML = `<p>Eroare: ${data.error}</p>`;
+                    return;
+                }
+
+                let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">';
+                
+                // Systemd service
+                html += `<div style="padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                    <h3>Systemd Service</h3>
+                    <p><span class="status-indicator ${data.systemd_active ? 'status-online' : 'status-offline'}"></span>
+                    ${data.systemd_active ? 'Active' : 'Inactive'}</p>
+                    <p>Service: ${data.service_name || 'N/A'}</p>
+                </div>`;
+
+                // vLLM services
+                if (data.services) {
+                    for (const [port, info] of Object.entries(data.services)) {
+                        html += `<div style="padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                            <h3>Port ${port} - ${info.name}</h3>
+                            <p><span class="status-indicator ${info.online ? 'status-online' : 'status-offline'}"></span>
+                            ${info.online ? 'Online' : 'Offline'}</p>
+                            ${info.online ? `
+                                <p>Models: ${info.model_count || 0}</p>
+                                ${info.models ? info.models.map(m => `<span class="badge badge-info">${m}</span>`).join(' ') : ''}
+                            ` : `<p style="color: red; font-size: 0.9em;">${info.error || 'Unknown error'}</p>`}
+                        </div>`;
+                    }
+                }
+
+                html += '</div>';
+                document.getElementById('vllm-container').innerHTML = html;
+            } catch (e) {
+                console.error('Error loading vLLM:', e);
+            }
+        }
+
+        // Load diagnostic
+        async function loadDiagnostic() {
+            const container = document.getElementById('diagnostic-container');
+            container.innerHTML = '<p class="loading"></p> Loading diagnostic...';
+            
+            try {
+                const res = await fetch(`${API_BASE}/api/system/diagnostic`);
+                const data = await res.json();
+                
+                if (data.error) {
+                    container.innerHTML = `<p style="color: red;">Eroare: ${data.error}</p>`;
+                    return;
+                }
+
+                let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-bottom: 20px;">';
+                
+                // GPU Summary
+                if (data.gpu?.available) {
+                    html += `<div style="padding: 15px; background: ${data.gpu.total_memory_percent > 10 ? '#d4edda' : '#fff3cd'}; border-radius: 8px;">
+                        <h3>🎮 GPU Summary</h3>
+                        <p><strong>Total:</strong> ${data.gpu.count} GPU-uri</p>
+                        <p><strong>Memory:</strong> ${data.gpu.total_memory_used}/${data.gpu.total_memory} MB (${data.gpu.total_memory_percent}%)</p>
+                        <p><strong>Status:</strong> ${data.gpu.total_memory_percent < 5 ? '⚠️ Neutilizate' : '✅ Utilizate'}</p>
+                    </div>`;
+                }
+
+                // vLLM Status
+                const vllm_online = data.vllm?.services && Object.values(data.vllm.services).some(s => s.online);
+                html += `<div style="padding: 15px; background: ${vllm_online ? '#d4edda' : '#f8d7da'}; border-radius: 8px;">
+                    <h3>🚀 vLLM</h3>
+                    <p><strong>Systemd:</strong> ${data.vllm?.systemd_active ? '✅ Active' : '❌ Inactive'}</p>
+                    <p><strong>Services Online:</strong> ${vllm_online ? '✅' : '❌'}</p>
+                </div>`;
+
+                // MongoDB
+                html += `<div style="padding: 15px; background: ${data.mongodb?.connected ? '#d4edda' : '#f8d7da'}; border-radius: 8px;">
+                    <h3>🗄️ MongoDB</h3>
+                    <p><strong>Status:</strong> ${data.mongodb?.connected ? '✅ Connected' : '❌ Offline'}</p>
+                    ${data.mongodb?.connected ? `<p><strong>Collections:</strong> ${data.mongodb.collections}</p>` : ''}
+                </div>`;
+
+                // Qdrant
+                html += `<div style="padding: 15px; background: ${data.qdrant?.connected ? '#d4edda' : '#f8d7da'}; border-radius: 8px;">
+                    <h3>🔍 Qdrant</h3>
+                    <p><strong>Status:</strong> ${data.qdrant?.connected ? `✅ Connected (port ${data.qdrant.port})` : '❌ Offline'}</p>
+                </div>`;
+
+                html += '</div>';
+
+                // Recommendations
+                if (data.recommendations && data.recommendations.length > 0) {
+                    html += '<h3 style="margin-top: 20px;">💡 Recomandări:</h3>';
+                    html += '<ul style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 10px;">';
+                    data.recommendations.forEach(rec => {
+                        html += `<li style="margin: 5px 0;">${rec}</li>`;
+                    });
+                    html += '</ul>';
+                }
+
+                container.innerHTML = html;
+            } catch (e) {
+                container.innerHTML = `<p style="color: red;">Eroare: ${e.message}</p>`;
+            }
+        }
+
+        // Action functions
+        async function testOrchestrator() {
+            const res = await fetch(`${API_BASE}/api/actions/test_orchestrator`, {method: 'POST'});
+            const data = await res.json();
+            alert(data.success ? `✅ Success! Provider: ${data.provider}` : `❌ Error: ${data.error}`);
+            refreshAll();
+        }
+
+        async function buildJSONL() {
+            const res = await fetch(`${API_BASE}/api/actions/build_jsonl`, {method: 'POST'});
+            const data = await res.json();
+            alert(data.success ? `✅ JSONL built!` : `❌ Error: ${data.error}`);
+            refreshAll();
+        }
+
+        async function updateQdrant() {
+            const res = await fetch(`${API_BASE}/api/actions/update_qdrant`, {method: 'POST'});
+            const data = await res.json();
+            alert(data.success ? `✅ Qdrant updated!` : `❌ Error: ${data.error}`);
+            refreshAll();
+        }
+
+        // Auto-refresh every 10 seconds
+        setInterval(refreshAll, 10000);
+
+        // Initial load
+        refreshAll();
+    </script>
+</body>
+</html>

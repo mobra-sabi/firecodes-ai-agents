@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SERP Monitoring - Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-card .number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .label {
+            color: #666;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .sidebar h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .endpoint-list {
+            list-style: none;
+        }
+
+        .endpoint-item {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+
+        .endpoint-item:hover {
+            background: #f5f7ff;
+            border-left-color: #667eea;
+        }
+
+        .endpoint-item.active {
+            background: #667eea;
+            color: white;
+            border-left-color: #4c5fd7;
+        }
+
+        .endpoint-item .method {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .method.POST { background: #48bb78; color: white; }
+        .method.GET { background: #4299e1; color: white; }
+        .method.WS { background: #ed8936; color: white; }
+
+        .endpoint-item.active .method {
+            background: white;
+            color: #667eea;
+        }
+
+        .content-area {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            min-height: 600px;
+        }
+
+        .endpoint-detail h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .endpoint-detail .description {
+            color: #666;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #333;
+            margin-left: 10px;
+        }
+
+        .response-area {
+            margin-top: 30px;
+        }
+
+        .response-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .response-header h3 {
+            color: #333;
+        }
+
+        .response-status {
+            padding: 6px 15px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .response-status.success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .response-status.error {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .response-body {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .tab {
+            padding: 12px 25px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: #666;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .live-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #48bb78;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #c6f6d5;
+            color: #22543d;
+            border-left: 4px solid #48bb78;
+        }
+
+        .alert-error {
+            background: #fed7d7;
+            color: #742a2a;
+            border-left: 4px solid #f56565;
+        }
+
+        .alert-info {
+            background: #bee3f8;
+            color: #2c5282;
+            border-left: 4px solid #4299e1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 SERP Monitoring Admin</h1>
+            <p>Production-ready API testing & monitoring dashboard</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="number" id="stat-endpoints">12</div>
+                <div class="label">API Endpoints</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="stat-agents">-</div>
+                <div class="label">Active Agents</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="stat-runs">-</div>
+                <div class="label">SERP Runs</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="stat-alerts">-</div>
+                <div class="label">Active Alerts</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <h3>📊 API Endpoints</h3>
+                <ul class="endpoint-list" id="endpoint-list">
+                    <!-- Populated by JavaScript -->
+                </ul>
+            </div>
+
+            <div class="content-area">
+                <div id="endpoint-detail">
+                    <div style="text-align: center; padding: 60px; color: #999;">
+                        <h2>Select an endpoint to test</h2>
+                        <p>Choose from the list on the left</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000';
+        
+        const endpoints = [
+            {
+                id: 'serp-run',
+                method: 'POST',
+                path: '/api/serp/run',
+                name: 'Start SERP Run',
+                description: 'Start a new SERP monitoring run for an agent',
+                params: [
+                    { name: 'agent_id', type: 'text', required: true, default: '6915e1275eb1766cbe71fd4b' },
+                    { name: 'keywords', type: 'textarea', required: true, default: '["vopsea intumescenta", "protectie pasiva la foc"]' },
+                    { name: 'market', type: 'text', required: false, default: 'ro' },
+                    { name: 'provider', type: 'text', required: false, default: 'brave' },
+                    { name: 'results_per_keyword', type: 'number', required: false, default: 10 }
+                ]
+            },
+            {
+                id: 'serp-status',
+                method: 'GET',
+                path: '/api/serp/run/{run_id}',
+                name: 'Get Run Status',
+                description: 'Get status and progress of a SERP run',
+                params: [
+                    { name: 'run_id', type: 'text', required: true, default: 'run_2025-11-13_19-16-03' }
+                ]
+            },
+            {
+                id: 'serp-results',
+                method: 'GET',
+                path: '/api/serp/results/{run_id}',
+                name: 'Get SERP Results',
+                description: 'Get detailed SERP results for a completed run',
+                params: [
+                    { name: 'run_id', type: 'text', required: true, default: 'run_2025-11-13_19-16-03' }
+                ]
+            },
+            {
+                id: 'competitors-from-serp',
+                method: 'POST',
+                path: '/api/serp/competitors/from-serp',
+                name: 'Create Competitors',
+                description: 'Create/update competitors from SERP results',
+                params: [
+                    { name: 'run_id', type: 'text', required: true, default: 'run_2025-11-13_19-16-03' }
+                ]
+            },
+            {
+                id: 'competitors-list',
+                method: 'GET',
+                path: '/api/serp/competitors',
+                name: 'List Competitors',
+                description: 'Get list of all competitors with threat scores',
+                params: [
+                    { name: 'agent_id', type: 'text', required: false, default: '6915e1275eb1766cbe71fd4b' },
+                    { name: 'sort_by', type: 'select', options: ['threat_score', 'visibility', 'keywords_ranked'], default: 'threat_score' },
+                    { name: 'limit', type: 'number', required: false, default: 10 }
+                ]
+            },
+            {
+                id: 'alerts-list',
+                method: 'GET',
+                path: '/api/serp/alerts',
+                name: 'Get Alerts',
+                description: 'Get list of SERP alerts (rank drops, new competitors)',
+                params: [
+                    { name: 'agent_id', type: 'text', required: false, default: '6915e1275eb1766cbe71fd4b' },
+                    { name: 'acknowledged', type: 'select', options: ['true', 'false', ''], default: 'false' },
+                    { name: 'severity', type: 'select', options: ['critical', 'warning', 'info', ''], default: '' },
+                    { name: 'limit', type: 'number', required: false, default: 20 }
+                ]
+            },
+            {
+                id: 'alert-acknowledge',
+                method: 'POST',
+                path: '/api/serp/alerts/{alert_id}/acknowledge',
+                name: 'Acknowledge Alert',
+                description: 'Mark an alert as acknowledged',
+                params: [
+                    { name: 'alert_id', type: 'text', required: true, default: '' },
+                    { name: 'action_taken', type: 'text', required: false, default: 'Reviewed and actioned' }
+                ]
+            },
+            {
+                id: 'slave-create',
+                method: 'POST',
+                path: '/api/serp/agents/slave/create',
+                name: 'Create Slave Agent',
+                description: 'Create a slave agent for a competitor domain',
+                params: [
+                    { name: 'domain', type: 'text', required: true, default: 'promat.com' },
+                    { name: 'master_agent_id', type: 'text', required: true, default: '6915e1275eb1766cbe71fd4b' }
+                ]
+            },
+            {
+                id: 'graph-update',
+                method: 'POST',
+                path: '/api/serp/graph/update',
+                name: 'Update Graph',
+                description: 'Update competitor graph (nodes & edges)',
+                params: [
+                    { name: 'agent_id', type: 'text', required: true, default: '6915e1275eb1766cbe71fd4b' },
+                    { name: 'run_id', type: 'text', required: true, default: 'run_2025-11-13_19-16-03' }
+                ]
+            },
+            {
+                id: 'monitor-schedule',
+                method: 'POST',
+                path: '/api/serp/monitor/schedule',
+                name: 'Schedule Monitoring',
+                description: 'Schedule automated SERP monitoring',
+                params: [
+                    { name: 'agent_id', type: 'text', required: true, default: '6915e1275eb1766cbe71fd4b' },
+                    { name: 'cadence', type: 'select', options: ['daily', 'weekly', 'monthly'], default: 'daily' }
+                ]
+            },
+            {
+                id: 'report-ceo',
+                method: 'POST',
+                path: '/api/serp/report/deepseek',
+                name: 'Generate CEO Report',
+                description: 'Generate executive summary report for CEO',
+                params: [
+                    { name: 'agent_id', type: 'text', required: true, default: '6915e1275eb1766cbe71fd4b' },
+                    { name: 'run_id', type: 'text', required: false, default: '' },
+                    { name: 'use_deepseek', type: 'select', options: ['true', 'false'], default: 'false' }
+                ]
+            },
+            {
+                id: 'health',
+                method: 'GET',
+                path: '/api/serp/health',
+                name: 'Health Check',
+                description: 'Check API health status',
+                params: []
+            }
+        ];
+
+        // Render endpoint list
+        function renderEndpointList() {
+            const list = document.getElementById('endpoint-list');
+            list.innerHTML = endpoints.map(ep => `
+                <li class="endpoint-item" onclick="selectEndpoint('${ep.id}')">
+                    <span class="method ${ep.method}">${ep.method}</span>
+                    ${ep.name}
+                </li>
+            `).join('');
+        }
+
+        // Select endpoint
+        function selectEndpoint(id) {
+            const endpoint = endpoints.find(ep => ep.id === id);
+            if (!endpoint) return;
+
+            // Update active state
+            document.querySelectorAll('.endpoint-item').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            // Render detail
+            renderEndpointDetail(endpoint);
+        }
+
+        // Render endpoint detail
+        function renderEndpointDetail(endpoint) {
+            const detail = document.getElementById('endpoint-detail');
+            
+            const paramsHtml = endpoint.params.map(param => {
+                if (param.type === 'select') {
+                    return `
+                        <div class="form-group">
+                            <label>${param.name}${param.required ? ' *' : ''}</label>
+                            <select name="${param.name}" ${param.required ? 'required' : ''}>
+                                ${param.options.map(opt => `<option value="${opt}" ${opt === param.default ? 'selected' : ''}>${opt || '(empty)'}</option>`).join('')}
+                            </select>
+                        </div>
+                    `;
+                } else if (param.type === 'textarea') {
+                    return `
+                        <div class="form-group">
+                            <label>${param.name}${param.required ? ' *' : ''}</label>
+                            <textarea name="${param.name}" rows="3" ${param.required ? 'required' : ''}>${param.default}</textarea>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="form-group">
+                            <label>${param.name}${param.required ? ' *' : ''}</label>
+                            <input type="${param.type}" name="${param.name}" value="${param.default}" ${param.required ? 'required' : ''}>
+                        </div>
+                    `;
+                }
+            }).join('');
+
+            detail.innerHTML = `
+                <div class="endpoint-detail">
+                    <h2><span class="method ${endpoint.method}">${endpoint.method}</span> ${endpoint.name}</h2>
+                    <p class="description">${endpoint.description}</p>
+                    <p style="color: #999; font-family: monospace; margin-bottom: 25px;">${endpoint.path}</p>
+                    
+                    <form id="test-form" onsubmit="testEndpoint(event, '${endpoint.id}')">
+                        ${paramsHtml}
+                        
+                        <div style="margin-top: 30px;">
+                            <button type="submit" class="btn btn-primary">
+                                🚀 Execute Request
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="clearResponse()">
+                                Clear Response
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="response-area" id="response-area" style="display: none;">
+                        <div class="response-header">
+                            <h3><span class="live-indicator"></span>Response</h3>
+                            <span class="response-status" id="response-status"></span>
+                        </div>
+                        <div class="response-body" id="response-body"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Test endpoint
+        async function testEndpoint(event, endpointId) {
+            event.preventDefault();
+            
+            const endpoint = endpoints.find(ep => ep.id === endpointId);
+            const form = event.target;
+            const formData = new FormData(form);
+            
+            // Show loading
+            const responseArea = document.getElementById('response-area');
+            const responseBody = document.getElementById('response-body');
+            const responseStatus = document.getElementById('response-status');
+            
+            responseArea.style.display = 'block';
+            responseBody.innerHTML = '<div class="loading">Loading</div>';
+            responseStatus.textContent = 'Pending...';
+            responseStatus.className = 'response-status';
+            
+            try {
+                // Build URL and body
+                let url = API_BASE + endpoint.path;
+                let body = null;
+                
+                // Replace path params
+                endpoint.params.forEach(param => {
+                    if (endpoint.path.includes(`{${param.name}}`)) {
+                        const value = formData.get(param.name);
+                        url = url.replace(`{${param.name}}`, value);
+                    }
+                });
+                
+                // Build query params or body
+                if (endpoint.method === 'GET') {
+                    const params = new URLSearchParams();
+                    endpoint.params.forEach(param => {
+                        if (!endpoint.path.includes(`{${param.name}}`)) {
+                            const value = formData.get(param.name);
+                            if (value) params.append(param.name, value);
+                        }
+                    });
+                    if (params.toString()) url += '?' + params.toString();
+                } else {
+                    // POST body
+                    body = {};
+                    endpoint.params.forEach(param => {
+                        if (!endpoint.path.includes(`{${param.name}}`)) {
+                            let value = formData.get(param.name);
+                            if (value) {
+                                // Try to parse JSON for arrays
+                                if (param.type === 'textarea' && value.trim().startsWith('[')) {
+                                    try {
+                                        value = JSON.parse(value);
+                                    } catch (e) {}
+                                }
+                                body[param.name] = value;
+                            }
+                        }
+                    });
+                }
+                
+                // Make request
+                const startTime = Date.now();
+                const response = await fetch(url, {
+                    method: endpoint.method,
+                    headers: endpoint.method === 'POST' ? { 'Content-Type': 'application/json' } : {},
+                    body: endpoint.method === 'POST' ? JSON.stringify(body) : null
+                });
+                const duration = Date.now() - startTime;
+                
+                const data = await response.json();
+                
+                // Display response
+                responseStatus.textContent = `${response.status} ${response.statusText} (${duration}ms)`;
+                responseStatus.className = `response-status ${response.ok ? 'success' : 'error'}`;
+                
+                responseBody.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                
+            } catch (error) {
+                responseStatus.textContent = 'Error';
+                responseStatus.className = 'response-status error';
+                responseBody.innerHTML = `<pre style="color: #f56565;">${error.message}</pre>`;
+            }
+        }
+
+        // Clear response
+        function clearResponse() {
+            document.getElementById('response-area').style.display = 'none';
+        }
+
+        // Load stats
+        async function loadStats() {
+            try {
+                // Get agents count
+                const agentsRes = await fetch(`${API_BASE}/agents`);
+                const agents = await agentsRes.json();
+                document.getElementById('stat-agents').textContent = Array.isArray(agents) ? agents.length : 0;
+                
+                // Get alerts count
+                const alertsRes = await fetch(`${API_BASE}/api/serp/alerts?acknowledged=false`);
+                const alerts = await alertsRes.json();
+                document.getElementById('stat-alerts').textContent = Array.isArray(alerts) ? alerts.length : 0;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderEndpointList();
+            loadStats();
+            
+            // Auto-refresh stats every 30s
+            setInterval(loadStats, 30000);
+        });
+    </script>
+</body>
+</html>
+

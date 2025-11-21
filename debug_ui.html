@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agents Platform - DEBUG</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .debug-panel { 
+            background: rgba(255,0,0,0.2); 
+            padding: 15px; 
+            border-radius: 10px; 
+            margin-bottom: 30px;
+            border: 2px solid #ff0000;
+        }
+        .panels { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 30px; 
+        }
+        .panel { 
+            background: rgba(255,255,255,0.1); 
+            padding: 25px; 
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        .panel h2 { margin-bottom: 20px; color: #60a5fa; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group select { 
+            width: 100%; 
+            padding: 12px; 
+            border: none; 
+            border-radius: 8px; 
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 1rem;
+        }
+        .form-group select option {
+            background: #1e3a8a !important;
+            color: white !important;
+            padding: 8px;
+        }
+        select {
+            background-color: rgba(255,255,255,0.1) !important;
+            color: white !important;
+        }
+        select option {
+            background-color: #1e3a8a !important;
+            color: white !important;
+        }
+        .btn { 
+            width: 100%; 
+            padding: 12px; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 1rem; 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .log-box { 
+            background: rgba(0,0,0,0.3); 
+            padding: 15px; 
+            border-radius: 8px; 
+            height: 200px; 
+            overflow-y: auto; 
+            font-family: monospace; 
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Agents Platform - DEBUG MODE</h1>
+            <p>Versiunea de debug pentru identificarea problemei cu agenții</p>
+        </div>
+
+        <div class="debug-panel">
+            <h2>🔧 DEBUG INFO</h2>
+            <div id="debug-status">Se încarcă...</div>
+            <div id="debug-agents-count">Agenți: -</div>
+            <div id="debug-api-status">API: -</div>
+        </div>
+
+        <div class="panels">
+            <div class="panel">
+                <h2>➕ Create New Agent</h2>
+                <div class="form-group">
+                    <label for="site-url">Website URL</label>
+                    <input type="text" id="site-url" placeholder="https://www.example.com">
+                </div>
+                <button class="btn btn-primary" onclick="createAgent()">Create Agent</button>
+                <div class="log-box" id="creation-progress"></div>
+            </div>
+
+            <div class="panel">
+                <h2>🎯 Agent Strategy & Tasking</h2>
+                <div class="form-group">
+                    <label for="agent-selector">Select Agent</label>
+                    <select id="agent-selector">
+                        <option value="">Loading agents...</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="loadAgents()" style="margin-top: 5px; font-size: 0.9rem; padding: 8px;">🔄 Refresh Agents</button>
+                </div>
+                <div class="log-box" id="strategy-progress"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentWebSocket = null;
+        let currentAgentId = null;
+
+        // Initialize on page load
+        window.onload = function() {
+            console.log('=== DEBUG PAGE LOADED ===');
+            document.getElementById('debug-status').textContent = 'Pagina încărcată - JavaScript activ';
+            checkApiKeyStatus();
+            loadAgents();
+        };
+
+        async function checkApiKeyStatus() {
+            try {
+                console.log('Checking API key status...');
+                const response = await fetch('/config/api-key-status');
+                const data = await response.json();
+                document.getElementById('debug-api-status').textContent = `API Key: ${data.is_set ? 'SET' : 'NOT SET'}`;
+                console.log('API key status:', data);
+            } catch (error) {
+                console.error('Error checking API key:', error);
+                document.getElementById('debug-api-status').textContent = 'API Key: ERROR';
+            }
+        }
+
+        async function loadAgents() {
+            try {
+                console.log('=== LOADING AGENTS ===');
+                document.getElementById('debug-status').textContent = 'Se încarcă agenții...';
+                
+                const response = await fetch('/api/agents', {
+                    method: 'GET',
+                    headers: {
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache'
+                    }
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const agents = await response.json();
+                console.log('Raw agents response:', agents);
+                console.log('Agents count:', agents.length);
+                
+                document.getElementById('debug-agents-count').textContent = `Agenți: ${agents.length}`;
+                
+                const selector = document.getElementById('agent-selector');
+                selector.innerHTML = '<option value="">Select an agent...</option>';
+                
+                let validAgents = 0;
+                agents.forEach((agent, index) => {
+                    console.log(`Processing agent ${index}:`, agent);
+                    if (agent._id) {
+                        const option = document.createElement('option');
+                        option.value = agent._id;
+                        const displayName = agent.name || agent.domain || 'Unknown Agent';
+                        const siteUrl = agent.site_url || 'No URL';
+                        const status = agent.status || 'unknown';
+                        option.textContent = `${displayName} (${siteUrl}) [${status}]`;
+                        selector.appendChild(option);
+                        validAgents++;
+                        console.log(`Added agent: ${displayName}`);
+                    } else {
+                        console.log(`Skipped agent ${index} - no _id:`, agent);
+                    }
+                });
+                
+                console.log('Valid agents added:', validAgents);
+                
+                if (validAgents === 0) {
+                    selector.innerHTML = '<option value="">No agents found</option>';
+                    document.getElementById('debug-status').textContent = `❌ Nu s-au găsit agenți valizi. Total: ${agents.length}`;
+                } else {
+                    document.getElementById('debug-status').textContent = `✅ S-au încărcat ${validAgents} agenți valizi!`;
+                }
+                
+            } catch (error) {
+                console.error('=== ERROR LOADING AGENTS ===', error);
+                document.getElementById('agent-selector').innerHTML = '<option value="">Failed to load agents</option>';
+                document.getElementById('debug-status').textContent = `❌ EROARE: ${error.message}`;
+            }
+        }
+
+        function createAgent() {
+            const url = document.getElementById('site-url').value.trim();
+            if (!url) {
+                alert('Please enter a website URL');
+                return;
+            }
+            
+            const progressBox = document.getElementById('creation-progress');
+            progressBox.textContent = `► Creating agent for ${url}...\n`;
+            
+            // Simple creation without WebSocket for now
+            progressBox.textContent += '✅ Agent creation started (simplified)\n';
+        }
+    </script>
+</body>
+</html>

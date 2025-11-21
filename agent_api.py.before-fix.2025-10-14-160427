@@ -1,0 +1,789 @@
+# agent_api.py
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query, BackgroundTasks, Body
+from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pymongo import MongoClient
+from bson import ObjectId
+from pydantic import BaseModel
+from typing import Optional, List, Dict
+import os
+import requests
+import socket
+import urllib.robotparser as robotparser
+from urllib.parse import urlparse
+import asyncio
+import logging
+import traceback
+from datetime import datetime, timezone
+
+# existente
+from site_agent_creator import create_site_agent_ws
+from task_executor import handle_task_conversation
+
+# admin (competitor discovery + ingest)
+from tools.admin_discovery import ingest_urls, web_search
+from adapters.scraper_adapter import smart_fetch
+from adapters.search_providers import search_serp
+from langchain_openai import ChatOpenAI
+
+# <<< NEW: config DB unificat >>>
+from config.database_config import (
+    MONGODB_URI, MONGODB_DATABASE, MONGODB_COLLECTION
+)
+
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
+)
+
+# ------ Health/Ready ------
+@app.get("/health")
+async def health():
+    return {"ok": True}
+
+@app.get("/ready")
+async def ready():
+    # conexiune minimă la Mongo (best-effort)
+    try:
+        mongo_client.admin.command("ping")
+        mongo_ok = True
+    except Exception:
+        mongo_ok = False
+    return {"ok": mongo_ok}
+
+# <<< CHANGED: unificare Mongo și colecții >>>
+mongo_client = MongoClient(MONGODB_URI)
+db = mongo_client[MONGODB_DATABASE]
+agents_collection = db.agents
+conversations_collection = db.conversations
+site_content_col = db[MONGODB_COLLECTION]
+
+logger = logging.getLogger("agent_api")
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
+
+def get_api_key():
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="CRITICAL: OPENAI_API_KEY is not set. Check config.env/.env file.")
+    return api_key
+
+def save_conversation(agent_id: str, user_message: str, assistant_response: str, strategy: str = "manual_task"):
+    """Salvează conversația în baza de date pentru învățare"""
+    try:
+        conversation_doc = {
+            "agent_id": ObjectId(agent_id),
+            "timestamp": datetime.now(timezone.utc),
+            "strategy": strategy,
+            "user_message": user_message,
+            "assistant_response": assistant_response,
+            "conversation_length": len(user_message) + len(assistant_response)
+        }
+        conversations_collection.insert_one(conversation_doc)
+        logger.info(f"[CONVERSATION] Saved conversation for agent {agent_id}")
+    except Exception as e:
+        logger.error(f"[CONVERSATION] Failed to save conversation: {e}")
+
+def get_learning_strategy_prompt(agent_id: str, site_url: str, industry: str, context: str) -> str:
+    """Generează promptul pentru strategia de învățare din industrie"""
+    return f"""
+Ești un expert în analiza industriei și dezvoltarea strategiilor de învățare pentru agenți AI.
+
+AGENT ANALIZAT:
+- ID: {agent_id}
+- Site: {site_url}
+- Industrie detectată: {industry}
+- Context din baza de date: {context[:1000]}...
+
+OBIECTIV: Dezvoltă o strategie comprehensivă de învățare pentru acest agent să înțeleagă și să se dezvolte în industria sa.
+
+STRATEGIA TREBUIE SĂ INCLUDE:
+
+1. **ANALIZA INDUSTRIEI:**
+   - Identificarea segmentelor de piață
+   - Analiza competitorilor directi și indirecți
+   - Tendințele și oportunitățile din industrie
+
+2. **PLAN DE ÎNVĂȚARE:**
+   - Ce informații să caute și să analizeze
+   - Cum să identifice oportunități de dezvoltare
+   - Strategii de monitorizare a pieței
+
+3. **ACȚIUNI CONCRETE:**
+   - Căutări specifice de a face
+   - Site-uri relevante de monitorizat
+   - Metrice de urmărit
+
+4. **DEZVOLTARE CONTINUĂ:**
+   - Cum să învețe din conversațiile cu utilizatorii
+   - Cum să se adapteze la schimbările din industrie
+   - Strategii de îmbunătățire continuă
+
+Răspunde cu o strategie detaliată, structurată și acționabilă.
+"""
+
+# ------------- UI -------------
+@app.get("/", response_class=HTMLResponse)
+async def get_ui_root():
+    with open("ui_interface_new.html", "r", encoding="utf-8") as f:
+        return HTMLResponse(content=f.read())
+
+# alias /ui (unele setup-uri folosesc exact acest path)
+@app.get("/ui", response_class=HTMLResponse)
+async def get_ui_alias():
+    with open("ui_interface_new.html", "r", encoding="utf-8") as f:
+        return HTMLResponse(content=f.read())
+
+@app.get("/config/api-key-status")
+async def api_key_status():
+    return {"is_set": bool(os.getenv("OPENAI_API_KEY"))}
+
+# ------------- Agents list -------------
+@app.get("/api/agents")
+async def get_agents():
+    agents = list(
+        agents_collection.find(
+            {},
+            {"_id": 1, "name": 1, "domain": 1, "site_url": 1, "status": 1, "createdAt": 1, "updatedAt": 1}
+        ).sort([("updatedAt", -1), ("createdAt", -1)])
+    )
+    for agent in agents:
+        agent["_id"] = str(agent["_id"])
+        if isinstance(agent.get("createdAt"), datetime):
+            agent["createdAt"] = agent["createdAt"].isoformat()
+        if isinstance(agent.get("updatedAt"), datetime):
+            agent["updatedAt"] = agent["updatedAt"].isoformat()
+    return agents
+
+@app.get("/api/agents/last")
+async def get_last_agent():
+    cur = agents_collection.find(
+        {},
+        {"_id": 1, "name": 1, "domain": 1, "site_url": 1, "status": 1, "createdAt": 1, "updatedAt": 1}
+    ).sort([("updatedAt", -1), ("createdAt", -1)]).limit(1)
+    items = list(cur)
+    if not items:
+        return {}
+    agent = items[0]
+    agent["_id"] = str(agent["_id"])
+    if isinstance(agent.get("createdAt"), datetime):
+        agent["createdAt"] = agent["createdAt"].isoformat()
+    if isinstance(agent.get("updatedAt"), datetime):
+        agent["updatedAt"] = agent["updatedAt"].isoformat()
+    return agent
+
+# ------------- WebSockets -------------
+@app.websocket("/ws/create-agent")
+async def create_agent_websocket(websocket: WebSocket, url: str):
+    await websocket.accept()
+    api_key = get_api_key()
+    try:
+        await create_site_agent_ws(websocket, url, api_key)
+    except Exception as e:
+        await websocket.send_json({"status": "error", "message": f"Eroare neașteptată: {e}"})
+    finally:
+        try:
+            await websocket.close()
+        except Exception:
+            pass
+
+@app.websocket("/ws/task/{agent_id}")
+async def task_websocket(websocket: WebSocket, agent_id: str, strategy: str):
+    await websocket.accept()
+    api_key = get_api_key()
+    try:
+        agent = agents_collection.find_one({"_id": ObjectId(agent_id)})
+        if not agent:
+            await websocket.send_json({"type": "error", "data": "Agent not found."})
+            return
+
+        # Pasăm agent_id (nu doar domain) către executor
+        await handle_task_conversation(
+            websocket=websocket,
+            api_key=api_key,
+            agent_id=agent_id,
+            site_url=agent.get("site_url", "unknown"),
+            initial_strategy=strategy
+        )
+
+    except WebSocketDisconnect:
+        logger.info("WebSocket disconnected")
+    except Exception as e:
+        logger.exception("WebSocket error")
+        await websocket.send_json({"type": "error", "data": str(e)})
+    finally:
+        try:
+            await websocket.close()
+        except Exception:
+            pass
+
+# ===================== UTILITĂȚI PENTRU EXPAND =====================
+HTTP_TIMEOUT = 8  # sec
+
+def _norm_domain(domain_or_url: str) -> str:
+    if not domain_or_url:
+        return ""
+    if "://" in domain_or_url:
+        parsed = urlparse(domain_or_url)
+        host = parsed.netloc
+    else:
+        host = domain_or_url
+    host = host.strip().lower()
+    if host.startswith("www."):
+        host = host[4:]
+    if ":" in host:
+        host = host.split(":")[0]
+    return host
+
+def _robots_allows(url: str, user_agent: str = "*") -> bool:
+    try:
+        parsed = urlparse(url)
+        robots_url = f"{parsed.scheme}://{parsed.netloc}/robots.txt"
+        rp = robotparser.RobotFileParser()
+        rp.set_url(robots_url)
+        rp.read()
+        return rp.can_fetch(user_agent, "/")
+    except Exception:
+        # dacă robots nu poate fi citit, permitem conservator 1 pagină
+        return True
+
+def _is_alive(url: str) -> bool:
+    try:
+        r = requests.head(url, timeout=HTTP_TIMEOUT, allow_redirects=True)
+        if r.status_code < 400:
+            return True
+    except Exception:
+        pass
+    try:
+        r = requests.get(url, timeout=HTTP_TIMEOUT, allow_redirects=True)
+        return r.status_code < 400
+    except Exception:
+        return False
+
+def _resolve_dns(domain: str) -> bool:
+    try:
+        socket.gethostbyname(domain)
+        return True
+    except Exception:
+        return False
+
+def _to_url(domain: str) -> str:
+    return f"https://{_norm_domain(domain)}/"
+
+def propose_sites(base_domain: str, objective: str, limit: int = 5) -> List[str]:
+    """
+    Heuristică simplă: subdomenii uzuale + variantă TLD .ro/.com.
+    Ulterior poate fi înlocuit cu propuneri LLM sau crawling de link-graph.
+    """
+    d = _norm_domain(base_domain)
+    if not d:
+        return []
+    candidates = []
+
+    subs = ["www", "blog", "docs", "help", "support"]
+    for s in subs:
+        candidates.append(f"{s}.{d}")
+
+    if d.endswith(".ro"):
+        core = d[:-3].rstrip(".")
+        if core:
+            candidates.append(f"{core}.com")
+    if d.endswith(".com"):
+        core = d[:-4].rstrip(".")
+        if core:
+            candidates.append(f"{core}.ro")
+
+    # elimină duplicate + sine
+    seen = set()
+    out = []
+    for c in candidates:
+        c_norm = _norm_domain(c)
+        if c_norm and c_norm != d and c_norm not in seen:
+            seen.add(c_norm)
+            out.append(c_norm)
+
+    return out[: max(1, limit)]
+
+# ============ HEADLESS WS WRAPPER PENTRU CREAREA AGENTULUI ============
+class DummyWebSocket:
+    """WebSocket minimal pentru a apela create_site_agent_ws fără UI."""
+    async def accept(self): return
+    async def send_text(self, _: str): return
+    async def send_json(self, _: dict): return
+    async def close(self, code: Optional[int] = None): return
+
+async def _create_agent_ws_headless(url: str, api_key: str):
+    """Rulează fluxul existent de creare prin funcția WS, fără UI."""
+    try:
+        ws = DummyWebSocket()
+        await create_site_agent_ws(ws, url, api_key)
+    except Exception as e:
+        logger.error(f"[HEADLESS-CREATE] Eroare la {url}: {e}\n{traceback.format_exc()}")
+
+def launch_headless_create(url: str):
+    """Helper sync pentru BackgroundTasks: pornește un event loop local."""
+    api_key = get_api_key()
+    asyncio.run(_create_agent_ws_headless(url, api_key))
+
+# ===================== ENDPOINT: EXPAND (AUTO-CREATE BACKEND) =====================
+class ExpandRequest(BaseModel):
+    objective: str
+    maxAgents: int = 3
+    maxPagesPerSite: int = 20
+    # Fallback-uri dacă agentul nu are câmpul 'domain' sau 'site_url' în DB
+    domain: Optional[str] = None
+    agentName: Optional[str] = None
+
+@app.post("/agents/{agent_id}/expand")
+async def expand_agent_route(agent_id: str, req: ExpandRequest, background_tasks: BackgroundTasks):
+    """
+    Propune site-uri înrudite și PORNEȘTE crearea de agenți în BACKEND (BackgroundTasks).
+    Răspunde imediat cu lista de site-uri acceptate și job-urile pornite.
+    """
+    # 1) Citește agentul din Mongo (pt. domain/name)
+    agent = None
+    try:
+        agent = agents_collection.find_one({"_id": ObjectId(agent_id)})
+    except Exception:
+        agent = None
+
+    base_domain = None
+    agent_name = None
+    if agent:
+        agent_name = agent.get("name") or req.agentName or f"agent-{agent_id}"
+        base_domain = agent.get("domain")
+        if not base_domain:
+            site_url = agent.get("site_url")
+            if site_url:
+                base_domain = _norm_domain(site_url)
+        # touch updatedAt
+        try:
+            agents_collection.update_one({"_id": ObjectId(agent_id)}, {"$set": {"updatedAt": datetime.now(timezone.utc)}})
+        except Exception:
+            pass
+    else:
+        agent_name = req.agentName or f"agent-{agent_id}"
+        base_domain = req.domain
+
+    if not base_domain:
+        raise HTTPException(
+            status_code=400,
+            detail="Missing base domain: agentul nu are domain/site_url și nu ai furnizat 'domain' în body."
+        )
+
+    # 2) Propuneri și filtrare
+    proposals = propose_sites(base_domain, req.objective, limit=max(3, req.maxAgents * 2))
+    allowed: List[Dict] = []
+    skipped: List[Dict] = []
+    for dom in proposals:
+        dnorm = _norm_domain(dom)
+        if not dnorm:
+            skipped.append({"domain": dom, "reason": "invalid"})
+            continue
+        url = _to_url(dnorm)
+        if not _resolve_dns(dnorm):
+            skipped.append({"domain": dnorm, "reason": "dns_fail"})
+            continue
+        if not _is_alive(url):
+            skipped.append({"domain": dnorm, "reason": "unreachable"})
+            continue
+        if not _robots_allows(url):
+            skipped.append({"domain": dnorm, "reason": "robots_disallow"})
+            continue
+        allowed.append({"domain": dnorm, "url": url})
+
+    # 3) PORNEȘTE CREAREA în backend pentru primele N (maxAgents)
+    started: List[Dict] = []
+    for item in allowed[: req.maxAgents]:
+        background_tasks.add_task(launch_headless_create, item["url"])
+        started.append({"domain": item["domain"], "url": item["url"]})
+
+    return {
+        "status": "accepted",
+        "agent_id": agent_id,
+        "agent_name": agent_name,
+        "base_domain": _norm_domain(base_domain),
+        "objective": req.objective,
+        "started": started,
+        "skipped": skipped
+    }
+
+# ===================== ADMIN: DISCOVER & INGEST =====================
+@app.post("/admin/industry/{agent_id}/discover")
+def api_discover_competitors(agent_id: str, payload: Dict = Body(default={})):
+    """
+    Body (optional): { "limit": 12, "queries": ["q1", "q2", ...] }
+    Returnează: {ok, agent_id, domain, candidates: [{url, score, reason, homepage_text_len}], queries}
+    """
+    limit   = int(payload.get("limit", 12) or 12)
+    queries = payload.get("queries")
+    if queries and not isinstance(queries, list):
+        queries = None
+    res = discover_competitors(agent_id, limit=limit, queries=queries)
+    return res
+
+
+# ===================== ADMIN: AUTO-EXPANSION (GPT SUPERVISOR) =====================
+class AutoExpandRequest(BaseModel):
+    limit: int = 12
+    maxPagesPerSite: int = 10
+    objective: str = "market_intel"
+
+@app.post("/admin/industry/{agent_id}/auto-expand")
+def api_auto_expand(agent_id: str, payload: AutoExpandRequest):
+    """
+    1) Rulează discover_competitors
+    2) Cere la GPT să selecteze și să justifice top N URL-uri
+    3) Pornește ingest pentru URL-urile selectate
+    """
+    # 0) Citește agentul din colecția existentă (ai_agents_db.agents)
+    try:
+        agent = agents_collection.find_one({"_id": ObjectId(agent_id)})
+    except Exception:
+        agent = None
+    if not agent:
+        return {"ok": False, "error": "agent_not_found"}
+
+    base_domain = agent.get("domain")
+    site_url = agent.get("site_url") or (f"https://{base_domain}" if base_domain else None)
+
+    # 1) Context pentru GPT din baza de date (conținutul site-ului catalogat)
+    homepage_text = ""
+    agent_content = ""
+    agent_industry = ""
+
+    # <<< FIX: citește din colecția corectă de conținut >>>
+    try:
+        content_docs = site_content_col.find({"agent_id": ObjectId(agent_id)}).limit(5)
+        content_parts = []
+        for doc in content_docs:
+            if doc.get("content"):
+                content_parts.append(doc["content"][:500])  # primele 500 caractere
+        agent_content = " ".join(content_parts)[:2000]
+        logger.info(f"[AUTOEXPAND] Found {len(content_parts)} content docs from DB for agent {agent_id}")
+    except Exception as e:
+        logger.warning(f"Could not get agent content from DB: {e}")
+
+    # Fallback: încearcă să obții homepage-ul direct
+    if not agent_content and site_url:
+        try:
+            r = requests.get(site_url, timeout=10)
+            r.raise_for_status()
+            html = r.text
+            try:
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(html, "html.parser")
+                homepage_text = (soup.get_text(" ") or "").strip()
+                if len(homepage_text) > 2000:
+                    homepage_text = homepage_text[:2000]
+            except Exception:
+                pass
+        except Exception:
+            pass
+
+    # Combină conținutul din DB cu homepage-ul
+    full_context = f"{agent_content}\n\n{homepage_text}".strip()
+
+    # Detectează industria (heuristic simplu)
+    if full_context:
+        industry_keywords = {
+            "e-commerce": ["magazin", "produs", "cumpără", "vânzare", "shop", "store"],
+            "tehnologie": ["software", "aplicație", "tehnologie", "digital", "IT"],
+            "servicii": ["serviciu", "consulting", "suport", "asistență"],
+            "educație": ["curs", "training", "educație", "învățare"],
+            "sănătate": ["medical", "sănătate", "doctor", "spital", "clinică"],
+            "financiar": ["bancă", "credit", "investiție", "asigurare", "financiar"],
+            "imobiliare": ["imobiliare", "apartament", "casă", "teren", "proprietate"],
+            "automotive": ["mașină", "auto", "service", "piese", "automotive"],
+            "alimentar": ["restaurant", "mâncare", "băutură", "alimentar", "food"],
+            "fashion": ["haine", "modă", "fashion", "îmbrăcăminte", "accesorii"]
+        }
+
+        context_lower = full_context.lower()
+        for industry, keywords in industry_keywords.items():
+            if any(keyword in context_lower for keyword in keywords):
+                agent_industry = industry
+                break
+
+        logger.info(f"[AUTOEXPAND] Detected industry: {agent_industry}, context length: {len(full_context)}")
+
+    # 2) Query generation cu GPT pe baza contextului
+    api_key = get_api_key()
+    llm = ChatOpenAI(model_name=os.getenv("LLM_MODEL", "gpt-4o-mini"), openai_api_key=api_key, temperature=0)
+
+    # detectează țara din domeniu
+    country = "romania" if (base_domain or "").endswith(".ro") else "internațional"
+
+    sys_prompt = (
+        "Generezi interogări web în română pentru a găsi competitori/vecini industriali. "
+        "Prioritizează site-uri din țara specificată. Răspunde doar cu un JSON: {\"queries\": [\"q1\", \"q2\", ...]}"
+    )
+    user_prompt = (
+        f"Agent ID: {agent_id}\nDomeniu: {base_domain}\nURL: {site_url}\nȚară: {country}\n"
+        f"Industrie detectată: {agent_industry}\nObiectiv: {payload.objective}\n\n"
+        f"CONTEXT COMPLET DIN BAZA DE DATE:\n{full_context}\n\n"
+        f"Generează 8 interogări diverse pentru a găsi competitori directi și site-uri relevante din aceeași industrie. "
+        f"Prioritizează site-uri din {country} (domenii .ro pentru România). "
+        f"Bazează-te pe conținutul real al site-ului pentru a identifica cuvinte cheie specifice industriei, "
+        f"produsele/serviciile oferite, și segmentul de piață. Include variante regionale și sinonime."
+    )
+    try:
+        resp = llm.invoke([
+            {"role": "system", "content": sys_prompt},
+            {"role": "user", "content": user_prompt},
+        ])
+        content = getattr(resp, "content", str(resp))
+        import json as _json
+        qdata = _json.loads(content) if isinstance(content, str) else {}
+        queries = [q for q in qdata.get("queries", []) if isinstance(q, str)]
+    except Exception as e:
+        logger.warning(f"GPT query generation failed: {e}")
+        queries = []
+    if not queries:
+        # fallback queries bazate pe domeniu și țară
+        if country == "romania":
+            queries = [
+                f"{base_domain} competitori românia",
+                f"{base_domain} industrie românia",
+                f"{base_domain} firme românia",
+                f"{base_domain} companii românia",
+                f"{base_domain} servicii românia"
+            ]
+        else:
+            queries = [
+                f"{base_domain} competitors",
+                f"{base_domain} industry",
+                f"{base_domain} companies",
+                f"{base_domain} services"
+            ]
+
+    # 3) Discovery: SERP provider dacă există chei, altfel fallback DDG (web_search)
+    k = max(5, int(payload.limit))
+    has_keys = bool(os.getenv("SERPAPI_KEY") or os.getenv("BING_V7_SUBSCRIPTION_KEY"))
+    if has_keys:
+        urls = search_serp(queries, k=k)
+    else:
+        urls = []
+        for q in queries:
+            for r in web_search(q, limit=k):
+                u = r.get("url") or ""
+                if u.startswith("http"):
+                    urls.append(u)
+            if len(urls) >= k * 3:
+                break
+
+    # 3b) Dacă încă nu avem candidați, folosește scraperul avansat pentru a extrage outlinks
+    if not urls and site_url:
+        try:
+            sf = smart_fetch(site_url)
+            links = sf.get("outlinks") or [] if isinstance(sf, dict) else []
+            urls = [u for u in links if isinstance(u, str) and u.startswith("http") and "://localhost" not in u]
+        except Exception:
+            urls = urls or []
+    seen, candidates = set(), []
+    for u in urls:
+        host = (urlparse(u).netloc or "").lower()
+        if base_domain and base_domain in host:
+            continue
+        if host and host not in seen:
+            seen.add(host)
+            candidates.append({"url": u, "host": host})
+        if len(candidates) >= payload.limit * 2:
+            break
+
+    # 2) GPT Supervisor select
+    api_key = get_api_key()
+    llm = ChatOpenAI(model_name=os.getenv("LLM_MODEL", "gpt-4o-mini"), openai_api_key=api_key, temperature=0)
+    prompt = (
+        f"Agent original: {base_domain} ({agent_industry})\n"
+        f"Context din baza de date: {full_context[:1000]}...\n\n"
+        f"Ai o listă de site-uri candidate din aceeași industrie. "
+        f"Prioritizează site-uri din {country} (domenii .ro pentru România). "
+        f"Bazează-te pe contextul agentului original pentru a identifica competitori directi și site-uri relevante. "
+        f"Alege cele mai promițătoare 3-5 URL-uri pentru ingest, ținând cont de relevanță și acoperire. "
+        f"Returnează JSON strict: {{\"urls\": [\"https://...\"] , \"reasons\": [\"...\"]}} fără alt text.\n\n"
+        f"CANDIDATES_JSON={candidates}"
+    )
+    try:
+        resp = llm.invoke(prompt)
+        content = getattr(resp, "content", str(resp))
+        logger.info(f"[AUTOEXPAND] GPT response: {content[:200]}...")
+    except Exception as e:
+        logger.error(f"[AUTOEXPAND] GPT selection failed: {e}")
+        content = "{}"
+
+    selected: List[str] = []
+    reasons: List[str] = []
+    try:
+        import json as _json
+        data = _json.loads(content) if isinstance(content, str) else {}
+        selected = [u for u in data.get("urls", []) if isinstance(u, str)]
+        reasons = data.get("reasons", [])
+        logger.info(f"[AUTOEXPAND] GPT selected: {selected}")
+    except Exception as e:
+        logger.error(f"[AUTOEXPAND] JSON parsing failed: {e}")
+        selected = [item.get("url") for item in candidates[:3] if isinstance(item, dict) and item.get("url")]
+
+    if not selected:
+        selected = [item.get("url") for item in candidates[:5] if isinstance(item, dict) and item.get("url")]
+
+    selected = selected[: max(3, min(5, len(selected)))]
+
+    # 3) Ingest
+    ingest_res = {"ok": False, "error": "no_selection"}
+    if selected:
+        filtered = []
+        deny_hosts = {"facebook.com", "twitter.com", "linkedin.com", "youtube.com", "instagram.com"}
+        for u in selected:
+            try:
+                up = urlparse(u)
+                if not up.scheme.startswith("http"):
+                    continue
+                host = (up.netloc or "").lower()
+                if host.startswith("localhost") or host.startswith("127.0.0.1"):
+                    continue
+                if any(h in host for h in ("whatsapp.com", "api.whatsapp")):
+                    continue
+                if any(host.endswith(dh) for dh in deny_hosts):
+                    continue
+                home = f"https://{host}/"
+                try:
+                    r = requests.head(home, timeout=1, allow_redirects=True)
+                    if r.status_code >= 400:
+                        r2 = requests.head(f"http://{host}/", timeout=1, allow_redirects=True)
+                        if r2.status_code < 400:
+                            home = f"http://{host}/"
+                except Exception:
+                    try:
+                        r2 = requests.head(f"http://{host}/", timeout=1, allow_redirects=True)
+                        if r2.status_code < 400:
+                            home = f"http://{host}/"
+                    except Exception:
+                        pass
+                if home not in filtered:
+                    filtered.append(home)
+                logger.info(f"[AUTOEXPAND] candidate_kept home={home} from={u}")
+            except Exception:
+                continue
+        selected_final = filtered[: int(payload.limit)]
+        ingest_res = ingest_urls(selected_final, max_pages=int(payload.maxPagesPerSite))
+
+    if 'selected_final' not in locals():
+        selected_final = []
+
+    resp = {
+        "ok": True,
+        "agent_id": str(agent.get("_id")),
+        "domain": base_domain,
+        "industry": agent_industry,
+        "context_length": len(full_context),
+        "discover_count": len(candidates),
+        "candidate_count": len(candidates),
+        "selected": selected,
+        "selected_final": selected_final,
+        "reasons": reasons,
+        "ingest": ingest_res,
+        "ingest_status": ingest_res,
+    }
+    return resp
+
+@app.post("/admin/industry/{agent_id}/ingest")
+def api_ingest_candidates(agent_id: str, payload: Dict = Body(default={})):
+    """
+    Body: { "urls": ["https://...", ...], "max_pages": 10 }
+    Returnează: {ok, results: [{url, ok, agent_id|error}]}
+    """
+    urls = payload.get("urls") or []
+    if not isinstance(urls, list) or not urls:
+        return {"ok": False, "error": "urls_required"}
+    max_pages = int(payload.get("max_pages", 10) or 10)
+    res = ingest_urls(urls, max_pages=max_pages)
+    return res
+
+@app.post("/admin/industry/{agent_id}/learning-strategy")
+def api_generate_learning_strategy(agent_id: str):
+    """
+    Generează o strategie de învățare pentru agent bazată pe industria sa
+    """
+    try:
+        agent = agents_collection.find_one({"_id": ObjectId(agent_id)})
+        if not agent:
+            return {"ok": False, "error": "agent_not_found"}
+
+        base_domain = agent.get("domain")
+        site_url = agent.get("site_url") or (f"https://{base_domain}" if base_domain else None)
+
+        # <<< FIX: citește din colecția corectă de conținut >>>
+        agent_content = ""
+        try:
+            content_docs = site_content_col.find({"agent_id": ObjectId(agent_id)}).limit(5)
+            content_parts = []
+            for doc in content_docs:
+                if doc.get("content"):
+                    content_parts.append(doc["content"][:500])
+            agent_content = " ".join(content_parts)[:2000]
+        except Exception as e:
+            logger.warning(f"Could not get agent content from DB: {e}")
+
+        # Detectează industria
+        industry = "general"
+        if agent_content:
+            industry_keywords = {
+                "e-commerce": ["magazin", "produs", "cumpără", "vânzare", "shop", "store"],
+                "tehnologie": ["software", "aplicație", "tehnologie", "digital", "IT"],
+                "servicii": ["serviciu", "consulting", "suport", "asistență"],
+                "educație": ["curs", "training", "educație", "învățare"],
+                "sănătate": ["medical", "sănătate", "doctor", "spital", "clinică"],
+                "financiar": ["bancă", "credit", "investiție", "asigurare", "financiar"],
+                "imobiliare": ["imobiliare", "apartament", "casă", "teren", "proprietate"],
+                "automotive": ["mașină", "auto", "service", "piese", "automotive"],
+                "alimentar": ["restaurant", "mâncare", "băutură", "alimentar", "food"],
+                "fashion": ["haine", "modă", "fashion", "îmbrăcăminte", "accesorii"]
+            }
+
+            context_lower = agent_content.lower()
+            for ind, keywords in industry_keywords.items():
+                if any(keyword in context_lower for keyword in keywords):
+                    industry = ind
+                    break
+
+        api_key = get_api_key()
+        llm = ChatOpenAI(model_name=os.getenv("LLM_MODEL", "gpt-4o-mini"), openai_api_key=api_key, temperature=0.3)
+
+        strategy_prompt = get_learning_strategy_prompt(agent_id, site_url, industry, agent_content)
+
+        try:
+            response = llm.invoke(strategy_prompt)
+            strategy = response.content
+
+            strategy_doc = {
+                "agent_id": ObjectId(agent_id),
+                "timestamp": datetime.now(timezone.utc),
+                "industry": industry,
+                "strategy": strategy,
+                "context_used": agent_content[:1000]
+            }
+            db.learning_strategies.insert_one(strategy_doc)
+
+            return {
+                "ok": True,
+                "agent_id": str(agent.get("_id")),
+                "domain": base_domain,
+                "industry": industry,
+                "strategy": strategy,
+                "context_length": len(agent_content)
+            }
+
+        except Exception as e:
+            logger.error(f"Error generating learning strategy: {e}")
+            return {"ok": False, "error": f"strategy_generation_failed: {str(e)}"}
+
+    except Exception as e:
+        logger.error(f"Error in learning strategy endpoint: {e}")
+        return {"ok": False, "error": f"endpoint_error: {str(e)}"}
+
+# ------------- Main -------------
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("agent_api:app", host="0.0.0.0", port=8083, reload=True)
+

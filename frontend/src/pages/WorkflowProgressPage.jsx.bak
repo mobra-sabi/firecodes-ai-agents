@@ -1,0 +1,142 @@
+import { useParams } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import api from '../lib/api'
+import { CheckCircle2, Circle, Loader2, XCircle } from 'lucide-react'
+
+export default function WorkflowProgressPage() {
+  const { workflowId } = useParams()
+
+  const { data: workflow, isLoading } = useQuery({
+    queryKey: ['workflow', workflowId],
+    queryFn: async () => {
+      const response = await api.get(`/workflow/${workflowId}`)
+      return response.data
+    },
+    refetchInterval: 5000, // Refresh every 5 seconds
+  })
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+      </div>
+    )
+  }
+
+  if (!workflow) {
+    return (
+      <div className="card text-center py-16">
+        <h3 className="text-lg font-semibold text-dark-900">Workflow not found</h3>
+      </div>
+    )
+  }
+
+  const phases = workflow.phases || []
+  const progress = workflow.progress || 0
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="card">
+        <h1 className="text-3xl font-bold text-dark-900 mb-2">
+          Workflow: {workflow.domain}
+        </h1>
+        <p className="text-dark-600">
+          Status: {workflow.status === 'completed' ? '✅ Completed' : '⏳ In Progress'}
+        </p>
+        
+        {/* Progress Bar */}
+        <div className="mt-6">
+          <div className="flex items-center justify-between text-sm mb-2">
+            <span className="font-medium text-dark-700">Overall Progress</span>
+            <span className="font-medium text-dark-700">{progress}%</span>
+          </div>
+          <div className="w-full bg-dark-200 rounded-full h-3">
+            <div
+              className="bg-primary-600 h-3 rounded-full transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Phases */}
+      <div className="card">
+        <h2 className="text-xl font-semibold text-dark-900 mb-6">Workflow Phases</h2>
+        
+        <div className="space-y-4">
+          {phases.map((phase, index) => (
+            <PhaseItem key={index} phase={phase} index={index + 1} />
+          ))}
+        </div>
+      </div>
+
+      {/* Stats */}
+      {workflow.stats && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="card">
+            <p className="text-sm text-dark-600 mb-1">Total Chunks</p>
+            <p className="text-2xl font-bold text-dark-900">{workflow.stats.total_chunks || 0}</p>
+          </div>
+          <div className="card">
+            <p className="text-sm text-dark-600 mb-1">GPU Utilization</p>
+            <p className="text-2xl font-bold text-dark-900">{workflow.stats.gpu_util || 0}%</p>
+          </div>
+          <div className="card">
+            <p className="text-sm text-dark-600 mb-1">API Calls</p>
+            <p className="text-2xl font-bold text-dark-900">{workflow.stats.api_calls || 0}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function PhaseItem({ phase, index }) {
+  const getIcon = () => {
+    if (phase.status === 'completed') {
+      return <CheckCircle2 className="w-6 h-6 text-green-600" />
+    }
+    if (phase.status === 'failed') {
+      return <XCircle className="w-6 h-6 text-red-600" />
+    }
+    if (phase.status === 'in_progress') {
+      return <Loader2 className="w-6 h-6 text-primary-600 animate-spin" />
+    }
+    return <Circle className="w-6 h-6 text-dark-300" />
+  }
+
+  const getBgColor = () => {
+    if (phase.status === 'completed') return 'bg-green-50'
+    if (phase.status === 'failed') return 'bg-red-50'
+    if (phase.status === 'in_progress') return 'bg-primary-50'
+    return 'bg-dark-50'
+  }
+
+  return (
+    <div className={`p-4 rounded-lg ${getBgColor()} transition-colors`}>
+      <div className="flex items-start gap-4">
+        <div className="flex-shrink-0 mt-1">{getIcon()}</div>
+        <div className="flex-1">
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="font-semibold text-dark-900">
+                Phase {index}: {phase.name}
+              </h3>
+              <p className="text-sm text-dark-600 mt-1">{phase.description}</p>
+              {phase.details && (
+                <p className="text-xs text-dark-500 mt-2 font-mono">{phase.details}</p>
+              )}
+            </div>
+            {phase.status === 'in_progress' && phase.progress && (
+              <span className="text-sm font-medium text-primary-700">
+                {phase.progress}%
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+

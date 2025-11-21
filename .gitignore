@@ -7,4 +7,16 @@ node_modules/
 .pytest_cache/
 .secrets/*.key
 .env
+.env.*
+.env.backup.*
+.env.bak.*
+config.env
 exports/
+logs/
+*.log
+mongodb_export/
+*.tar.gz
+*.zip
+data/
+*.db
+*.sqlite

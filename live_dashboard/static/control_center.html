@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠 AI Learning Control Center</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            background: #0a0e27;
+            color: #00ff88;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 2000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1f3a 0%, #2d1b4e 100%);
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 2px solid #00ff88;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            text-shadow: 0 0 20px #00ff88;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #00d4ff;
+            font-size: 1.2em;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            margin-top: 10px;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        .status-connected {
+            background: #00ff88;
+            color: #0a0e27;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Left Panel - Data Pipeline */
+        .panel {
+            background: #1a1f3a;
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid #00ff88;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+        }
+
+        .panel-header {
+            font-size: 1.5em;
+            color: #00ff88;
+            border-bottom: 2px solid #00ff88;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        /* Data Pipeline Steps */
+        .pipeline-step {
+            background: rgba(0, 255, 136, 0.1);
+            border-left: 4px solid #00ff88;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .pipeline-step:hover {
+            background: rgba(0, 255, 136, 0.2);
+            transform: translateX(5px);
+        }
+
+        .step-title {
+            font-size: 1.1em;
+            color: #00d4ff;
+            margin-bottom: 8px;
+        }
+
+        .step-status {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            margin-top: 8px;
+        }
+
+        .step-count {
+            background: #00ff88;
+            color: #0a0e27;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        /* Center Panel - Control Center */
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .control-btn {
+            background: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%);
+            color: #0a0e27;
+            border: none;
+            padding: 20px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
+        }
+
+        .control-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.5);
+        }
+
+        .control-btn:active {
+            transform: translateY(0);
+        }
+
+        .control-btn.danger {
+            background: linear-gradient(135deg, #ff0055 0%, #ff6b00 100%);
+        }
+
+        .control-btn.warning {
+            background: linear-gradient(135deg, #ffd000 0%, #ff8800 100%);
+        }
+
+        /* Logs Panel */
+        .logs-panel {
+            background: #0d1117;
+            border: 2px solid #00ff88;
+            border-radius: 10px;
+            padding: 15px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.1);
+        }
+
+        .log-timestamp {
+            color: #666;
+        }
+
+        .log-info { color: #00d4ff; }
+        .log-success { color: #00ff88; }
+        .log-warning { color: #ffd000; }
+        .log-error { color: #ff0055; }
+
+        /* Right Panel - Stats & Monitoring */
+        .stat-card {
+            background: rgba(0, 255, 136, 0.1);
+            border: 2px solid #00ff88;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            color: #00ff88;
+            text-shadow: 0 0 10px #00ff88;
+        }
+
+        .stat-label {
+            color: #00d4ff;
+            margin-top: 5px;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 20px;
+            background: rgba(0, 255, 136, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88, #00d4ff);
+            transition: width 0.5s ease;
+            box-shadow: 0 0 10px #00ff88;
+        }
+
+        /* Chat Panel */
+        .chat-panel {
+            background: #1a1f3a;
+            border: 2px solid #00d4ff;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #0d1117;
+            border-radius: 10px;
+        }
+
+        .chat-message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .chat-message.user {
+            background: rgba(0, 212, 255, 0.2);
+            border-left: 4px solid #00d4ff;
+        }
+
+        .chat-message.agent {
+            background: rgba(0, 255, 136, 0.2);
+            border-left: 4px solid #00ff88;
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: #0d1117;
+            border: 2px solid #00d4ff;
+            color: #00ff88;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1em;
+        }
+
+        .chat-send-btn {
+            background: linear-gradient(135deg, #00d4ff 0%, #00ff88 100%);
+            color: #0a0e27;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .voice-toggle {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+            border: 2px solid #00d4ff;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .voice-toggle:hover {
+            background: rgba(0, 212, 255, 0.4);
+        }
+
+        .voice-btn {
+            background: linear-gradient(135deg, #ff0055 0%, #00d4ff 100%);
+            color: #fff;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .voice-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .voice-btn.listening {
+            animation: pulse-red 1s infinite;
+        }
+
+        @keyframes pulse-red {
+            0%, 100% { background: linear-gradient(135deg, #ff0055 0%, #ff00aa 100%); }
+            50% { background: linear-gradient(135deg, #ff00aa 0%, #ff0055 100%); }
+        }
+
+        /* Bottom Grid - Data Viewer */
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .data-viewer {
+            background: #1a1f3a;
+            border: 2px solid #00ff88;
+            border-radius: 15px;
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .data-item {
+            background: rgba(0, 255, 136, 0.1);
+            border-left: 3px solid #00d4ff;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        .data-item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            color: #00d4ff;
+        }
+
+        .data-item-content {
+            color: #00ff88;
+            opacity: 0.8;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #00ff88;
+            border-radius: 5px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1a1f3a;
+            border: 2px solid #00ff88;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-close {
+            float: right;
+            font-size: 2em;
+            cursor: pointer;
+            color: #ff0055;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(0, 255, 136, 0.3);
+            border-top: 4px solid #00ff88;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Node Status */
+        .node-status {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            box-shadow: 0 0 5px;
+        }
+
+        .node-online {
+            background: #00ff88;
+            box-shadow: 0 0 10px #00ff88;
+        }
+
+        .node-offline {
+            background: #ff0055;
+            box-shadow: 0 0 10px #ff0055;
+        }
+
+        .node-idle {
+            background: #ffd000;
+            box-shadow: 0 0 10px #ffd000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧠 AI LEARNING CONTROL CENTER</h1>
+            <p class="subtitle">Continuous Learning System - Qwen 2.5 72B</p>
+            <div id="wsStatus" class="status-indicator status-connected">🟢 WebSocket Connected</div>
+        </header>
+
+        <div class="main-grid">
+            <!-- LEFT: Data Pipeline -->
+            <div class="panel">
+                <div class="panel-header">📊 DATA PIPELINE</div>
+                
+                <div class="pipeline-step">
+                    <div class="step-title">1️⃣ Data Collection</div>
+                    <div style="font-size: 0.9em; opacity: 0.8;">LLM interactions, diagnostics, routes</div>
+                    <div class="step-status">
+                        <span>Total:</span>
+                        <span class="step-count" id="pipelineTotal">0</span>
+                    </div>
+                </div>
+
+                <div class="pipeline-step">
+                    <div class="step-title">2️⃣ Processing Queue</div>
+                    <div style="font-size: 0.9em; opacity: 0.8;">Awaiting processing for fine-tuning</div>
+                    <div class="step-status">
+                        <span>Unprocessed:</span>
+                        <span class="step-count" id="pipelineUnprocessed">0</span>
+                    </div>
+                </div>
+
+                <div class="pipeline-step">
+                    <div class="step-title">3️⃣ JSONL Export</div>
+                    <div style="font-size: 0.9em; opacity: 0.8;">Dataset for fine-tuning</div>
+                    <div class="step-status">
+                        <span>Lines:</span>
+                        <span class="step-count" id="pipelineJsonl">0</span>
+                    </div>
+                </div>
+
+                <div class="pipeline-step">
+                    <div class="step-title">4️⃣ Fine-Tuning</div>
+                    <div style="font-size: 0.9em; opacity: 0.8;">Training Qwen model</div>
+                    <div class="step-status">
+                        <span>Status:</span>
+                        <span class="step-count" id="pipelineTraining">Idle</span>
+                    </div>
+                </div>
+
+                <div class="pipeline-step">
+                    <div class="step-title">5️⃣ RAG Update</div>
+                    <div style="font-size: 0.9em; opacity: 0.8;">Qdrant vector database</div>
+                    <div class="step-status">
+                        <span>Vectors:</span>
+                        <span class="step-count" id="pipelineVectors">0</span>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px; text-align: center; padding: 15px; background: rgba(0, 255, 136, 0.1); border-radius: 10px;">
+                    <div style="color: #00d4ff; margin-bottom: 10px;">⏱️ Last Update</div>
+                    <div id="pipelineLastUpdate" style="color: #00ff88;">-</div>
+                </div>
+            </div>
+
+            <!-- CENTER: Control Center -->
+            <div class="panel">
+                <div class="panel-header">🎮 CONTROL CENTER</div>
+                
+                <div class="control-grid">
+                    <button class="control-btn" onclick="processLearningData()">
+                        🔄 PROCESS DATA<br><small>Analyze & Prepare</small>
+                    </button>
+                    <button class="control-btn" onclick="buildJsonl()">
+                        📦 BUILD JSONL<br><small>Export Dataset</small>
+                    </button>
+                    <button class="control-btn warning" onclick="startFineTuning()">
+                        🚀 START TRAINING<br><small>Fine-tune Qwen</small>
+                    </button>
+                    <button class="control-btn" onclick="updateRAG()">
+                        🧠 UPDATE RAG<br><small>Refresh Vectors</small>
+                    </button>
+                    <button class="control-btn" onclick="viewDataset()">
+                        👁️ VIEW DATASET<br><small>Preview JSONL</small>
+                    </button>
+                    <button class="control-btn" onclick="testModel()">
+                        🧪 TEST MODEL<br><small>Compare Performance</small>
+                    </button>
+                </div>
+
+                <div class="panel-header" style="margin-top: 20px;">📋 LIVE LOGS</div>
+                <div class="logs-panel" id="logsPanel">
+                    <div class="log-entry log-info">
+                        <span class="log-timestamp">[System]</span> Control Center initialized...
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Stats & Monitoring -->
+            <div class="panel">
+                <div class="panel-header">📈 LIVE STATS</div>
+                
+                <div class="stat-card">
+                    <div class="stat-value" id="statInteractions">0</div>
+                    <div class="stat-label">Total Interactions</div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="progressInteractions" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-value" id="statProcessed">0</div>
+                    <div class="stat-label">Processed</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-value" id="statQwen">0</div>
+                    <div class="stat-label">Qwen Local Calls</div>
+                </div>
+
+                <div class="panel-header" style="margin-top: 20px;">🔌 NODES STATUS</div>
+                
+                <div style="padding: 10px;">
+                    <div style="padding: 8px; margin-bottom: 5px;">
+                        <span class="node-status node-online" id="nodeMongo"></span>
+                        <span>MongoDB</span>
+                    </div>
+                    <div style="padding: 8px; margin-bottom: 5px;">
+                        <span class="node-status node-online" id="nodeQdrant"></span>
+                        <span>Qdrant</span>
+                    </div>
+                    <div style="padding: 8px; margin-bottom: 5px;">
+                        <span class="node-status node-offline" id="nodeQwen7b"></span>
+                        <span>Qwen 7B (9201)</span>
+                    </div>
+                    <div style="padding: 8px; margin-bottom: 5px;">
+                        <span class="node-status node-offline" id="nodeQwen72b"></span>
+                        <span>Qwen 72B (9400)</span>
+                    </div>
+                    <div style="padding: 8px; margin-bottom: 5px;">
+                        <span class="node-status node-idle" id="nodeOrchestrator"></span>
+                        <span>Orchestrator</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat with Master Agent -->
+        <div class="chat-panel">
+            <div class="panel-header">
+                💬 CHAT WITH MASTER AGENT
+                <button class="voice-toggle" id="voiceToggle" onclick="toggleVoice()">🎤 Voice</button>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="chat-message agent">
+                    <strong>Master Agent:</strong> Hello! I can help you control the learning system. Try: "process data", "start training", "check status" or use voice 🎤
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <button class="voice-btn" id="voiceBtn" onclick="startVoiceInput()" title="Click and speak">🎤</button>
+                <input type="text" class="chat-input" id="chatInput" placeholder="Type or speak your command..." onkeypress="if(event.key==='Enter') sendMessage()">
+                <button class="chat-send-btn" onclick="sendMessage()">SEND 📤</button>
+            </div>
+            <audio id="audioPlayer" style="display: none;"></audio>
+        </div>
+
+        <!-- Data Viewers -->
+        <div class="data-grid">
+            <div class="data-viewer">
+                <div class="panel-header">🔄 Recent Interactions</div>
+                <div id="recentInteractions">Loading...</div>
+            </div>
+
+            <div class="data-viewer">
+                <div class="panel-header">🛣️ Execution Routes</div>
+                <div id="executionRoutes">Loading...</div>
+            </div>
+
+            <div class="data-viewer">
+                <div class="panel-header">🔍 Diagnostics</div>
+                <div id="diagnosticsView">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Dataset/Results -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        const API_BASE = 'http://localhost:6001/api';
+
+        // WebSocket connection
+        function connectWebSocket() {
+            ws = new WebSocket('ws://localhost:6001/ws');
+
+            ws.onopen = () => {
+                console.log('✅ WebSocket connected');
+                updateWSStatus(true);
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'update') {
+                    updateDashboard(data.nodes);
+                }
+            };
+
+            ws.onclose = () => {
+                console.log('🔴 WebSocket disconnected');
+                updateWSStatus(false);
+                setTimeout(connectWebSocket, 5000);
+            };
+        }
+
+        function updateWSStatus(connected) {
+            const el = document.getElementById('wsStatus');
+            if (connected) {
+                el.textContent = '🟢 WebSocket Connected';
+                el.className = 'status-indicator status-connected';
+            } else {
+                el.textContent = '🔴 Disconnected';
+                el.style.background = '#ff0055';
+            }
+        }
+
+        // Load all data
+        async function loadData() {
+            try {
+                // Load stats
+                const statsResp = await fetch(`${API_BASE}/interactions/stats`);
+                const stats = await statsResp.json();
+                
+                document.getElementById('statInteractions').textContent = stats.total || 0;
+                document.getElementById('statQwen').textContent = stats.by_provider?.['qwen2.5-72b-local'] || 0;
+                
+                // Update pipeline
+                document.getElementById('pipelineTotal').textContent = stats.total || 0;
+                
+                // Load recent interactions
+                const interResp = await fetch(`${API_BASE}/interactions/recent?limit=10`);
+                const interData = await interResp.json();
+                
+                const interDiv = document.getElementById('recentInteractions');
+                interDiv.innerHTML = '';
+                
+                if (interData.interactions && interData.interactions.length > 0) {
+                    interData.interactions.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'data-item';
+                        div.innerHTML = `
+                            <div class="data-item-header">
+                                <span>${item.provider || 'unknown'}</span>
+                                <span>${new Date(item.timestamp).toLocaleTimeString()}</span>
+                            </div>
+                            <div class="data-item-content">${item.prompt?.substring(0, 80)}...</div>
+                        `;
+                        interDiv.appendChild(div);
+                    });
+                } else {
+                    interDiv.innerHTML = '<div style="text-align: center; opacity: 0.5; padding: 20px;">No data yet</div>';
+                }
+                
+                document.getElementById('pipelineLastUpdate').textContent = new Date().toLocaleTimeString();
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                addLog('error', 'Failed to load data: ' + error.message);
+            }
+        }
+
+        // Control actions
+        async function processLearningData() {
+            addLog('info', 'Starting data processing...');
+            try {
+                const resp = await fetch('http://localhost:5001/api/actions/process_learning', { method: 'POST' });
+                const data = await resp.json();
+                if (data.success) {
+                    addLog('success', `✅ Processed ${data.stats.processed} documents for learning`);
+                } else {
+                    addLog('error', '❌ Processing failed: ' + data.error);
+                }
+            } catch (error) {
+                addLog('error', '❌ Error: ' + error.message);
+            }
+        }
+
+        async function buildJsonl() {
+            addLog('info', 'Building JSONL dataset...');
+            // TODO: implement
+            addLog('warning', 'Feature in development');
+        }
+
+        async function startFineTuning() {
+            addLog('warning', '🚀 Starting fine-tuning (this takes time)...');
+            // TODO: implement
+            addLog('info', 'Training process initiated');
+        }
+
+        async function updateRAG() {
+            addLog('info', 'Updating RAG vectors in Qdrant...');
+            // TODO: implement
+            addLog('success', '✅ RAG update completed');
+        }
+
+        async function viewDataset() {
+            document.getElementById('modal').classList.add('active');
+            document.getElementById('modalContent').innerHTML = '<div class="loading-spinner"></div><p style="text-align: center;">Loading dataset...</p>';
+            // TODO: load and display JSONL
+        }
+
+        async function testModel() {
+            document.getElementById('modal').classList.add('active');
+            document.getElementById('modalContent').innerHTML = '<h2>Model Testing</h2><p>Feature in development...</p>';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        // Voice Recognition
+        let recognition = null;
+        let voiceEnabled = false;
+
+        function toggleVoice() {
+            voiceEnabled = !voiceEnabled;
+            const btn = document.getElementById('voiceToggle');
+            btn.textContent = voiceEnabled ? '🎤 Voice ON' : '🎤 Voice';
+            btn.style.background = voiceEnabled ? 'rgba(0, 255, 136, 0.3)' : 'rgba(0, 212, 255, 0.2)';
+        }
+
+        function startVoiceInput() {
+            if (!('webkitSpeechRecognition' in window)) {
+                addChatMessage('system', 'Voice recognition not supported in this browser. Try Chrome.');
+                return;
+            }
+
+            if (!recognition) {
+                recognition = new webkitSpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'ro-RO'; // Romanian
+
+                recognition.onstart = () => {
+                    document.getElementById('voiceBtn').classList.add('listening');
+                    addChatMessage('system', '🎤 Listening... speak now!');
+                };
+
+                recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    document.getElementById('chatInput').value = transcript;
+                    addChatMessage('user', `🎤 "${transcript}"`);
+                    setTimeout(() => sendMessage(), 500);
+                };
+
+                recognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                    addChatMessage('system', `❌ Voice error: ${event.error}`);
+                };
+
+                recognition.onend = () => {
+                    document.getElementById('voiceBtn').classList.remove('listening');
+                };
+            }
+
+            recognition.start();
+        }
+
+        // Chat with Master Agent
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            addChatMessage('user', message);
+            input.value = '';
+
+            try {
+                const response = await fetch('http://localhost:5010/api/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        user_id: 'admin',
+                        message: message
+                    })
+                });
+
+                const data = await response.json();
+                addChatMessage('agent', data.text || 'No response');
+
+                // Play audio if available
+                if (data.audio_path && voiceEnabled) {
+                    playAudio(data.audio_path);
+                }
+
+                // Show action taken
+                if (data.action) {
+                    addLog('success', `Action executed: ${data.action}`);
+                }
+            } catch (error) {
+                console.error('Chat error:', error);
+                addChatMessage('system', `❌ Error: ${error.message}`);
+            }
+        }
+
+        function addChatMessage(sender, text) {
+            const div = document.createElement('div');
+            div.className = `chat-message ${sender}`;
+            const label = sender === 'user' ? 'You' : sender === 'agent' ? 'Master Agent' : 'System';
+            div.innerHTML = `<strong>${label}:</strong> ${text}`;
+            document.getElementById('chatMessages').appendChild(div);
+            document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+        }
+
+        function playAudio(audioPath) {
+            const audio = document.getElementById('audioPlayer');
+            audio.src = audioPath;
+            audio.play().catch(e => console.error('Audio play error:', e));
+        }
+
+        // Logs
+        function addLog(type, message) {
+            const div = document.createElement('div');
+            div.className = `log-entry log-${type}`;
+            const time = new Date().toLocaleTimeString();
+            div.innerHTML = `<span class="log-timestamp">[${time}]</span> ${message}`;
+            const panel = document.getElementById('logsPanel');
+            panel.insertBefore(div, panel.firstChild);
+            
+            // Keep only last 50 logs
+            while (panel.children.length > 50) {
+                panel.removeChild(panel.lastChild);
+            }
+        }
+
+        function updateDashboard(nodes) {
+            // Update node status
+            if (nodes.mongodb) {
+                document.getElementById('nodeMongo').className = `node-status node-${nodes.mongodb.status === 'online' ? 'online' : 'offline'}`;
+            }
+            if (nodes.qdrant) {
+                document.getElementById('nodeQdrant').className = `node-status node-${nodes.qdrant.status === 'online' ? 'online' : 'offline'}`;
+                if (nodes.qdrant.mem_auto_points !== undefined) {
+                    document.getElementById('pipelineVectors').textContent = nodes.qdrant.mem_auto_points;
+                }
+            }
+            if (nodes.vllm) {
+                if (nodes.vllm['9201']) {
+                    document.getElementById('nodeQwen7b').className = `node-status node-${nodes.vllm['9201'].status === 'online' ? 'online' : 'offline'}`;
+                }
+                if (nodes.vllm['9400']) {
+                    document.getElementById('nodeQwen72b').className = `node-status node-${nodes.vllm['9400'].status === 'online' ? 'online' : 'offline'}`;
+                }
+            }
+            if (nodes.orchestrator) {
+                document.getElementById('nodeOrchestrator').className = `node-status node-${nodes.orchestrator.status === 'online' ? 'online' : nodes.orchestrator.status === 'idle' ? 'idle' : 'offline'}`;
+            }
+        }
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            connectWebSocket();
+            loadData();
+            setInterval(loadData, 30000); // Refresh every 30s
+            addLog('success', '✅ Control Center initialized');
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,41 @@
+{
+  "nodes": [
+    {
+      "id": "tehnica-antifoc.ro",
+      "type": "master",
+      "chunks": 0
+    },
+    {
+      "id": "promat.com",
+      "type": "slave",
+      "chunks": 863
+    },
+    {
+      "id": "ropaintsolutions.ro",
+      "type": "slave",
+      "chunks": 7
+    },
+    {
+      "id": "romfire.ro",
+      "type": "slave",
+      "chunks": 214
+    }
+  ],
+  "edges": [
+    {
+      "source": "tehnica-antifoc.ro",
+      "target": "promat.com",
+      "weight": 1.0
+    },
+    {
+      "source": "tehnica-antifoc.ro",
+      "target": "ropaintsolutions.ro",
+      "weight": 1.0
+    },
+    {
+      "source": "tehnica-antifoc.ro",
+      "target": "romfire.ro",
+      "weight": 1.0
+    }
+  ]
+}

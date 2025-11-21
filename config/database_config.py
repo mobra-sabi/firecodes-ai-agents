@@ -1,11 +1,9 @@
 import os
 
-# Configurare MongoDB
-MONGODB_URI = "mongodb://localhost:27017"
-MONGODB_DATABASE = "ai_agents_db"
-MONGODB_COLLECTION = "site_content"
+MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27018")
+MONGODB_DATABASE = os.getenv("MONGODB_DATABASE", "ai_agents_db")
+MONGODB_COLLECTION = os.getenv("MONGODB_COLLECTION", "site_content")
 
-# Configurare Qdrant
-QDRANT_HOST = "localhost"
-QDRANT_PORT = 6333
-QDRANT_COLLECTION = "site_embeddings"
+QDRANT_HOST = os.getenv("QDRANT_HOST", "localhost")
+QDRANT_PORT = int(os.getenv("QDRANT_PORT", "9306"))
+QDRANT_COLLECTION = os.getenv("QDRANT_COLLECTION", "mem_ai_agents")

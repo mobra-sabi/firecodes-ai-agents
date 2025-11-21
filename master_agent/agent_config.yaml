@@ -1,0 +1,54 @@
+# Master Agent Configuration
+agent:
+  name: "Master Agent"
+  version: "1.0.0"
+  port: 5010
+  host: "0.0.0.0"
+
+connections:
+  mongodb:
+    uri: "mongodb://127.0.0.1:27017/adbrain_ai"
+    database: "adbrain_ai"
+  
+  qdrant:
+    host: "127.0.0.1"
+    port: 6333
+    collection_user_memory: "user_memory"
+  
+  ui_backend:
+    url: "http://127.0.0.1:5001"
+  
+  orchestrator:
+    url: "http://127.0.0.1:18001"
+
+voice:
+  stt:
+    model: "whisper"
+    model_path: "/opt/models/whisper-base"
+    language: "ro"
+  
+  tts:
+    engine: "piper"
+    model_path: "/opt/models/piper/ro_RO-doru-medium"
+    output_dir: "/srv/hf/ai_agents/master_agent/voice/output"
+    sample_rate: 22050
+
+actions:
+  build_jsonl:
+    script: "/srv/hf/ai_agents/fine_tuning/build_jsonl.py"
+    timeout: 300
+  
+  start_finetune:
+    script: "/srv/hf/ai_agents/fine_tuning/train_qwen.sh"
+    timeout: 3600
+  
+  update_qdrant:
+    script: "/srv/hf/ai_agents/rag_updater/update_qdrant.py"
+    timeout: 600
+
+logging:
+  file: "/srv/hf/ai_agents/master_agent/logs/agent_actions.log"
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+

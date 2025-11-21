@@ -1,7 +1,14 @@
 import os
 import uuid
 import requests
+from langchain_ollama import OllamaEmbeddings
 from typing import List, Tuple, Optional
+
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL","nomic-embed-text")
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL","http://127.0.0.1:11434")
+def get_embedder():
+    return OllamaEmbeddings(model=EMBEDDING_MODEL, base_url=OLLAMA_BASE_URL)
+
 
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
@@ -41,7 +48,7 @@ class EmbeddingProvider:
         self.strict = (bool(int(os.getenv("EMBED_STRICT", "0"))) if strict is None else bool(strict))
 
         self._st = None
-        self._dim = 768  # compatibil bge-base + nomic-embed-text
+        self._dim = 1024  # compatibil bge-base + nomic-embed-text
 
         if self.backend not in ("tei", "ollama", "st"):
             self.backend = "tei"
@@ -159,7 +166,7 @@ class EmbeddingProvider:
 
 class QdrantVectorizer:
     def __init__(self):
-        self.client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
+        self.client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT,)
         self.collection_name = QDRANT_COLLECTION
         self.embedder = EmbeddingProvider(
             backend=os.getenv("EMBED_BACKEND", "tei"),

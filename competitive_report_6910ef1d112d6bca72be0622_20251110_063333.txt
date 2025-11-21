@@ -1,0 +1,152 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║   📊 RAPORT COMPETITIVE INTELLIGENCE                                 ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+MASTER AGENT: tehnica-antifoc.ro
+DATA RAPORT: 2025-11-10 06:33:33
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 STATISTICI GENERALE:
+
+  • Total competitori identificați: 306
+  • Competitori cu score > 60: 1
+  • Competitori cu score 40-60: 24
+  • Competitori transformați în agenți: 16
+
+═══════════════════════════════════════════════════════════════════════
+
+🏆 TOP 20 COMPETITORI (după score):
+
+ 1. promat.com                               Score:  67.1  ✅ AGENT
+    • Apariții: 53 keywords
+    • Poziție medie Google: #5.6
+    • Subdomenii: Izolații și hidroizolații, Consultanță și conformitate legislativă, Protecție structuri metalice
+
+ 2. lege5.ro                                 Score:  56.1  ✅ AGENT
+    • Apariții: 31 keywords
+    • Poziție medie Google: #5.2
+    • Subdomenii: Izolații și hidroizolații, Uși și accesorii antifoc, Consultanță și conformitate legislativă
+
+ 3. romfire.ro                               Score:  50.0  ✅ AGENT
+    • Apariții: 17 keywords
+    • Poziție medie Google: #4.5
+    • Subdomenii: Izolații și hidroizolații, Consultanță și conformitate legislativă, Protecție structuri metalice
+
+ 4. protectiilafoc.ro                        Score:  46.7  ✅ AGENT
+    • Apariții: 17 keywords
+    • Poziție medie Google: #5.2
+    • Subdomenii: Sisteme compartimentare antifoc, Protecție structuri metalice, Consultanță și conformitate legislativă
+
+ 5. terrageneralcontractor.ro                Score:  45.1  ✅ AGENT
+    • Apariții: 5 keywords
+    • Poziție medie Google: #1.8
+    • Subdomenii: Izolații și hidroizolații, Consultanță și conformitate legislativă, Matări și etanșări antifoc
+
+ 6. scenariu-securitate-incendiu.ro          Score:  43.3  ✅ AGENT
+    • Apariții: 8 keywords
+    • Poziție medie Google: #4.5
+    • Subdomenii: Izolații și hidroizolații, Sisteme compartimentare antifoc, Protecție structuri metalice
+
+ 7. hilti.ro                                 Score:  42.3  ✅ AGENT
+    • Apariții: 15 keywords
+    • Poziție medie Google: #5.9
+    • Subdomenii: Protecție structuri metalice, Consultanță și conformitate legislativă, Matări și etanșări antifoc
+
+ 8. proidea.ro                               Score:  42.2  ✅ AGENT
+    • Apariții: 12 keywords
+    • Poziție medie Google: #5.1
+    • Subdomenii: Izolații și hidroizolații, Sisteme compartimentare antifoc, Consultanță și conformitate legislativă
+
+ 9. isuautorizari.ro                         Score:  41.5  ✅ AGENT
+    • Apariții: 5 keywords
+    • Poziție medie Google: #2.6
+    • Subdomenii: Consultanță și conformitate legislativă, Matări și etanșări antifoc
+
+10. migs.ro                                  Score:  41.3  ✅ AGENT
+    • Apariții: 8 keywords
+    • Poziție medie Google: #4.5
+    • Subdomenii: Uși și accesorii antifoc, Consultanță și conformitate legislativă, Matări și etanșări antifoc
+
+11. coneco.ro                                Score:  41.2  ✅ AGENT
+    • Apariții: 7 keywords
+    • Poziție medie Google: #4.3
+    • Subdomenii: Izolații și hidroizolații, Protecție structuri metalice, Matări și etanșări antifoc
+
+12. hefest.ro                                Score:  41.1  ✅ AGENT
+    • Apariții: 2 keywords
+    • Poziție medie Google: #1.0
+    • Subdomenii: Protecție structuri metalice
+
+13. ropaintsolutions.ro                      Score:  40.6  ✅ AGENT
+    • Apariții: 12 keywords
+    • Poziție medie Google: #3.9
+    • Subdomenii: Protecție structuri metalice
+
+14. walraven.com                             Score:  40.5  ✅ AGENT
+    • Apariții: 1 keywords
+    • Poziție medie Google: #1.0
+    • Subdomenii: Matări și etanșări antifoc
+
+15. ceb.selemix.com                          Score:  40.5  ✅ AGENT
+    • Apariții: 1 keywords
+    • Poziție medie Google: #1.0
+    • Subdomenii: Protecție structuri metalice
+
+16. eurobac.ro                               Score:  40.5  
+    • Apariții: 1 keywords
+    • Poziție medie Google: #1.0
+    • Subdomenii: Uși și accesorii antifoc
+
+17. eurosandoor.ro                           Score:  40.5  
+    • Apariții: 1 keywords
+    • Poziție medie Google: #1.0
+    • Subdomenii: Uși și accesorii antifoc
+
+18. clapeteantifoc.ro                        Score:  40.5  
+    • Apariții: 1 keywords
+    • Poziție medie Google: #1.0
+    • Subdomenii: Izolații și hidroizolații
+
+19. xn--hidroizolaii-terase-fzg.ro           Score:  40.5  
+    • Apariții: 1 keywords
+    • Poziție medie Google: #1.0
+    • Subdomenii: Izolații și hidroizolații
+
+20. izorom.ro                                Score:  40.5  
+    • Apariții: 1 keywords
+    • Poziție medie Google: #1.0
+    • Subdomenii: Izolații și hidroizolații
+
+═══════════════════════════════════════════════════════════════════════
+
+📦 ANALIZA PER SUBDOMENIU:
+
+Matări și etanșări antifoc:
+  • Competitori: 49
+  • Top 5: coneco.ro, bucuresticonstruct.ro, protectiilafoc.ro, romfire.ro, hilti.ro
+
+Protecție structuri metalice:
+  • Competitori: 58
+  • Top 5: coneco.ro, bucuresticonstruct.ro, protectiilafoc.ro, romfire.ro, hilti.ro
+
+Sisteme compartimentare antifoc:
+  • Competitori: 53
+  • Top 5: protectiilafoc.ro, romfire.ro, promat.com, lege5.ro, securitate-incendiu-constructii.ro
+
+Uși și accesorii antifoc:
+  • Competitori: 50
+  • Top 5: lege5.ro, migs.ro, speedfire.ro, usi365.ro, servsting.com
+
+Izolații și hidroizolații:
+  • Competitori: 64
+  • Top 5: coneco.ro, romfire.ro, promat.com, terrageneralcontractor.ro, lege5.ro
+
+Consultanță și conformitate legislativă:
+  • Competitori: 58
+  • Top 5: protectiilafoc.ro, romfire.ro, hilti.ro, promat.com, vafrom.ro
+
+═══════════════════════════════════════════════════════════════════════
+

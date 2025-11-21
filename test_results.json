@@ -1,0 +1,151 @@
+{
+  "timestamp": "2025-11-19T13:07:47.450124+00:00",
+  "tests": [
+    {
+      "name": "Health Check",
+      "status": "FAIL",
+      "timestamp": "2025-11-19T13:07:57.464983+00:00",
+      "details": {
+        "error": "HTTPConnectionPool(host='localhost', port=8090): Read timed out. (read timeout=10)"
+      },
+      "is_real": null
+    },
+    {
+      "name": "API Stats",
+      "status": "FAIL",
+      "timestamp": "2025-11-19T13:08:07.476337+00:00",
+      "details": {
+        "error": "HTTPConnectionPool(host='localhost', port=8090): Read timed out. (read timeout=10)"
+      },
+      "is_real": null
+    },
+    {
+      "name": "Agents List",
+      "status": "PASS",
+      "timestamp": "2025-11-19T13:08:14.937040+00:00",
+      "details": {
+        "total_agents": 164,
+        "agents_with_domain": 5,
+        "sample_agent": {
+          "_id": "691c0fe55eb1766cbe72009e",
+          "domain": "isuautorizari.ro",
+          "site_url": "https://www.isuautorizari.ro/sprinklere/",
+          "status": "validated",
+          "pages_indexed": 0,
+          "chunks_indexed": 720,
+          "master_agent_id": "68ff439a6c54d01d42bb6519",
+          "createdAt": "2025-11-18T22:18:46.407000",
+          "keywords_count": 0,
+          "competitors_count": 0
+        }
+      },
+      "is_real": true
+    },
+    {
+      "name": "Agent Details",
+      "status": "PASS",
+      "timestamp": "2025-11-19T13:08:14.963835+00:00",
+      "details": {
+        "agent_id": "68ff439a6c54d01d42bb6519",
+        "has_domain": true,
+        "has_keywords": true,
+        "has_embeddings": false
+      },
+      "is_real": true
+    },
+    {
+      "name": "SERP Rankings Statistics",
+      "status": "FAIL",
+      "timestamp": "2025-11-19T13:08:14.970954+00:00",
+      "details": {
+        "status_code": 404
+      },
+      "is_real": null
+    },
+    {
+      "name": "Playbook Generation",
+      "status": "FAIL",
+      "timestamp": "2025-11-19T13:08:14.977323+00:00",
+      "details": {
+        "status_code": 404,
+        "response": "{\"detail\":\"Not Found\"}"
+      },
+      "is_real": null
+    },
+    {
+      "name": "Orchestrator Insights",
+      "status": "PASS",
+      "timestamp": "2025-11-19T13:08:15.009765+00:00",
+      "details": {
+        "total_actions": 3553,
+        "patterns_found": 0,
+        "insights": 13
+      },
+      "is_real": true
+    },
+    {
+      "name": "Actions Queue Stats",
+      "status": "FAIL",
+      "timestamp": "2025-11-19T13:08:15.175893+00:00",
+      "details": {
+        "status_code": 404
+      },
+      "is_real": null
+    },
+    {
+      "name": "Intelligence Overview",
+      "status": "PASS",
+      "timestamp": "2025-11-19T13:08:15.235867+00:00",
+      "details": {
+        "total_agents": null,
+        "total_keywords": 2889,
+        "total_competitors": 819
+      },
+      "is_real": false
+    },
+    {
+      "name": "Database Integrity",
+      "status": "PASS",
+      "timestamp": "2025-11-19T13:08:15.249992+00:00",
+      "details": {
+        "total_agents": 164,
+        "agents_with_domain": 164,
+        "agents_with_keywords": 56,
+        "agents_with_embeddings": 115,
+        "serp_results": 2355,
+        "orchestrator_actions": 3556,
+        "data_quality": "100.0%"
+      },
+      "is_real": true
+    },
+    {
+      "name": "GPU/Embeddings Usage",
+      "status": "PASS",
+      "timestamp": "2025-11-19T13:08:16.774769+00:00",
+      "details": {
+        "agents_with_embeddings": 115,
+        "qdrant_collections": 366,
+        "total_vectors": 2043,
+        "gpu_used": true
+      },
+      "is_real": true
+    },
+    {
+      "name": "LLM Usage",
+      "status": "PASS",
+      "timestamp": "2025-11-19T13:08:16.778425+00:00",
+      "details": {
+        "recent_actions_checked": 10,
+        "llm_detected": false,
+        "competitive_analysis_docs": 210
+      },
+      "is_real": true
+    }
+  ],
+  "summary": {
+    "total": 12,
+    "passed": 7,
+    "failed": 5,
+    "warnings": 0
+  }
+}

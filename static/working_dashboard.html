@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 AI Agent Platform - Working Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .header h1 { font-size: 32px; color: #1f2937; margin-bottom: 10px; }
+        .header p { color: #6b7280; font-size: 16px; }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .stat-card h3 { color: #6b7280; font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+        .stat-card .value { font-size: 36px; font-weight: 700; color: #1f2937; }
+        .agents-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .agents-section h2 { margin-bottom: 20px; color: #1f2937; }
+        .agent-card {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+        .agent-card h3 { color: #1f2937; margin-bottom: 10px; }
+        .agent-card p { color: #6b7280; font-size: 14px; margin: 5px 0; }
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .badge-master { background: #dbeafe; color: #1e40af; }
+        .badge-slave { background: #fef3c7; color: #92400e; }
+        .badge-active { background: #d1fae5; color: #065f46; }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover { background: #5568d3; }
+        .loading { text-align: center; padding: 40px; color: white; font-size: 18px; }
+        .error { background: #fee2e2; color: #991b1b; padding: 15px; border-radius: 8px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Agent Platform</h1>
+            <p>Competitive Intelligence Dashboard</p>
+        </div>
+
+        <div id="loading" class="loading">Loading data...</div>
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="content" style="display: none;">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Master Agents</h3>
+                    <div class="value" id="masterAgents">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Slave Agents</h3>
+                    <div class="value" id="slaveAgents">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Keywords</h3>
+                    <div class="value" id="totalKeywords">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Reports</h3>
+                    <div class="value" id="reports">-</div>
+                </div>
+            </div>
+
+            <div class="agents-section">
+                <h2>📊 Master Agents</h2>
+                <div id="agentsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://etc-korea-survivors-nest.trycloudflare.com';
+        
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_URL}/stats`, {
+                    headers: {
+                        'Authorization': 'Bearer demo-token-bypass'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                document.getElementById('masterAgents').textContent = data.master_agents;
+                document.getElementById('slaveAgents').textContent = data.slave_agents;
+                document.getElementById('totalKeywords').textContent = data.total_keywords;
+                document.getElementById('reports').textContent = data.reports;
+                
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                throw error;
+            }
+        }
+        
+        async function loadAgents() {
+            try {
+                const response = await fetch(`${API_URL}/agents?type=master`, {
+                    headers: {
+                        'Authorization': 'Bearer demo-token-bypass'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const agents = await response.json();
+                const agentsList = document.getElementById('agentsList');
+                
+                if (agents.length === 0) {
+                    agentsList.innerHTML = '<p style="color: #6b7280;">No agents yet. Create your first agent!</p>';
+                    return;
+                }
+                
+                agentsList.innerHTML = agents.map(agent => `
+                    <div class="agent-card">
+                        <h3>
+                            ${agent.domain}
+                            <span class="badge badge-${agent.agent_type}">${agent.agent_type}</span>
+                            <span class="badge badge-${agent.status}">${agent.status}</span>
+                        </h3>
+                        <p><strong>URL:</strong> ${agent.site_url}</p>
+                        <p><strong>Industry:</strong> ${agent.industry || 'N/A'}</p>
+                        <p><strong>Chunks:</strong> ${agent.chunks_indexed || 0} | <strong>Keywords:</strong> ${agent.keyword_count || 0} | <strong>Slaves:</strong> ${agent.slave_count || 0}</p>
+                        <p><strong>Created:</strong> ${new Date(agent.created_at).toLocaleString()}</p>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Error loading agents:', error);
+                throw error;
+            }
+        }
+        
+        async function init() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
+                document.getElementById('content').style.display = 'none';
+                
+                await Promise.all([loadStats(), loadAgents()]);
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+                
+                // Auto-refresh every 30 seconds
+                setInterval(async () => {
+                    try {
+                        await Promise.all([loadStats(), loadAgents()]);
+                    } catch (error) {
+                        console.error('Auto-refresh error:', error);
+                    }
+                }, 30000);
+                
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = `Error: ${error.message}. Check console for details.`;
+            }
+        }
+        
+        // Start loading
+        init();
+    </script>
+</body>
+</html>
+

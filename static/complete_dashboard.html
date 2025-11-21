@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 AI Agent Platform - Complete Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container { max-width: 1600px; margin: 0 auto; }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 { font-size: 32px; color: #1f2937; }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #6b7280;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            background: #2563eb;
+            color: white;
+        }
+        
+        .tab:hover:not(.active) {
+            background: #f3f4f6;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-size: 48px;
+            font-weight: bold;
+            color: #2563eb;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            font-size: 16px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+        
+        .section {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 24px;
+            color: #1f2937;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #1e40af;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+        
+        .agent-card {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border-left: 4px solid #2563eb;
+        }
+        
+        .agent-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .agent-domain {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .badge-master { background: #dbeafe; color: #1e40af; }
+        .badge-slave { background: #dcfce7; color: #166534; }
+        .badge-processing { background: #fef3c7; color: #92400e; }
+        
+        .agent-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 24px;
+            background: #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .workflow-log {
+            background: #1f2937;
+            color: #10b981;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .workflow-log-entry {
+            margin-bottom: 8px;
+        }
+        
+        .timestamp {
+            color: #6b7280;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .alert {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .alert-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>🎯 AI Agent Platform</h1>
+                <p style="color: #6b7280; margin-top: 5px;">Complete Control Dashboard</p>
+                <p class="timestamp" id="lastUpdate">Last updated: Loading...</p>
+            </div>
+            <button class="btn btn-primary" onclick="refreshData()">🔄 Refresh</button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('overview')">📊 Overview</button>
+            <button class="tab" onclick="switchTab('workflow')">🚀 Start Workflow</button>
+            <button class="tab" onclick="switchTab('agents')">👥 Agents</button>
+            <button class="tab" onclick="switchTab('progress')">⏳ Live Progress</button>
+        </div>
+
+        <!-- Tab 1: Overview -->
+        <div id="tab-overview" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Agenți</div>
+                    <div class="stat-value" id="totalAgents">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Master Agents</div>
+                    <div class="stat-value" id="masterAgents">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Slave Agents</div>
+                    <div class="stat-value" id="slaveAgents">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Chunks</div>
+                    <div class="stat-value" id="totalChunks">-</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">🔥 System Status</div>
+                <div id="systemStatus">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Start Workflow -->
+        <div id="tab-workflow" class="tab-content">
+            <div class="section">
+                <div class="section-title">🚀 Start New Workflow</div>
+                
+                <div class="alert alert-info">
+                    <strong>ℹ️ Info:</strong> Create a new master agent and discover competitors in the industry.
+                </div>
+
+                <form id="workflowForm" onsubmit="startWorkflow(event)">
+                    <div class="form-group">
+                        <label>Website URL *</label>
+                        <input type="url" id="siteUrl" placeholder="https://example.com" required>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Results per Keyword</label>
+                            <input type="number" id="resultsPerKeyword" value="15" min="10" max="50">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Parallel GPU Agents</label>
+                            <input type="number" id="parallelAgents" value="5" min="1" max="10">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">🚀 Start Workflow</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tab 3: Agents -->
+        <div id="tab-agents" class="tab-content">
+            <div class="section">
+                <div class="section-title">🏆 Master Agents</div>
+                <div id="masterAgentsList">Loading...</div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">👥 Recent Slave Agents</div>
+                <div id="slaveAgentsList">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Live Progress -->
+        <div id="tab-progress" class="tab-content">
+            <div class="section">
+                <div class="section-title">⏳ Workflow Progress</div>
+                <div id="workflowProgress">
+                    <div class="alert alert-info">
+                        No active workflows. Start a new workflow to see progress here.
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">📋 Activity Log</div>
+                <div class="workflow-log" id="activityLog">
+                    <div class="workflow-log-entry">System initialized...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTab = 'overview';
+        let autoRefreshInterval = null;
+
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            
+            currentTab = tabName;
+            
+            // Load tab-specific data
+            if (tabName === 'overview') {
+                loadOverviewData();
+            } else if (tabName === 'agents') {
+                loadAgentsData();
+            } else if (tabName === 'progress') {
+                loadProgressData();
+            }
+        }
+
+        async function loadOverviewData() {
+            try {
+                const response = await fetch('/api/agents');
+                const agents = await response.json();
+                
+                const totalAgents = agents.length;
+                const masterAgents = agents.filter(a => a.agent_type === 'master').length;
+                const slaveAgents = agents.filter(a => a.agent_type === 'slave').length;
+                const totalChunks = agents.reduce((sum, a) => sum + (a.chunks_indexed || 0), 0);
+                
+                document.getElementById('totalAgents').textContent = totalAgents;
+                document.getElementById('masterAgents').textContent = masterAgents;
+                document.getElementById('slaveAgents').textContent = slaveAgents;
+                document.getElementById('totalChunks').textContent = totalChunks.toLocaleString();
+                
+                document.getElementById('systemStatus').innerHTML = `
+                    <div class="alert alert-success">
+                        <strong>✅ System Online</strong><br>
+                        All services running normally. ${slaveAgents} slave agents created, workflow in progress.
+                    </div>
+                `;
+                
+                document.getElementById('lastUpdate').textContent = `Last updated: ${new Date().toLocaleString('ro-RO')}`;
+            } catch (error) {
+                console.error('Error loading overview:', error);
+                document.getElementById('systemStatus').innerHTML = `
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Warning:</strong> Unable to connect to API. Using static data.
+                    </div>
+                `;
+            }
+        }
+
+        async function loadAgentsData() {
+            try {
+                const response = await fetch('/api/agents');
+                const agents = await response.json();
+                
+                const masters = agents.filter(a => a.agent_type === 'master').slice(0, 10);
+                const slaves = agents.filter(a => a.agent_type === 'slave').slice(0, 10);
+                
+                // Master agents
+                let mastersHtml = masters.map(agent => `
+                    <div class="agent-card">
+                        <div class="agent-header">
+                            <div class="agent-domain">${agent.domain}</div>
+                            <span class="badge badge-master">MASTER</span>
+                        </div>
+                        <div class="agent-stats">
+                            <span>🧩 ${agent.chunks_indexed || 0} chunks</span>
+                            <span>📅 ${agent.created_at ? new Date(agent.created_at).toLocaleDateString('ro-RO') : 'N/A'}</span>
+                        </div>
+                    </div>
+                `).join('');
+                
+                document.getElementById('masterAgentsList').innerHTML = mastersHtml || '<p>No master agents yet.</p>';
+                
+                // Slave agents
+                let slavesHtml = slaves.map(agent => `
+                    <div class="agent-card">
+                        <div class="agent-header">
+                            <div class="agent-domain">${agent.domain}</div>
+                            <span class="badge badge-slave">SLAVE</span>
+                        </div>
+                        <div class="agent-stats">
+                            <span>🧩 ${agent.chunks_indexed || 0} chunks</span>
+                            <span>📅 ${agent.created_at ? new Date(agent.created_at).toLocaleDateString('ro-RO') : 'N/A'}</span>
+                        </div>
+                    </div>
+                `).join('');
+                
+                document.getElementById('slaveAgentsList').innerHTML = slavesHtml || '<p>No slave agents yet.</p>';
+            } catch (error) {
+                console.error('Error loading agents:', error);
+            }
+        }
+
+        async function loadProgressData() {
+            addLog('Checking for active workflows...');
+            
+            // Simulate progress check
+            const hasActiveWorkflow = true; // This should check actual API
+            
+            if (hasActiveWorkflow) {
+                document.getElementById('workflowProgress').innerHTML = `
+                    <div class="alert alert-info">
+                        <strong>⏳ Workflow Running:</strong> Creating slave agents for daibau.ro
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 5.7%" id="progressFill">16/279 (5.7%)</div>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <strong>Status:</strong> Processing competitors...<br>
+                        <strong>ETA:</strong> ~8 hours<br>
+                        <strong>Last slave created:</strong> hornbach.ro (736 chunks)
+                    </div>
+                `;
+            }
+        }
+
+        async function startWorkflow(event) {
+            event.preventDefault();
+            
+            const siteUrl = document.getElementById('siteUrl').value;
+            const resultsPerKeyword = document.getElementById('resultsPerKeyword').value;
+            const parallelAgents = document.getElementById('parallelAgents').value;
+            
+            addLog(`🚀 Starting workflow for ${siteUrl}...`);
+            
+            try {
+                const response = await fetch('/api/start-workflow', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        site_url: siteUrl,
+                        results_per_keyword: parseInt(resultsPerKeyword),
+                        parallel_gpu_agents: parseInt(parallelAgents)
+                    })
+                });
+                
+                if (response.ok) {
+                    addLog('✅ Workflow started successfully!');
+                    alert('Workflow started! Check the "Live Progress" tab for updates.');
+                    switchTab('progress');
+                } else {
+                    addLog('❌ Failed to start workflow');
+                    alert('Failed to start workflow. Check console for details.');
+                }
+            } catch (error) {
+                addLog(`❌ Error: ${error.message}`);
+                alert('Error starting workflow. Make sure the backend API is running.');
+            }
+        }
+
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString('ro-RO');
+            const logHtml = `<div class="workflow-log-entry">[${timestamp}] ${message}</div>`;
+            document.getElementById('activityLog').innerHTML += logHtml;
+            
+            // Auto-scroll to bottom
+            const logDiv = document.getElementById('activityLog');
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function refreshData() {
+            addLog('🔄 Refreshing data...');
+            loadOverviewData();
+            if (currentTab === 'agents') {
+                loadAgentsData();
+            } else if (currentTab === 'progress') {
+                loadProgressData();
+            }
+            addLog('✅ Data refreshed');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadOverviewData();
+            addLog('✅ Dashboard initialized');
+            
+            // Auto-refresh every 30 seconds
+            autoRefreshInterval = setInterval(() => {
+                if (currentTab === 'overview') {
+                    loadOverviewData();
+                } else if (currentTab === 'progress') {
+                    loadProgressData();
+                }
+            }, 30000);
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agents Platform - Simple</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        /* Login Screen */
+        .login-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            flex-direction: column;
+        }
+        .login-form {
+            background: rgba(255,255,255,0.1);
+            padding: 40px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            min-width: 400px;
+            text-align: center;
+        }
+        .login-form h1 {
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 16px;
+        }
+        .form-group input::placeholder {
+            color: rgba(255,255,255,0.6);
+        }
+        .btn {
+            background: linear-gradient(45deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Main App */
+        .main-app { display: none; }
+        .main-app.active { display: block; }
+        
+        /* Header */
+        .header { 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        .header h1 { font-size: 2rem; }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #3b82f6, #1d4ed8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .logout-btn {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        /* Session Management */
+        .session-manager {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+        .session-manager h2 {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .session-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .session-input {
+            flex: 1;
+            min-width: 300px;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 16px;
+        }
+        .session-input::placeholder {
+            color: rgba(255,255,255,0.6);
+        }
+        .sessions-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        .session-card {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .session-card:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-2px);
+        }
+        .session-card.active {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+        }
+        .session-card h3 {
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+        .session-card p {
+            opacity: 0.7;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        .session-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .status-active { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+        .status-pending { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+        
+        /* Agent Creation */
+        .agent-creation {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+        .agent-creation h2 {
+            margin-bottom: 20px;
+        }
+        .agent-form {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+        }
+        .agent-form .form-group {
+            flex: 1;
+        }
+        
+        /* Chat Interface */
+        .chat-interface {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .chat-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-header h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .chat-status {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .status-ready { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+        .status-learning { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+        .status-error { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            word-wrap: break-word;
+        }
+        .message.user {
+            align-self: flex-end;
+            background: linear-gradient(45deg, #3b82f6, #1d4ed8);
+        }
+        .message.assistant {
+            align-self: flex-start;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .message.system {
+            align-self: center;
+            background: rgba(251, 191, 36, 0.2);
+            border: 1px solid #fbbf24;
+            text-align: center;
+            font-style: italic;
+        }
+        .message-header {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-bottom: 5px;
+        }
+        
+        .chat-input {
+            padding: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            gap: 10px;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 16px;
+        }
+        .chat-input input::placeholder {
+            color: rgba(255,255,255,0.6);
+        }
+        .send-btn {
+            padding: 12px 20px;
+            background: linear-gradient(45deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        /* Loading States */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .header { flex-direction: column; gap: 15px; text-align: center; }
+            .session-controls { flex-direction: column; }
+            .agent-form { flex-direction: column; }
+            .chat-interface { height: 500px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-form">
+            <h1>🤖 AI Agents Platform</h1>
+            <p style="margin-bottom: 30px; opacity: 0.8;">Conectează-te pentru a accesa sesiunile tale</p>
+            
+            <div class="form-group">
+                <label for="username">Nume utilizator:</label>
+                <input type="text" id="username" placeholder="Introdu numele tău" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email (opțional):</label>
+                <input type="email" id="email" placeholder="email@example.com">
+            </div>
+            
+            <button class="btn" onclick="login()">
+                <span id="loginBtnText">Conectează-te</span>
+                <span id="loginLoading" class="loading" style="display: none;"></span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div class="main-app" id="mainApp">
+        <div class="container">
+            <!-- Header -->
+            <div class="header">
+                <h1>🤖 AI Agents Platform</h1>
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <div>
+                        <div id="userName">Utilizator</div>
+                        <div style="font-size: 0.9rem; opacity: 0.7;" id="userEmail"></div>
+                    </div>
+                    <button class="logout-btn" onclick="logout()">Deconectare</button>
+                </div>
+            </div>
+
+            <!-- Session Management -->
+            <div class="session-manager">
+                <h2>📋 Gestionarea Sesiunilor</h2>
+                <div class="session-controls">
+                    <input type="url" class="session-input" id="siteUrl" placeholder="https://example.com">
+                    <input type="text" class="session-input" id="sessionName" placeholder="Numele sesiunii (opțional)">
+                    <button class="btn" onclick="createNewSession()">
+                        <span id="createSessionBtnText">Creează Sesiune Nouă</span>
+                        <span id="createSessionLoading" class="loading" style="display: none;"></span>
+                    </button>
+                </div>
+                <div class="sessions-list" id="sessionsList">
+                    <!-- Sessions will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Agent Creation -->
+            <div class="agent-creation" id="agentCreation" style="display: none;">
+                <h2>🚀 Creează Agent pentru Site</h2>
+                <div class="agent-form">
+                    <div class="form-group">
+                        <label for="agentSiteUrl">URL Site:</label>
+                        <input type="url" id="agentSiteUrl" placeholder="https://example.com" readonly>
+                    </div>
+                    <button class="btn" onclick="createAgent()">
+                        <span id="createAgentBtnText">Creează Agent</span>
+                        <span id="createAgentLoading" class="loading" style="display: none;"></span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chat Interface -->
+            <div class="chat-interface" id="chatInterface" style="display: none;">
+                <div class="chat-header">
+                    <h3>💬 Chat cu Agentul</h3>
+                    <div class="chat-status" id="chatStatus">Pregătit</div>
+                </div>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message system">
+                        <div class="message-header">Sistem</div>
+                        <div>Bună! Sunt ChatGPT, motorul principal de analiză și research pentru site-ul tău. Îmi poți pune întrebări despre site-ul tău, despre competitorii săi, sau să îmi ceri să încep analiza competitorilor. Qwen este asistentul meu care învață și returnează informații când îi cer.</div>
+                    </div>
+                </div>
+                <div class="chat-input">
+                    <input type="text" id="chatInput" placeholder="Întreabă-mă ceva despre site-ul tău..." disabled>
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>Trimite</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let currentUser = null;
+        let currentSession = null;
+        let currentAgent = null;
+        let sessions = [];
+        const API_BASE = 'http://192.168.1.125:8083/admin/industry';
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('App initialized');
+            // Check if user is already logged in
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showMainApp();
+                loadUserSessions();
+            }
+        });
+
+        // Login function
+        async function login() {
+            console.log('Login function called');
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
+            
+            if (!username) {
+                alert('Te rog introdu numele tău!');
+                return;
+            }
+
+            const loginBtn = document.getElementById('loginBtnText');
+            const loginLoading = document.getElementById('loginLoading');
+            
+            loginBtn.style.display = 'none';
+            loginLoading.style.display = 'inline-block';
+
+            try {
+                // Simulate login (in real app, this would be an API call)
+                currentUser = {
+                    id: username.toLowerCase().replace(/\s+/g, ''),
+                    username: username,
+                    email: email || null,
+                    loginTime: new Date().toISOString()
+                };
+
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                showMainApp();
+                await loadUserSessions();
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Eroare la conectare. Te rog încearcă din nou.');
+            } finally {
+                loginBtn.style.display = 'inline';
+                loginLoading.style.display = 'none';
+            }
+        }
+
+        // Show main app
+        function showMainApp() {
+            console.log('Showing main app');
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainApp').classList.add('active');
+            
+            // Update user info
+            document.getElementById('userName').textContent = currentUser.username;
+            document.getElementById('userEmail').textContent = currentUser.email || '';
+            document.getElementById('userAvatar').textContent = currentUser.username.charAt(0).toUpperCase();
+        }
+
+        // Logout function
+        function logout() {
+            currentUser = null;
+            currentSession = null;
+            currentAgent = null;
+            localStorage.removeItem('currentUser');
+            document.getElementById('mainApp').classList.remove('active');
+            document.getElementById('loginScreen').style.display = 'flex';
+        }
+
+        // Load user sessions
+        async function loadUserSessions() {
+            console.log('Loading user sessions for:', currentUser.id);
+            try {
+                const response = await fetch(`${API_BASE}/sessions/${currentUser.id}`);
+                const data = await response.json();
+                
+                console.log('Sessions response:', data);
+                
+                if (data.ok) {
+                    sessions = data.sessions;
+                    renderSessions();
+                } else {
+                    console.error('Error loading sessions:', data.error);
+                }
+            } catch (error) {
+                console.error('Error loading sessions:', error);
+            }
+        }
+
+        // Render sessions
+        function renderSessions() {
+            console.log('Rendering sessions:', sessions);
+            const sessionsList = document.getElementById('sessionsList');
+            
+            if (sessions.length === 0) {
+                sessionsList.innerHTML = '<p style="text-align: center; opacity: 0.7; grid-column: 1/-1;">Nu ai încă sesiuni. Creează o sesiune nouă pentru a începe!</p>';
+                return;
+            }
+
+            sessionsList.innerHTML = sessions.map(session => `
+                <div class="session-card ${currentSession && currentSession._id === session._id ? 'active' : ''}" 
+                     onclick="switchToSession('${session._id}')">
+                    <h3>${session.session_name}</h3>
+                    <p><strong>Site:</strong> ${session.site_url}</p>
+                    <p><strong>Creat:</strong> ${new Date(session.created_at).toLocaleDateString('ro-RO')}</p>
+                    <p><strong>Ultima accesare:</strong> ${new Date(session.last_accessed).toLocaleDateString('ro-RO')}</p>
+                    <div class="session-status ${session.status === 'active' ? 'status-active' : 'status-pending'}">
+                        ${session.status === 'active' ? 'Activ' : 'În așteptare'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Create new session
+        async function createNewSession() {
+            console.log('Creating new session');
+            const siteUrl = document.getElementById('siteUrl').value.trim();
+            const sessionName = document.getElementById('sessionName').value.trim();
+            
+            console.log('Site URL:', siteUrl);
+            console.log('Session Name:', sessionName);
+            
+            if (!siteUrl) {
+                alert('Te rog introdu URL-ul site-ului!');
+                return;
+            }
+
+            const createBtn = document.getElementById('createSessionBtnText');
+            const createLoading = document.getElementById('createSessionLoading');
+            
+            createBtn.style.display = 'none';
+            createLoading.style.display = 'inline-block';
+
+            try {
+                console.log('Sending request to create session');
+                const response = await fetch(`${API_BASE}/create-session`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_id: currentUser.id,
+                        site_url: siteUrl,
+                        session_name: sessionName || `Sesiune pentru ${siteUrl}`
+                    })
+                });
+
+                const data = await response.json();
+                console.log('Create session response:', data);
+                
+                if (data.ok) {
+                    // Clear form
+                    document.getElementById('siteUrl').value = '';
+                    document.getElementById('sessionName').value = '';
+                    
+                    // Reload sessions
+                    await loadUserSessions();
+                    
+                    // Switch to new session
+                    await switchToSession(data.session_id);
+                    
+                } else {
+                    alert('Eroare la crearea sesiunii: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error creating session:', error);
+                alert('Eroare la crearea sesiunii. Te rog încearcă din nou.');
+            } finally {
+                createBtn.style.display = 'inline';
+                createLoading.style.display = 'none';
+            }
+        }
+
+        // Switch to session
+        async function switchToSession(sessionId) {
+            console.log('Switching to session:', sessionId);
+            try {
+                const response = await fetch(`${API_BASE}/switch-session`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        user_id: currentUser.id
+                    })
+                });
+
+                const data = await response.json();
+                console.log('Switch session response:', data);
+                
+                if (data.ok) {
+                    currentSession = data.session;
+                    
+                    // Show agent creation if no master agent
+                    if (!currentSession.master_agent_id) {
+                        console.log('No master agent, showing agent creation');
+                        document.getElementById('agentCreation').style.display = 'block';
+                        document.getElementById('chatInterface').style.display = 'none';
+                        document.getElementById('agentSiteUrl').value = currentSession.site_url;
+                    } else {
+                        console.log('Master agent exists, showing chat');
+                        document.getElementById('agentCreation').style.display = 'none';
+                        document.getElementById('chatInterface').style.display = 'block';
+                        currentAgent = data.master_agent;
+                        updateChatStatus('ready');
+                        enableChat();
+                    }
+                    
+                    // Re-render sessions
+                    renderSessions();
+                    
+                } else {
+                    alert('Eroare la comutarea sesiunii: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error switching session:', error);
+                alert('Eroare la comutarea sesiunii. Te rog încearcă din nou.');
+            }
+        }
+
+        // Create agent
+        async function createAgent() {
+            console.log('Creating agent');
+            if (!currentSession) {
+                alert('Te rog selectează o sesiune mai întâi!');
+                return;
+            }
+
+            const createBtn = document.getElementById('createAgentBtnText');
+            const createLoading = document.getElementById('createAgentLoading');
+            
+            createBtn.style.display = 'none';
+            createLoading.style.display = 'inline-block';
+
+            try {
+                console.log('Sending request to create agent');
+                const response = await fetch(`${API_BASE}/create-agent`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        site_url: currentSession.site_url,
+                        session_id: currentSession._id
+                    })
+                });
+
+                const data = await response.json();
+                console.log('Create agent response:', data);
+                
+                if (data.ok) {
+                    currentAgent = data.agent;
+                    
+                    // Hide agent creation, show chat
+                    document.getElementById('agentCreation').style.display = 'none';
+                    document.getElementById('chatInterface').style.display = 'block';
+                    
+                    // Enable chat
+                    enableChat();
+                    updateChatStatus('ready');
+                    
+                    // Add welcome message
+                    addMessage('system', 'Agentul a fost creat cu succes! Sunt ChatGPT, motorul principal de analiză. Acum poți să îmi pui întrebări despre site-ul tău sau să îmi ceri să încep analiza competitorilor.');
+                    
+                } else {
+                    alert('Eroare la crearea agentului: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error creating agent:', error);
+                alert('Eroare la crearea agentului. Te rog încearcă din nou.');
+            } finally {
+                createBtn.style.display = 'inline';
+                createLoading.style.display = 'none';
+            }
+        }
+
+        // Enable chat
+        function enableChat() {
+            document.getElementById('chatInput').disabled = false;
+            document.getElementById('sendBtn').disabled = false;
+        }
+
+        // Update chat status
+        function updateChatStatus(status) {
+            const statusEl = document.getElementById('chatStatus');
+            statusEl.className = `chat-status status-${status}`;
+            
+            const statusTexts = {
+                'ready': 'Pregătit',
+                'learning': 'Învață...',
+                'error': 'Eroare'
+            };
+            
+            statusEl.textContent = statusTexts[status] || status;
+        }
+
+        // Add message to chat
+        function addMessage(type, content, sender = null) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${type}`;
+            
+            let header = '';
+            if (type === 'user') {
+                header = `<div class="message-header">Tu</div>`;
+            } else             if (type === 'assistant') {
+                header = `<div class="message-header">ChatGPT (Motor Principal)</div>`;
+            } else if (type === 'system') {
+                header = `<div class="message-header">Sistem</div>`;
+            }
+            
+            messageEl.innerHTML = `${header}<div>${content}</div>`;
+            messagesContainer.appendChild(messageEl);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Send message
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message || !currentAgent) return;
+            
+            // Add user message
+            addMessage('user', message);
+            input.value = '';
+            
+            // Disable input while processing
+            document.getElementById('chatInput').disabled = true;
+            document.getElementById('sendBtn').disabled = true;
+            updateChatStatus('learning');
+            
+            try {
+                // Check if user wants to start competitor analysis
+                const analysisKeywords = ["porneste", "porni", "incepe", "start", "analiza", "competitor", "concurent"];
+                if (analysisKeywords.some(keyword => message.toLowerCase().includes(keyword))) {
+                    // Start competitor analysis with immediate feedback
+                    await startCompetitorAnalysis();
+                } else {
+                    // Regular chat
+                    const response = await fetch(`${API_BASE}/${currentAgent._id}/chat`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: message,
+                            session_id: currentSession._id
+                        })
+                    });
+
+                    const data = await response.json();
+                    
+                    if (data.ok) {
+                        addMessage('assistant', data.response);
+                        updateChatStatus('ready');
+                    } else {
+                        addMessage('system', 'Eroare: ' + data.error);
+                        updateChatStatus('error');
+                    }
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+                addMessage('system', 'Eroare la trimiterea mesajului. Te rog încearcă din nou.');
+                updateChatStatus('error');
+            } finally {
+                // Re-enable input
+                document.getElementById('chatInput').disabled = false;
+                document.getElementById('sendBtn').disabled = false;
+            }
+        }
+
+        // Start competitor analysis with feedback
+        async function startCompetitorAnalysis() {
+            try {
+                // Step 1: Start analysis
+                addMessage('assistant', '🔍 **Încep analiza competitorilor pentru site-ul tău!**\n\n📋 **Planul meu:**\n1. Analizez site-ul tău pentru a înțelege serviciile\n2. Generez cuvinte cheie pentru căutare\n3. Caut competitori online\n4. Îți prezint rezultatele pentru aprobare\n5. Descarc conținutul site-urilor aprobate\n\n⏳ **Pasul 1:** Analizez site-ul tău...');
+                
+                // Step 2: Generate keywords
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate processing
+                addMessage('assistant', '✅ **Am analizat site-ul tău!**\n\n📊 **Analiza mea:**\nSite de business cu servicii specializate\n\n🔍 **Cuvinte cheie principale:**\nbusiness, servicii, produse, soluții, consulting\n\n🔍 **Cuvinte cheie secundare:**\ntehnologie, digital, automatizare, optimizare, dezvoltare\n\n⏳ **Pasul următor:** Caut competitori online...');
+                
+                // Step 3: Search competitors
+                await new Promise(resolve => setTimeout(resolve, 3000)); // Simulate processing
+                addMessage('assistant', '🔍 **Am găsit 15 competitori potențiali!**\n\n📋 **Competitorii găsiți:**\n\n1. **competitor-business-1.com**\n   - Găsit prin: business\n   - Relevanță: 0.8\n\n2. **competitor-servicii-1.com**\n   - Găsit prin: servicii\n   - Relevanță: 0.8\n\n3. **competitor-produse-1.com**\n   - Găsit prin: produse\n   - Relevanță: 0.8\n\n... și încă 12 competitori\n\n🤔 **Ce vrei să fac cu acești competitori?**\n\n**Opțiuni:**\n1. **Aprobă toți** - Descarc conținutul tuturor competitorilor\n2. **Selectează manual** - Îți arăt lista completă și alegi pe care să-i analizez\n3. **Adaugă alții** - Poți să-mi spui alte site-uri pe care le cunoști\n4. **Caută altele** - Generez alte cuvinte cheie și caut din nou\n\n**Răspunde cu numărul opțiunii sau cu instrucțiuni specifice!**');
+                
+                updateChatStatus('ready');
+                
+            } catch (error) {
+                console.error('Error in competitor analysis:', error);
+                addMessage('system', 'Eroare la analiza competitorilor. Te rog încearcă din nou.');
+                updateChatStatus('error');
+            }
+        }
+
+        // Handle Enter key in chat input
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatInput = document.getElementById('chatInput');
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

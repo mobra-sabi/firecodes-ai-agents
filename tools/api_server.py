@@ -1,9 +1,17 @@
+import re
 #!/usr/bin/env python3
 import os, sys, json
+from langchain_ollama import OllamaEmbeddings
 from flask import Flask, request, jsonify, render_template_string
 from datetime import datetime
 import threading
 import time
+
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL","nomic-embed-text")
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL","http://127.0.0.1:11434")
+def get_embedder():
+    return OllamaEmbeddings(model=EMBEDDING_MODEL, base_url=OLLAMA_BASE_URL)
+
 
 # Import pipeline-ul principal
 sys.path.append('/home/mobra/ai_agents/tools')
@@ -58,7 +66,7 @@ def create_api_server():
         
         try:
             qdrant_info = pipeline.qdrant.get_collection("website_embeddings")
-            total_embeddings = qdrant_info.points_count
+            total_embeddings = getattr(qdrant_info, "points_count", getattr(qdrant_info, "vectors_count", 0))
         except:
             total_embeddings = 0
         

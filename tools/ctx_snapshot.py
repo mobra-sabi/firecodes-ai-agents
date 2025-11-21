@@ -1,6 +1,14 @@
+import re
 # tools/ctx_snapshot.py
 import os, json, sys, traceback
+from langchain_ollama import OllamaEmbeddings
 from pathlib import Path
+
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL","nomic-embed-text")
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL","http://127.0.0.1:11434")
+def get_embedder():
+    return OllamaEmbeddings(model=EMBEDDING_MODEL, base_url=OLLAMA_BASE_URL)
+
 
 def safe_len(v): return len(v) if isinstance(v, str) else 0
 def has_file(p): 
@@ -43,7 +51,7 @@ def check_brave_key():
 def check_qdrant():
     try:
         from qdrant_client import QdrantClient
-        qc = QdrantClient(host=os.getenv("QDRANT_HOST","127.0.0.1"),
+        qc = QdrantClient(host=os.getenv("QDRANT_HOST","127.0.0.1",),
                           port=int(os.getenv("QDRANT_PORT","6333")))
         cols = [c.name for c in qc.get_collections().collections]
         info = {}

@@ -1,7 +1,15 @@
+import re
 # tools/build_site_agents.py
 import os, math
+from langchain_ollama import OllamaEmbeddings
 from collections import defaultdict
 from urllib.parse import urlsplit
+
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL","nomic-embed-text")
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL","http://127.0.0.1:11434")
+def get_embedder():
+    return OllamaEmbeddings(model=EMBEDDING_MODEL, base_url=OLLAMA_BASE_URL)
+
 
 from pymongo import MongoClient, ASCENDING
 from qdrant_client import QdrantClient
@@ -47,7 +55,7 @@ def extract_vector(v):
         return None
 
 def main():
-    qc = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
+    qc = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT,)
     mc = MongoClient(MONGODB_URI)
     db = mc[MONGO_DB]
     agents = db["site_agents"]

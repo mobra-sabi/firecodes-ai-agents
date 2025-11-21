@@ -1,0 +1,61 @@
+{
+  "nodes": [
+    {
+      "id": "protectiilafoc.ro",
+      "type": "master",
+      "chunks": 470
+    },
+    {
+      "id": "promat.com",
+      "type": "slave",
+      "chunks": 869
+    },
+    {
+      "id": "ropaintsolutions.ro",
+      "type": "slave",
+      "chunks": 27
+    },
+    {
+      "id": "romfire.ro",
+      "type": "slave",
+      "chunks": 291
+    },
+    {
+      "id": "igsu.ro",
+      "type": "slave",
+      "chunks": 0
+    },
+    {
+      "id": "alpaccess.com",
+      "type": "slave",
+      "chunks": 0
+    }
+  ],
+  "edges": [
+    {
+      "source": "protectiilafoc.ro",
+      "target": "promat.com",
+      "weight": 1.0
+    },
+    {
+      "source": "protectiilafoc.ro",
+      "target": "ropaintsolutions.ro",
+      "weight": 1.0
+    },
+    {
+      "source": "protectiilafoc.ro",
+      "target": "romfire.ro",
+      "weight": 1.0
+    },
+    {
+      "source": "protectiilafoc.ro",
+      "target": "igsu.ro",
+      "weight": 1.0
+    },
+    {
+      "source": "protectiilafoc.ro",
+      "target": "alpaccess.com",
+      "weight": 1.0
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 import os, re, json, time, argparse, urllib.parse, requests
-from datetime import datetime
+from datetime import datetime, timezone
 from pymongo import MongoClient
 from orchestrator.orchestrator_loop import Orchestrator
 
@@ -146,7 +146,7 @@ def log_supervisor(seed, plan, picked_sites):
     try:
         mc = MongoClient("mongodb://127.0.0.1:27017")
         mc["ai_agents_db"]["supervisor_logs"].insert_one({
-            "ts": datetime.utcnow(),
+            "ts": datetime.now(timezone.utc),
             "seed": seed,
             "plan": plan,
             "picked_sites": picked_sites,

@@ -1,0 +1,109 @@
+{
+  "run_id": "0428e64bb063",
+  "site": "https://tehnica-antifoc.ro",
+  "started_at": "2025-11-13T14:40:00.000Z",
+  "finished_at": null,
+  "duration": "3.62 minute",
+  "durations": {
+    "crawl": 65,
+    "split": 18,
+    "embed": 87,
+    "upsert": 21,
+    "serp": 34
+  },
+  "agents": {
+    "master": {
+      "domain": "tehnica-antifoc.ro",
+      "status": "validated",
+      "chunks": 0,
+      "site_url": "https://tehnica-antifoc.ro",
+      "created_at": "ISODate('2025-11-13T14:40:00.000Z')"
+    },
+    "slaves": [
+      {
+        "domain": "promat.com",
+        "status": "validated",
+        "chunks": 863
+      },
+      {
+        "domain": "ropaintsolutions.ro",
+        "status": "validated",
+        "chunks": 7
+      },
+      {
+        "domain": "romfire.ro",
+        "status": "validated",
+        "chunks": 214
+      }
+    ]
+  },
+  "qdrant": {
+    "collection": "agent_tehnica-antifoc.ro",
+    "points": 1084,
+    "dim": 768
+  },
+  "seo": {
+    "keywords": 85,
+    "intent_distribution": {
+      "informational": 0.48,
+      "commercial": 0.32,
+      "transactional": 0.2
+    },
+    "opportunities": [
+      {
+        "term": "vopsea intumescentă H120",
+        "score": 82,
+        "volume": 1200,
+        "difficulty": 38,
+        "intent": "transactional"
+      },
+      {
+        "term": "protecție pasivă la foc structuri metalice",
+        "score": 77,
+        "volume": 850,
+        "difficulty": 42,
+        "intent": "commercial"
+      },
+      {
+        "term": "clasificare rezistență la foc R60 R120",
+        "score": 74,
+        "volume": 650,
+        "difficulty": 35,
+        "intent": "informational"
+      }
+    ]
+  },
+  "actions": [
+    {
+      "title": "Publică ghidul 'vopsea intumescentă H120'",
+      "impact": "High",
+      "effort": "Low",
+      "ice": 9.1
+    },
+    {
+      "title": "Optimiză pagina 'protecție pasivă' cu secțiune normative",
+      "impact": "High",
+      "effort": "Medium",
+      "ice": 8.6
+    }
+  ],
+  "alerts": [],
+  "phases": [
+    "Phase 1",
+    "Phase 2",
+    "Phase 3",
+    "Phase 4",
+    "Phase 5",
+    "Phase 6",
+    "Phase 7",
+    "Phase 8"
+  ],
+  "statistics": {
+    "total_agents": 4,
+    "total_chunks": 1084,
+    "master_chunks": 0,
+    "slave_chunks": 1084,
+    "validated_slaves": 3,
+    "created_slaves": 0
+  }
+}

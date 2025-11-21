@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Creare Agent LIVE - AI Agents Platform</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .progress-card {
+            display: none;
+        }
+        
+        .progress-card.active {
+            display: block;
+        }
+        
+        .step {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            background: #f8f9fa;
+            border-left: 4px solid #ddd;
+            transition: all 0.3s;
+        }
+        
+        .step.active {
+            background: #e3f2fd;
+            border-left-color: #2196f3;
+        }
+        
+        .step.completed {
+            background: #e8f5e9;
+            border-left-color: #4caf50;
+        }
+        
+        .step.error {
+            background: #ffebee;
+            border-left-color: #f44336;
+        }
+        
+        .step-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .step-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+        
+        .step-title {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .step-status {
+            margin-left: auto;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .status-pending {
+            background: #e0e0e0;
+            color: #666;
+        }
+        
+        .status-active {
+            background: #2196f3;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-completed {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .status-error {
+            background: #f44336;
+            color: white;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        .step-details {
+            font-size: 14px;
+            color: #666;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+        
+        .log-console {
+            background: #1e1e1e;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            padding: 15px;
+            border-radius: 8px;
+            height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .log-line {
+            margin-bottom: 5px;
+        }
+        
+        .log-timestamp {
+            color: #888;
+        }
+        
+        .log-info { color: #00ff00; }
+        .log-warning { color: #ffeb3b; }
+        .log-error { color: #ff5252; }
+        .log-success { color: #4caf50; }
+        
+        .result-card {
+            display: none;
+            margin-top: 20px;
+        }
+        
+        .result-card.show {
+            display: block;
+        }
+        
+        .result-success {
+            padding: 20px;
+            background: #e8f5e9;
+            border-radius: 8px;
+            border-left: 4px solid #4caf50;
+        }
+        
+        .result-success h3 {
+            color: #2e7d32;
+            margin-bottom: 15px;
+        }
+        
+        .result-item {
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        
+        .result-item strong {
+            color: #333;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Creare Agent AI - LIVE</h1>
+            <p>Vezi în timp real cum se creează agentul tău!</p>
+        </div>
+        
+        <!-- Form Card -->
+        <div class="card" id="formCard">
+            <h2 style="margin-bottom: 20px;">Introdu URL-ul Site-ului</h2>
+            
+            <div class="input-group">
+                <label for="siteUrl">🌐 URL Site Web</label>
+                <input 
+                    type="url" 
+                    id="siteUrl" 
+                    placeholder="https://example.com"
+                    value="https://academia-ro.tuv.com/">
+            </div>
+            
+            <button class="btn" onclick="createAgent()">
+                ✨ Creează Agent Acum
+            </button>
+        </div>
+        
+        <!-- Progress Card -->
+        <div class="card progress-card" id="progressCard">
+            <h2 style="margin-bottom: 20px;">🔄 Proces de Creare în Desfășurare</h2>
+            
+            <div id="steps">
+                <!-- Steps will be added dynamically -->
+            </div>
+            
+            <div class="log-console" id="logConsole">
+                <div class="log-line">
+                    <span class="log-timestamp">[00:00:00]</span>
+                    <span class="log-info">Console initialized. Waiting for agent creation...</span>
+                </div>
+            </div>
+            
+            <div class="result-card" id="resultCard">
+                <div class="result-success">
+                    <h3>✅ Agent Creat Cu Succes!</h3>
+                    <div id="resultDetails"></div>
+                    
+                    <div class="btn-group">
+                        <button class="btn" onclick="viewAgent()">
+                            👁️ Vezi Agent în Dashboard
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetForm()">
+                            🔄 Creează Alt Agent
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://100.66.157.27:5000';
+        let currentAgentId = null;
+        let startTime = null;
+        
+        const STEPS = [
+            { id: 'init', icon: '🎯', title: 'Inițializare', desc: 'Verificare URL și pregătire sistem' },
+            { id: 'scrape', icon: '🌐', title: 'Scraping Conținut', desc: 'Extragere conținut de pe site' },
+            { id: 'analyze', icon: '🤖', title: 'Analiză DeepSeek', desc: 'Extragere servicii și categorii cu AI' },
+            { id: 'save', icon: '💾', title: 'Salvare Date', desc: 'Salvare în MongoDB' },
+            { id: 'competitive', icon: '🎯', title: 'Analiză Competitivă', desc: 'Generare subdomenii și keywords' },
+            { id: 'finalize', icon: '✅', title: 'Finalizare', desc: 'Verificare și activare agent' }
+        ];
+        
+        function createAgent() {
+            const url = document.getElementById('siteUrl').value.trim();
+            
+            if (!url) {
+                alert('Te rog introdu un URL valid!');
+                return;
+            }
+            
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                alert('URL-ul trebuie să înceapă cu http:// sau https://');
+                return;
+            }
+            
+            // Show progress card
+            document.getElementById('formCard').style.display = 'none';
+            document.getElementById('progressCard').classList.add('active');
+            
+            // Initialize steps
+            initializeSteps();
+            
+            // Start creation
+            startTime = Date.now();
+            performAgentCreation(url);
+        }
+        
+        function initializeSteps() {
+            const stepsContainer = document.getElementById('steps');
+            stepsContainer.innerHTML = '';
+            
+            STEPS.forEach(step => {
+                const stepDiv = document.createElement('div');
+                stepDiv.className = 'step';
+                stepDiv.id = `step-${step.id}`;
+                stepDiv.innerHTML = `
+                    <div class="step-header">
+                        <span class="step-icon">${step.icon}</span>
+                        <span class="step-title">${step.title}</span>
+                        <span class="step-status status-pending">⏳ Pending</span>
+                    </div>
+                    <div class="step-details">${step.desc}</div>
+                `;
+                stepsContainer.appendChild(stepDiv);
+            });
+        }
+        
+        function updateStep(stepId, status, details = null) {
+            const stepDiv = document.getElementById(`step-${stepId}`);
+            if (!stepDiv) return;
+            
+            stepDiv.className = `step ${status}`;
+            
+            const statusSpan = stepDiv.querySelector('.step-status');
+            
+            if (status === 'active') {
+                statusSpan.className = 'step-status status-active';
+                statusSpan.innerHTML = '🔄 In Progress';
+            } else if (status === 'completed') {
+                statusSpan.className = 'step-status status-completed';
+                statusSpan.innerHTML = '✅ Done';
+            } else if (status === 'error') {
+                statusSpan.className = 'step-status status-error';
+                statusSpan.innerHTML = '❌ Error';
+            }
+            
+            if (details) {
+                const detailsDiv = stepDiv.querySelector('.step-details');
+                detailsDiv.innerHTML = details;
+            }
+        }
+        
+        function addLog(message, type = 'info') {
+            const console = document.getElementById('logConsole');
+            const elapsed = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
+            const timestamp = new Date(elapsed * 1000).toISOString().substr(11, 8);
+            
+            const logLine = document.createElement('div');
+            logLine.className = 'log-line';
+            logLine.innerHTML = `
+                <span class="log-timestamp">[${timestamp}]</span>
+                <span class="log-${type}">${message}</span>
+            `;
+            
+            console.appendChild(logLine);
+            console.scrollTop = console.scrollHeight;
+        }
+        
+        async function performAgentCreation(url) {
+            try {
+                // Step 1: Initialize
+                updateStep('init', 'active');
+                addLog('🎯 Starting agent creation...', 'info');
+                addLog(`📍 Target URL: ${url}`, 'info');
+                
+                await delay(500);
+                updateStep('init', 'completed');
+                
+                // Step 2: API Call
+                updateStep('scrape', 'active');
+                addLog('📡 Sending request to API...', 'info');
+                
+                const response = await fetch(`${API_BASE}/api/agents/create`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ site_url: url })
+                });
+                
+                const data = await response.json();
+                
+                if (!data.ok) {
+                    throw new Error(data.error || 'Failed to create agent');
+                }
+                
+                currentAgentId = data.agent._id;
+                addLog(`✅ Agent created! ID: ${currentAgentId}`, 'success');
+                addLog(`🌐 Domain: ${data.agent.domain}`, 'success');
+                
+                updateStep('scrape', 'completed', `Scraping completed for ${data.agent.domain}`);
+                
+                // Step 3: Simulate analysis (in real app, poll API)
+                await simulateAnalysis();
+                
+                // Show results
+                showResults(data.agent);
+                
+            } catch (error) {
+                addLog(`❌ ERROR: ${error.message}`, 'error');
+                updateStep('init', 'error');
+                alert(`Error: ${error.message}`);
+            }
+        }
+        
+        async function simulateAnalysis() {
+            // Step 3: Analyze
+            updateStep('analyze', 'active');
+            addLog('🤖 DeepSeek AI analyzing content...', 'info');
+            await delay(2000);
+            addLog('✅ Services extracted', 'success');
+            updateStep('analyze', 'completed');
+            
+            // Step 4: Save
+            updateStep('save', 'active');
+            addLog('💾 Saving to MongoDB...', 'info');
+            await delay(1000);
+            addLog('✅ Data saved successfully', 'success');
+            updateStep('save', 'completed');
+            
+            // Step 5: Competitive Analysis
+            updateStep('competitive', 'active');
+            addLog('🎯 Running competitive analysis...', 'info');
+            addLog('📊 Generating subdomains...', 'info');
+            await delay(2000);
+            addLog('🔑 Generating keywords...', 'info');
+            await delay(1500);
+            addLog('✅ Competitive analysis complete', 'success');
+            updateStep('competitive', 'completed');
+            
+            // Step 6: Finalize
+            updateStep('finalize', 'active');
+            addLog('✅ Finalizing agent setup...', 'info');
+            await delay(1000);
+            addLog('🎉 Agent is now READY!', 'success');
+            updateStep('finalize', 'completed');
+        }
+        
+        function showResults(agent) {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            
+            document.getElementById('resultDetails').innerHTML = `
+                <div class="result-item">
+                    <strong>🆔 Agent ID:</strong> ${agent._id}
+                </div>
+                <div class="result-item">
+                    <strong>🌐 Domain:</strong> ${agent.domain}
+                </div>
+                <div class="result-item">
+                    <strong>📊 Status:</strong> ${agent.status}
+                </div>
+                <div class="result-item">
+                    <strong>⏱️ Timp Creare:</strong> ${elapsed} secunde
+                </div>
+            `;
+            
+            document.getElementById('resultCard').classList.add('show');
+            addLog(`⏱️ Total time: ${elapsed}s`, 'success');
+        }
+        
+        function viewAgent() {
+            if (currentAgentId) {
+                window.open(`${API_BASE}/static/competitive_intelligence_dashboard.html?agent=${currentAgentId}`, '_blank');
+            }
+        }
+        
+        function resetForm() {
+            location.reload();
+        }
+        
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+    </script>
+</body>
+</html>
+

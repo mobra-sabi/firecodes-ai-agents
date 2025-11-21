@@ -1,0 +1,918 @@
+{
+  "industry": "Construc\u021bii \u0219i Renov\u0103ri Rom\u00e2nia",
+  "started_at": "2025-11-11T19:46:04.012771+00:00",
+  "total_agents_created": 128,
+  "total_sites_discovered": 137,
+  "total_subdomains_identified": 0,
+  "total_keywords_discovered": 0,
+  "coverage_percentage": 50.0,
+  "status": "error",
+  "current_phase": "Batch 208: Agent 8/8",
+  "agents_in_progress": [],
+  "completed_agents": [
+    "https://www.total-constructii.ro/firma-amenajari-interioare-exterioare",
+    "https://www.casesigradini.ro/revista/a4/8607/2/Constructii/Cate-case-se-mai-construiesc-in-Romania",
+    "https://economedia.ro/cei-mai-mari-constructori-din-romania-primii-10-au-realizat-impreuna-afaceri-de-88-miliarde-lei-in-2021-omul-de-afaceri-umbrarescu-domina-top-5-cu-cele-trei-companii.html",
+    "https://zaineaconstructii.ro/",
+    "https://www.constructii-tsc.ro/",
+    "https://www.reddit.com/r/Romania/comments/qi6hdp/design_de_interior_in_romania/",
+    "https://evz.ro/vesti-bune-pentru-romanii-care-stau-la-bloc-ue-va-aloca-fonduri-consistente-pentru-renovari.html",
+    "https://www.romstal.ro/",
+    "https://homerun.ro/instalatii-sanitare",
+    "https://renovarecompleta.ro/",
+    "https://www.bucuresticonstruct.ro/constructii-civile.html",
+    "https://www.primarie6.ro/primarie_sector6/reabilitare-termica",
+    "https://www.ecoterm.ro/articole/instalatiile-sanitare-industriale/",
+    "https://www.ghid-constructii.ro/info/firme_constructii_si_executie/with--case_de_lemn/",
+    "https://vzg.ro/",
+    "https://firma-amenajari.ro/zugraveli-apartamente-case-bucuresti.html",
+    "https://www.roinstalatii.ro/",
+    "https://zugraveli-amenajari-interioare.ro/amenajari-interioare/",
+    "https://www.anuntul.ro/anunturi-prestari-servicii/constructii-amenajari/zugraveli-firme-zugravi-bucuresti",
+    "https://www.olx.ro/servicii-afaceri-colaborari/meseriasi-constructori/q-constructii-case/",
+    "https://electro-calin.ro/",
+    "https://www.necesit.ro/instalatii-sanitare",
+    "https://www.amenajari-locuinte.ro/preturi/",
+    "https://www.renovaritotale.ro/",
+    "https://homerun.ro/bucuresti-instalatii-sanitare",
+    "https://economedia.ro/analiza-topul-celor-mai-puternice-companii-de-constructii-din-romania-umbrarescu-controleaza-firmele-care-ocupa-primele-trei-locuri-in-clasament.html",
+    "https://www.deltastudio.ro/",
+    "https://www.reddit.com/r/bucuresti/comments/1af1hhe/ce_presupune_reconsolidarea_unui_bloc/",
+    "https://www.revistabiz.ro/romania-campioana-la-constructii/",
+    "https://www.anuntul.ro/anunturi-prestari-servicii/constructii-amenajari/electricieni",
+    "https://firmaconstructiicluj.ro/renovari/",
+    "https://mobexpert.ro/blogs/idei-de-amenajare/amenajare-casa",
+    "https://urbanartconstruct.ro/",
+    "https://firmaconstructii.com/",
+    "https://homerun.ro/amenajari-interioare",
+    "https://doingbusiness.ro/top-companii/constructii",
+    "https://www.forbes.ro/top-10-cei-mai-mari-constructori-de-pe-piata-locala-233289",
+    "https://ideiamenajari.ro/",
+    "https://www.electrician-autorizat.net/",
+    "https://www.necesit.ro/zugravi/bucuresti",
+    "https://www.adalisdesign.ro/",
+    "https://renovlies.ro/",
+    "https://casebinefacute.ro/",
+    "https://www.top100ofromania.eu/sub-category/193/firme-de-constructii-1",
+    "https://cautelectrician.ro/",
+    "https://amenajari-bucuresti.ro/",
+    "https://problemelocative.ro/probleme-administrative/pnrr-aproximativ-1-300-de-blocuri-vor-fi-reabilitate-beneficiarii-nu-vor-contribui-cu-bani-proprii/amp/",
+    "https://www.facebook.com/casebinefacute/?locale=ro_RO",
+    "https://zugraveli-amenajari-interioare.ro/zugraveli-3/",
+    "https://www.ghid-constructii.ro/info/firme_constructii_si_executie/with--mansardari_si_consolidari/",
+    "https://www.constructii-romania.com/",
+    "https://homerun.ro/bucuresti-zugravit-scara-bloc",
+    "https://www.olx.ro/locuri-de-munca/q-electrician/",
+    "https://homerun.ro/constructii",
+    "https://ps2.ro/index.php/reabilitare-termica-harta-2024",
+    "https://servicii-instalatii.ro/firma-amenajari-interioare-bucuresti/",
+    "https://constructii-amenajariinterioare.ro/serviciile-noastre/",
+    "https://www.dedeman.ro/ro/instalatii-sanitare/c/8035",
+    "https://www.nobili-interior-design.ro/oferta/bucuresti/amenajari",
+    "https://www.dedeman.ro/ro/obiecte-si-instalatii-sanitare/c/1427",
+    "https://www.daibau.ro/preturi/renovare_apartament",
+    "https://roomzia.ro/",
+    "https://www.reddit.com/r/bucuresti/comments/16eg6em/recomandare_firma_renovare_apartament/",
+    "https://www.zf.ro/business-construct/topul-celor-mari-30-constructori-romania-2023-an-vis-cifra-afaceri-22434805",
+    "https://www.publi24.ro/anunturi/locuri-de-munca/?q=electrician",
+    "https://www.reddit.com/r/bucuresti/comments/1ed9upo/cost_renovare_apartament/",
+    "https://arenaconstruct.ro/topul-constructorilor-2023/",
+    "https://www.hazconstruct.ro/",
+    "https://amenajariinterior.com/",
+    "https://www.mmconstruct.ro/",
+    "https://zugraveli.ro/",
+    "https://www.constructii-amenajari-bucuresti.ro/",
+    "https://firmaconstructii.com/amenajari-interioare/zugraveli/",
+    "https://www.clujconstruct.ro/instalatii-sanitare.html",
+    "https://uberhause.ro/constructii/",
+    "https://derenovat.ro/",
+    "https://fereastra.ro/top-500-firme-de-inginerie-arhitectura-si-consultanta-pentru-constructii-din-romania/",
+    "https://www.autorizatiedeconstruire.ro/blog/model-anunt-renovare-apartament",
+    "https://www.artdecozone.ro/",
+    "https://sortter.com/ro-ro/blog/articol/pret-renovare-apartament-2-camere-2022/",
+    "https://lovedeco.ro/renovare-de-apartament-vechi-etape-costuri-si-provocari/",
+    "https://iordacheamenajari.ro/",
+    "https://renovare-apartamente.ro/",
+    "https://electricalc.ro/index.php?option=com_content&view=article&id=92&Itemid=329",
+    "https://www.zugrav-bucuresti.ro/",
+    "https://www.ecoterm.ro/articole/instalatiile-sanitare-ce-sunt-si-la-ce-ne-folosesc/",
+    "https://zugraveli-amenajari-interioare.ro/",
+    "https://mathaus.ro/c/instalatii-termice-si-sanitare/7",
+    "https://www.dianaconstruct.ro/",
+    "https://www.publi24.ro/anunturi/locuri-de-munca/constructii-arhitectura-design/electricieni/bucuresti/",
+    "https://www.renovari-apartamente.ro/",
+    "https://zugravim-intr-o-zi.ro/",
+    "https://www.storia.ro/blog/ghid-imobiliar/autorizatii-modificari-in-apartament",
+    "https://www.constructii-case.com/",
+    "https://homerun.ro/renovare-apartament",
+    "https://zugravi-bucuresti.ro/",
+    "https://www.kanald.ro/vesti-bune-pentru-romanii-care-stau-la-bloc-se-dau-bani-pentru-renovarea-blocurilor-si-pentru-alte-utilitati-20194244",
+    "https://www.avocatnet.ro/articol_63728/Reabilitarea-blocurilor-de-locuin\u021be-in-2023-Ce-ar-trebui-s\u0103-\u0219tie-asocia\u021biile-de-proprietari.html",
+    "https://regata.ro/amenajari-interioare",
+    "https://www.ghid-constructii.ro/info/firme_constructii_si_executie/",
+    "https://www.zugravelimecanizate.ro/",
+    "https://www.clientsolutions.ro/firme-de-constructii-din-toate-judetele/",
+    "https://electricianbucuresti.com.ro/",
+    "https://www.necesit.ro/preturi/renovare-apartament/renovare-apartament-pret",
+    "https://www.smart-instalatii.ro/",
+    "https://agendaconstructiilor.ro/files/top-500-antreprenori-si-firme-de-constructii.html",
+    "https://www.anuntul.ro/renovariapartamente/detaliu-produs/196631/1246361",
+    "https://www.anuntul.ro/anunturi-prestari-servicii/constructii-amenajari/constructii-case",
+    "https://www.bucuresticonstruct.ro/instalatii-sanitare.html",
+    "https://atecton.com/firma-de-constructii/",
+    "https://www.romanian-companies.eu/41/d157.htm",
+    "https://firma-amenajari.ro/",
+    "https://next-interior.ro/renovare-bloc-vechi/",
+    "https://www.reconstruct.ro/renovare-apartament/",
+    "https://www.bricoretail.ro/servicii/colliers-romania-constructii.html",
+    "https://www.ghid-constructii.ro/info/firme_3/",
+    "https://www.reconstruct.ro/firma-amenajari-exterioare/",
+    "https://www.ejobs.ro/en/jobs/electrician",
+    "https://mobexpert.ro/blogs/ghidul-cumparatorului/costuri-renovare-apartament",
+    "https://amenajari-si-finisaje.ro/",
+    "https://www.electrician1.ro/",
+    "https://wolfconstruct.ro/",
+    "https://www.clujconstruct.ro/constructii-civile.html",
+    "https://www.homelux.ro/blog/amenajari-interioare-case/",
+    "https://www.reconstruct.ro/firma-amenajari-interioare/",
+    "https://www.necesit.ro/electrician/bucuresti",
+    "https://firmaconstructii.com/case-la-cheie/",
+    "https://www.primarie6.ro/primarie_sector6/105-blocuri-se-afla-reabilitare-ce-lucrari-se-fac-si-cum-arata-santierele"
+  ],
+  "discovered_sites": [
+    "https://www.total-constructii.ro/firma-amenajari-interioare-exterioare",
+    "https://www.casesigradini.ro/revista/a4/8607/2/Constructii/Cate-case-se-mai-construiesc-in-Romania",
+    "https://economedia.ro/cei-mai-mari-constructori-din-romania-primii-10-au-realizat-impreuna-afaceri-de-88-miliarde-lei-in-2021-omul-de-afaceri-umbrarescu-domina-top-5-cu-cele-trei-companii.html",
+    "https://zaineaconstructii.ro/",
+    "https://www.constructii-tsc.ro/",
+    "https://www.reddit.com/r/Romania/comments/qi6hdp/design_de_interior_in_romania/",
+    "https://evz.ro/vesti-bune-pentru-romanii-care-stau-la-bloc-ue-va-aloca-fonduri-consistente-pentru-renovari.html",
+    "https://www.romstal.ro/",
+    "https://homerun.ro/instalatii-sanitare",
+    "https://renovarecompleta.ro/",
+    "https://www.bucuresticonstruct.ro/constructii-civile.html",
+    "https://www.primarie6.ro/primarie_sector6/reabilitare-termica",
+    "https://www.ecoterm.ro/articole/instalatiile-sanitare-industriale/",
+    "https://www.ghid-constructii.ro/info/firme_constructii_si_executie/with--case_de_lemn/",
+    "https://vzg.ro/",
+    "https://firma-amenajari.ro/zugraveli-apartamente-case-bucuresti.html",
+    "https://www.roinstalatii.ro/",
+    "https://zugraveli-amenajari-interioare.ro/amenajari-interioare/",
+    "https://www.anuntul.ro/anunturi-prestari-servicii/constructii-amenajari/zugraveli-firme-zugravi-bucuresti",
+    "https://www.olx.ro/servicii-afaceri-colaborari/meseriasi-constructori/q-constructii-case/",
+    "https://electro-calin.ro/",
+    "https://www.necesit.ro/instalatii-sanitare",
+    "https://www.amenajari-locuinte.ro/preturi/",
+    "https://www.renovaritotale.ro/",
+    "https://homerun.ro/bucuresti-instalatii-sanitare",
+    "https://economedia.ro/analiza-topul-celor-mai-puternice-companii-de-constructii-din-romania-umbrarescu-controleaza-firmele-care-ocupa-primele-trei-locuri-in-clasament.html",
+    "https://www.deltastudio.ro/",
+    "https://www.reddit.com/r/bucuresti/comments/1af1hhe/ce_presupune_reconsolidarea_unui_bloc/",
+    "https://www.revistabiz.ro/romania-campioana-la-constructii/",
+    "https://www.anuntul.ro/anunturi-prestari-servicii/constructii-amenajari/electricieni",
+    "https://firmaconstructiicluj.ro/renovari/",
+    "https://mobexpert.ro/blogs/idei-de-amenajare/amenajare-casa",
+    "https://zugraveli.afacerist.ro/",
+    "https://urbanartconstruct.ro/",
+    "https://firmaconstructii.com/",
+    "https://homerun.ro/amenajari-interioare",
+    "https://doingbusiness.ro/top-companii/constructii",
+    "https://www.forbes.ro/top-10-cei-mai-mari-constructori-de-pe-piata-locala-233289",
+    "https://ideiamenajari.ro/",
+    "https://www.electrician-autorizat.net/",
+    "https://www.adalisdesign.ro/",
+    "https://renovlies.ro/",
+    "https://casebinefacute.ro/",
+    "https://www.top100ofromania.eu/sub-category/193/firme-de-constructii-1",
+    "https://www.necesit.ro/zugravi/bucuresti",
+    "https://cautelectrician.ro/",
+    "https://amenajari-bucuresti.ro/",
+    "https://problemelocative.ro/probleme-administrative/pnrr-aproximativ-1-300-de-blocuri-vor-fi-reabilitate-beneficiarii-nu-vor-contribui-cu-bani-proprii/amp/",
+    "https://www.facebook.com/casebinefacute/?locale=ro_RO",
+    "https://zugraveli-amenajari-interioare.ro/zugraveli-3/",
+    "https://www.ghid-constructii.ro/info/firme_constructii_si_executie/with--mansardari_si_consolidari/",
+    "https://www.constructii-romania.com/",
+    "https://homerun.ro/bucuresti-zugravit-scara-bloc",
+    "https://www.olx.ro/locuri-de-munca/q-electrician/",
+    "https://homerun.ro/constructii",
+    "https://romania.europalibera.org/a/blocurile-renovate-termic-inainte-sa-fie-consolidate/32297488.html",
+    "https://ps2.ro/index.php/reabilitare-termica-harta-2024",
+    "https://servicii-instalatii.ro/firma-amenajari-interioare-bucuresti/",
+    "https://constructii-amenajariinterioare.ro/serviciile-noastre/",
+    "https://www.dedeman.ro/ro/instalatii-sanitare/c/8035",
+    "https://www.nobili-interior-design.ro/oferta/bucuresti/amenajari",
+    "https://www.dedeman.ro/ro/obiecte-si-instalatii-sanitare/c/1427",
+    "https://www.daibau.ro/preturi/renovare_apartament",
+    "https://roomzia.ro/",
+    "https://www.reddit.com/r/bucuresti/comments/16eg6em/recomandare_firma_renovare_apartament/",
+    "https://www.zf.ro/business-construct/topul-celor-mari-30-constructori-romania-2023-an-vis-cifra-afaceri-22434805",
+    "https://www.publi24.ro/anunturi/locuri-de-munca/?q=electrician",
+    "https://portal.anre.ro/PublicLists/AutorizatiiElectricieniAutorizati",
+    "https://arenaconstruct.ro/topul-constructorilor-2023/",
+    "https://www.hazconstruct.ro/",
+    "https://www.mmconstruct.ro/",
+    "https://ro.vivre.eu/blog/10-stiluri-de-amenajari-interioare-tie-care-ti-se-potriveste",
+    "https://zugraveli.ro/",
+    "https://www.constructii-amenajari-bucuresti.ro/",
+    "https://firmaconstructii.com/amenajari-interioare/zugraveli/",
+    "https://www.clujconstruct.ro/instalatii-sanitare.html",
+    "https://fereastra.ro/top-500-firme-de-inginerie-arhitectura-si-consultanta-pentru-constructii-din-romania/",
+    "https://www.artdecozone.ro/",
+    "https://sortter.com/ro-ro/blog/articol/pret-renovare-apartament-2-camere-2022/",
+    "https://ro.wikipedia.org/wiki/List\u0103_de_companii_de_construc\u021bii_din_Rom\u00e2nia",
+    "https://zugraveli-amenajari-interioare.ro/",
+    "https://mathaus.ro/c/instalatii-termice-si-sanitare/7",
+    "https://www.publi24.ro/anunturi/locuri-de-munca/constructii-arhitectura-design/electricieni/bucuresti/",
+    "https://ro.wikipedia.org/wiki/Instala%C8%9Bii_sanitare",
+    "https://www.kanald.ro/vesti-bune-pentru-romanii-care-stau-la-bloc-se-dau-bani-pentru-renovarea-blocurilor-si-pentru-alte-utilitati-20194244",
+    "https://regata.ro/amenajari-interioare",
+    "https://www.clientsolutions.ro/firme-de-constructii-din-toate-judetele/",
+    "https://electricianbucuresti.com.ro/",
+    "https://agendaconstructiilor.ro/files/top-500-antreprenori-si-firme-de-constructii.html",
+    "https://www.anuntul.ro/renovariapartamente/detaliu-produs/196631/1246361",
+    "https://atecton.com/firma-de-constructii/",
+    "https://firma-amenajari.ro/",
+    "https://next-interior.ro/renovare-bloc-vechi/",
+    "https://www.reconstruct.ro/renovare-apartament/",
+    "https://www.bricoretail.ro/servicii/colliers-romania-constructii.html",
+    "https://www.ejobs.ro/en/jobs/electrician",
+    "https://mobexpert.ro/blogs/ghidul-cumparatorului/costuri-renovare-apartament",
+    "https://www.electrician1.ro/",
+    "https://wolfconstruct.ro/",
+    "https://www.clujconstruct.ro/constructii-civile.html",
+    "https://spv.anre.ro/autorizatii-electricieni/",
+    "https://firmaconstructii.com/case-la-cheie/",
+    "https://www.primarie6.ro/primarie_sector6/105-blocuri-se-afla-reabilitare-ce-lucrari-se-fac-si-cum-arata-santierele",
+    "https://www.reddit.com/r/bucuresti/comments/1ed9upo/cost_renovare_apartament/",
+    "https://amenajariinterior.com/",
+    "https://uberhause.ro/constructii/",
+    "https://www.autorizatiedeconstruire.ro/blog/model-anunt-renovare-apartament",
+    "https://lovedeco.ro/renovare-de-apartament-vechi-etape-costuri-si-provocari/",
+    "https://iordacheamenajari.ro/",
+    "https://renovare-apartamente.ro/",
+    "https://electricalc.ro/index.php?option=com_content&view=article&id=92&Itemid=329",
+    "https://www.zugrav-bucuresti.ro/",
+    "https://www.ecoterm.ro/articole/instalatiile-sanitare-ce-sunt-si-la-ce-ne-folosesc/",
+    "https://ro.kompass.com/s/constructii/09/",
+    "https://www.dianaconstruct.ro/",
+    "https://ro.jooble.org/locuri-de-munca-electricieni",
+    "https://www.renovari-apartamente.ro/",
+    "https://zugravim-intr-o-zi.ro/",
+    "https://www.storia.ro/blog/ghid-imobiliar/autorizatii-modificari-in-apartament",
+    "https://www.constructii-case.com/",
+    "https://homerun.ro/renovare-apartament",
+    "https://zugravi-bucuresti.ro/",
+    "https://www.avocatnet.ro/articol_63728/Reabilitarea-blocurilor-de-locuin\u021be-in-2023-Ce-ar-trebui-s\u0103-\u0219tie-asocia\u021biile-de-proprietari.html",
+    "https://www.ghid-constructii.ro/info/firme_constructii_si_executie/",
+    "https://www.zugravelimecanizate.ro/",
+    "https://www.necesit.ro/preturi/renovare-apartament/renovare-apartament-pret",
+    "https://www.smart-instalatii.ro/",
+    "https://www.anuntul.ro/anunturi-prestari-servicii/constructii-amenajari/constructii-case",
+    "https://www.bucuresticonstruct.ro/instalatii-sanitare.html",
+    "https://www.romanian-companies.eu/41/d157.htm",
+    "https://www.ghid-constructii.ro/info/firme_3/",
+    "https://www.reconstruct.ro/firma-amenajari-exterioare/",
+    "https://amenajari-si-finisaje.ro/",
+    "https://www.homelux.ro/blog/amenajari-interioare-case/",
+    "https://www.reconstruct.ro/firma-amenajari-interioare/",
+    "https://www.necesit.ro/electrician/bucuresti",
+    "https://derenovat.ro/"
+  ],
+  "indexed_sites": [
+    "https://www.total-constructii.ro/firma-amenajari-interioare-exterioare",
+    "https://www.casesigradini.ro/revista/a4/8607/2/Constructii/Cate-case-se-mai-construiesc-in-Romania",
+    "https://economedia.ro/cei-mai-mari-constructori-din-romania-primii-10-au-realizat-impreuna-afaceri-de-88-miliarde-lei-in-2021-omul-de-afaceri-umbrarescu-domina-top-5-cu-cele-trei-companii.html",
+    "https://zaineaconstructii.ro/",
+    "https://www.constructii-tsc.ro/",
+    "https://www.reddit.com/r/Romania/comments/qi6hdp/design_de_interior_in_romania/",
+    "https://evz.ro/vesti-bune-pentru-romanii-care-stau-la-bloc-ue-va-aloca-fonduri-consistente-pentru-renovari.html",
+    "https://www.romstal.ro/",
+    "https://homerun.ro/instalatii-sanitare",
+    "https://renovarecompleta.ro/",
+    "https://www.bucuresticonstruct.ro/constructii-civile.html",
+    "https://www.primarie6.ro/primarie_sector6/reabilitare-termica",
+    "https://www.ecoterm.ro/articole/instalatiile-sanitare-industriale/",
+    "https://www.ghid-constructii.ro/info/firme_constructii_si_executie/with--case_de_lemn/",
+    "https://vzg.ro/",
+    "https://firma-amenajari.ro/zugraveli-apartamente-case-bucuresti.html",
+    "https://www.roinstalatii.ro/",
+    "https://zugraveli-amenajari-interioare.ro/amenajari-interioare/",
+    "https://www.anuntul.ro/anunturi-prestari-servicii/constructii-amenajari/zugraveli-firme-zugravi-bucuresti",
+    "https://www.olx.ro/servicii-afaceri-colaborari/meseriasi-constructori/q-constructii-case/",
+    "https://electro-calin.ro/",
+    "https://www.necesit.ro/instalatii-sanitare",
+    "https://www.amenajari-locuinte.ro/preturi/",
+    "https://www.renovaritotale.ro/",
+    "https://homerun.ro/bucuresti-instalatii-sanitare",
+    "https://economedia.ro/analiza-topul-celor-mai-puternice-companii-de-constructii-din-romania-umbrarescu-controleaza-firmele-care-ocupa-primele-trei-locuri-in-clasament.html",
+    "https://www.deltastudio.ro/",
+    "https://www.reddit.com/r/bucuresti/comments/1af1hhe/ce_presupune_reconsolidarea_unui_bloc/",
+    "https://www.revistabiz.ro/romania-campioana-la-constructii/",
+    "https://www.anuntul.ro/anunturi-prestari-servicii/constructii-amenajari/electricieni",
+    "https://firmaconstructiicluj.ro/renovari/",
+    "https://mobexpert.ro/blogs/idei-de-amenajare/amenajare-casa",
+    "https://urbanartconstruct.ro/",
+    "https://firmaconstructii.com/",
+    "https://homerun.ro/amenajari-interioare",
+    "https://doingbusiness.ro/top-companii/constructii",
+    "https://www.forbes.ro/top-10-cei-mai-mari-constructori-de-pe-piata-locala-233289",
+    "https://ideiamenajari.ro/",
+    "https://www.electrician-autorizat.net/",
+    "https://www.necesit.ro/zugravi/bucuresti",
+    "https://www.adalisdesign.ro/",
+    "https://renovlies.ro/",
+    "https://casebinefacute.ro/",
+    "https://www.top100ofromania.eu/sub-category/193/firme-de-constructii-1",
+    "https://cautelectrician.ro/",
+    "https://amenajari-bucuresti.ro/",
+    "https://problemelocative.ro/probleme-administrative/pnrr-aproximativ-1-300-de-blocuri-vor-fi-reabilitate-beneficiarii-nu-vor-contribui-cu-bani-proprii/amp/",
+    "https://www.facebook.com/casebinefacute/?locale=ro_RO",
+    "https://zugraveli-amenajari-interioare.ro/zugraveli-3/",
+    "https://www.ghid-constructii.ro/info/firme_constructii_si_executie/with--mansardari_si_consolidari/",
+    "https://www.constructii-romania.com/",
+    "https://homerun.ro/bucuresti-zugravit-scara-bloc",
+    "https://www.olx.ro/locuri-de-munca/q-electrician/",
+    "https://homerun.ro/constructii",
+    "https://ps2.ro/index.php/reabilitare-termica-harta-2024",
+    "https://servicii-instalatii.ro/firma-amenajari-interioare-bucuresti/",
+    "https://constructii-amenajariinterioare.ro/serviciile-noastre/",
+    "https://www.dedeman.ro/ro/instalatii-sanitare/c/8035",
+    "https://www.nobili-interior-design.ro/oferta/bucuresti/amenajari",
+    "https://www.dedeman.ro/ro/obiecte-si-instalatii-sanitare/c/1427",
+    "https://www.daibau.ro/preturi/renovare_apartament",
+    "https://roomzia.ro/",
+    "https://www.reddit.com/r/bucuresti/comments/16eg6em/recomandare_firma_renovare_apartament/",
+    "https://www.zf.ro/business-construct/topul-celor-mari-30-constructori-romania-2023-an-vis-cifra-afaceri-22434805",
+    "https://www.publi24.ro/anunturi/locuri-de-munca/?q=electrician",
+    "https://arenaconstruct.ro/topul-constructorilor-2023/",
+    "https://www.hazconstruct.ro/",
+    "https://www.mmconstruct.ro/",
+    "https://zugraveli.ro/",
+    "https://www.constructii-amenajari-bucuresti.ro/",
+    "https://firmaconstructii.com/amenajari-interioare/zugraveli/",
+    "https://www.clujconstruct.ro/instalatii-sanitare.html",
+    "https://fereastra.ro/top-500-firme-de-inginerie-arhitectura-si-consultanta-pentru-constructii-din-romania/",
+    "https://www.artdecozone.ro/",
+    "https://sortter.com/ro-ro/blog/articol/pret-renovare-apartament-2-camere-2022/",
+    "https://zugraveli-amenajari-interioare.ro/",
+    "https://mathaus.ro/c/instalatii-termice-si-sanitare/7",
+    "https://www.publi24.ro/anunturi/locuri-de-munca/constructii-arhitectura-design/electricieni/bucuresti/",
+    "https://www.kanald.ro/vesti-bune-pentru-romanii-care-stau-la-bloc-se-dau-bani-pentru-renovarea-blocurilor-si-pentru-alte-utilitati-20194244",
+    "https://regata.ro/amenajari-interioare",
+    "https://www.clientsolutions.ro/firme-de-constructii-din-toate-judetele/",
+    "https://electricianbucuresti.com.ro/",
+    "https://agendaconstructiilor.ro/files/top-500-antreprenori-si-firme-de-constructii.html",
+    "https://www.anuntul.ro/renovariapartamente/detaliu-produs/196631/1246361",
+    "https://atecton.com/firma-de-constructii/",
+    "https://firma-amenajari.ro/",
+    "https://next-interior.ro/renovare-bloc-vechi/",
+    "https://www.reconstruct.ro/renovare-apartament/",
+    "https://www.bricoretail.ro/servicii/colliers-romania-constructii.html",
+    "https://www.ejobs.ro/en/jobs/electrician",
+    "https://mobexpert.ro/blogs/ghidul-cumparatorului/costuri-renovare-apartament",
+    "https://www.electrician1.ro/",
+    "https://wolfconstruct.ro/",
+    "https://www.clujconstruct.ro/constructii-civile.html",
+    "https://firmaconstructii.com/case-la-cheie/",
+    "https://www.primarie6.ro/primarie_sector6/105-blocuri-se-afla-reabilitare-ce-lucrari-se-fac-si-cum-arata-santierele",
+    "https://www.reddit.com/r/bucuresti/comments/1ed9upo/cost_renovare_apartament/",
+    "https://amenajariinterior.com/",
+    "https://uberhause.ro/constructii/",
+    "https://www.autorizatiedeconstruire.ro/blog/model-anunt-renovare-apartament",
+    "https://lovedeco.ro/renovare-de-apartament-vechi-etape-costuri-si-provocari/",
+    "https://iordacheamenajari.ro/",
+    "https://renovare-apartamente.ro/",
+    "https://electricalc.ro/index.php?option=com_content&view=article&id=92&Itemid=329",
+    "https://www.zugrav-bucuresti.ro/",
+    "https://www.ecoterm.ro/articole/instalatiile-sanitare-ce-sunt-si-la-ce-ne-folosesc/",
+    "https://www.dianaconstruct.ro/",
+    "https://www.storia.ro/blog/ghid-imobiliar/autorizatii-modificari-in-apartament",
+    "https://www.renovari-apartamente.ro/",
+    "https://zugravim-intr-o-zi.ro/",
+    "https://www.constructii-case.com/",
+    "https://homerun.ro/renovare-apartament",
+    "https://zugravi-bucuresti.ro/",
+    "https://www.avocatnet.ro/articol_63728/Reabilitarea-blocurilor-de-locuin\u021be-in-2023-Ce-ar-trebui-s\u0103-\u0219tie-asocia\u021biile-de-proprietari.html",
+    "https://www.ghid-constructii.ro/info/firme_constructii_si_executie/",
+    "https://www.zugravelimecanizate.ro/",
+    "https://www.necesit.ro/preturi/renovare-apartament/renovare-apartament-pret",
+    "https://www.smart-instalatii.ro/",
+    "https://www.anuntul.ro/anunturi-prestari-servicii/constructii-amenajari/constructii-case",
+    "https://www.bucuresticonstruct.ro/instalatii-sanitare.html",
+    "https://www.romanian-companies.eu/41/d157.htm",
+    "https://www.ghid-constructii.ro/info/firme_3/",
+    "https://www.reconstruct.ro/firma-amenajari-exterioare/",
+    "https://amenajari-si-finisaje.ro/",
+    "https://www.homelux.ro/blog/amenajari-interioare-case/",
+    "https://www.reconstruct.ro/firma-amenajari-interioare/",
+    "https://www.necesit.ro/electrician/bucuresti",
+    "https://derenovat.ro/"
+  ],
+  "last_coverage_analysis": {
+    "coverage_percentage": 50.0,
+    "is_complete": false,
+    "recommendation": "continue"
+  },
+  "activity_log": [
+    {
+      "time": "00:58:43",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "01:08:52",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "01:08:52",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "01:19:29",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "01:19:30",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "01:29:53",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "01:29:54",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "01:40:28",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "01:40:29",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "01:51:04",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "01:51:05",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "02:01:19",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "02:01:20",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "02:11:41",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "02:11:41",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "02:22:02",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "02:22:02",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "02:32:20",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "02:32:21",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "02:42:57",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "02:42:57",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "02:53:05",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "02:53:05",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "03:03:02",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "03:03:04",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "03:12:13",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "03:12:13",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "03:20:59",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "03:21:00",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "03:30:05",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "03:30:05",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "03:39:25",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "03:39:25",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "03:48:23",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "03:48:23",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "03:57:13",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "03:57:13",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "04:06:08",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "04:06:09",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "04:14:52",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "04:14:52",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "04:23:52",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "04:23:54",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "04:32:35",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "04:32:35",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "04:41:26",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "04:41:27",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "04:51:25",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "04:51:25",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "05:00:50",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "05:00:50",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "05:09:37",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "05:09:37",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "05:18:59",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "05:19:00",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "05:27:41",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "05:27:41",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "05:36:35",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "05:36:36",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "05:45:47",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "05:45:47",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "05:56:09",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "05:56:10",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "06:06:46",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "06:06:48",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "06:16:31",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "06:16:31",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "06:25:41",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "06:25:41",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "06:34:51",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "06:34:55",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "06:44:24",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "06:44:24",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "06:54:20",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "06:54:20",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "07:04:06",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "07:04:06",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "07:14:03",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "07:14:03",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "07:24:11",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "07:24:11",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "07:34:10",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "07:34:10",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "07:44:23",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "07:44:23",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "07:54:47",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "07:54:47",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "08:04:36",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "08:04:36",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "08:15:29",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "08:15:29",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "08:25:31",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "08:25:31",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "08:35:48",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "08:35:48",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "08:45:46",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "08:45:46",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "08:55:52",
+      "message": "\ud83e\udd16 Asking DeepSeek for coverage analysis...",
+      "type": "info"
+    },
+    {
+      "time": "08:55:52",
+      "message": "\ud83d\udcca Coverage: 50.0%",
+      "type": "success"
+    },
+    {
+      "time": "09:02:46",
+      "message": "\u274c Fatal error: localhost:27017: [Errno 111] Connection refused (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 30s, Topology Description: <TopologyDescription id: 6913927bcf578b9171aa6ce1, topology_type: Single, servers: [<ServerDescription ('localhost', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('localhost:27017: [Errno 111] Connection refused (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>",
+      "type": "error"
+    }
+  ]
+}

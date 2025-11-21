@@ -15,7 +15,7 @@ def log(*a):
 # Config
 MONGO_URL = os.getenv("MONGODB_URI","mongodb://127.0.0.1:27017")
 DB_NAME = os.getenv("MONGO_DB","ai_agents_db")
-MODEL_NAME = os.getenv("VLLM_MODEL", "Qwen/Qwen2.5-3B-Instruct")  # Smaller model
+MODEL_NAME = os.getenv("VLLM_MODEL", "Qwen/Qwen2.5-1.5B-Instruct")  # Even smaller model
 OUTPUT_DIR = "./models/fine_tuned_qwen"
 
 def prepare_training_data() -> Dataset:
@@ -77,7 +77,7 @@ def fine_tune_llm():
 
     def tokenize_function(examples):
         prompts = [f"Instruction: {inst}\nInput: {inp}\nOutput: {out}" for inst, inp, out in zip(examples["instruction"], examples["input"], examples["output"])]
-        return tokenizer(prompts, truncation=True, padding="max_length", max_length=256)
+        tokenized = tokenizer(prompts, truncation=True, padding="max_length", max_length=256)  # Shorter sequences
         tokenized["labels"] = tokenized["input_ids"].copy()  # For causal LM loss
         return tokenized
 
@@ -87,13 +87,14 @@ def fine_tune_llm():
     training_args = TrainingArguments(
         output_dir=OUTPUT_DIR,
         num_train_epochs=1,  # Start with 1 epoch
-        per_device_train_batch_size=1,  # Smaller batch
-        gradient_accumulation_steps=4,
+        per_device_train_batch_size=1,  # Very small batch
+        gradient_accumulation_steps=8,  # More accumulation
         save_steps=500,
         logging_steps=10,
-        learning_rate=2e-4,
+        learning_rate=1e-4,  # Lower learning rate
         fp16=True,
         dataloader_pin_memory=False,
+        dataloader_num_workers=0,  # No multiprocessing
     )
 
     trainer = Trainer(

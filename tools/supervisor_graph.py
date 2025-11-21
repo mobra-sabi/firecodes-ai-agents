@@ -128,19 +128,31 @@ def dedup(seq):
 # ============== NODES (faze deterministe) ==============
 def plan_node(state: S) -> Dict[str,Any]:
     # o singură dată, apoi trecem în faza search
-    return {"phase": "search", "last_plan": {"ok": True, "note": "entering search phase"}}
+    return {"phase": "search", "last_plan": {"ok": True, "note": "entering search phase"}, "search_count": 0}
 
 def search_node(state: S) -> Dict[str,Any]:
     inc_rx = re.compile(INCLUDE_PATTERN, re.I)
     exc_rx = re.compile(EXCLUDE_PATTERNS, re.I)
 
+    search_count = state.get("search_count", 0) + 1
+
     if INCLUDE_DOMAINS:
         domq = " OR ".join([f"site:{d}" for d in INCLUDE_DOMAINS])
-        q = f"({domq}) fire OR code OR standard OR sprinkler"
+        base_q = f"({domq}) fire OR code OR standard OR sprinkler"
     else:
         seed = state.get("seed_url") or "https://www.iccsafe.org"
         d = norm_domain(seed) or "iccsafe.org"
-        q = f"site:{d} code OR standard OR fire OR sprinkler"
+        base_q = f"site:{d} code OR standard OR fire OR sprinkler"
+
+    # Vary query based on search_count
+    if search_count == 1:
+        q = base_q
+    elif search_count == 2:
+        q = f"{base_q} OR NFPA OR IBC OR IFC"
+    elif search_count == 3:
+        q = f"{base_q} OR certification OR training OR inspection"
+    else:
+        q = f"{base_q} OR association OR organization OR institute"
 
     count = int(state.get("args",{}).get("count", 10))
 
@@ -153,7 +165,7 @@ def search_node(state: S) -> Dict[str,Any]:
             max_sites=state.get("max_sites", MAX_SITES),
             max_per_domain=state.get("max_per_domain", MAX_PER_DOMAIN)
         )
-        log(f"[SUP] SEARCH ok ({len(res_urls)} urls) for: {q}")
+        log(f"[SUP] SEARCH {search_count} ok ({len(res_urls)} urls) for: {q}")
     except Exception as e:
         log("[SUP] SEARCH error:", repr(e))
         return {"phase":"report","last_result":{"ok":False,"error":f"serp: {e}"}}
@@ -161,11 +173,12 @@ def search_node(state: S) -> Dict[str,Any]:
     tv = state.get("to_visit",[])
     tv = dedup(tv + [u for u in res_urls if u not in tv])
     if not tv:
-        return {"phase":"report", "to_visit": tv, "last_result":{"ok":True,"queued":[]} }
+        return {"phase":"report", "to_visit": tv, "last_result":{"ok":True,"queued":[]}, "search_count": search_count }
 
     return {
         "phase":"crawl",
         "to_visit": tv,
+        "search_count": search_count,
         "last_result": {"ok": True, "query": q, "queued": res_urls},
         "args": {"url": tv[0], "max_pages": state.get("per_site_pages", PER_SITE_PAGES)}
     }
@@ -194,19 +207,23 @@ def crawl_node(state: S) -> Dict[str,Any]:
         log("[SUP] CRAWL error:", repr(e))
         last = {"ok": False, "error": repr(e)}
 
-    if len(visited) >= state.get("max_sites", MAX_SITES):
+    max_sites = state.get("max_sites", MAX_SITES)
+    if len(visited) >= max_sites:
         nxt_phase = "report"
-    elif visits < max(MIN_VISITS, 1) and to_visit:
-        nxt_phase = "crawl"
-    elif to_visit:
-        nxt_phase = "crawl"
+    elif not to_visit:
+        if visits >= MIN_VISITS:
+            nxt_phase = "report"
+        else:
+            nxt_phase = "search"  # go back to search for more
     else:
-        nxt_phase = "report"
+        nxt_phase = "crawl"
 
     args = {}
     if nxt_phase == "crawl" and to_visit:
         args = {"url": to_visit[0], "max_pages": per_site_pages}
         time.sleep(0.2)
+    elif nxt_phase == "search":
+        args = {}  # search will generate new query
 
     return {
         "phase": nxt_phase,
@@ -223,6 +240,12 @@ def report_node(state: S) -> Dict[str,Any]:
     log("[SUP] REPORT:", json.dumps(rep, ensure_ascii=False))
     return {"phase": "stop", "report": rep, "last_result": {"ok": True, "report": rep}}
 
+def stop_node(state: S) -> Dict[str,Any]:
+    return {}
+
+def final_node(state: S) -> Dict[str,Any]:
+    return state
+
 # ============== GRAPH ==============
 def router(state: S):
     p = state.get("phase","plan")
@@ -230,7 +253,7 @@ def router(state: S):
     if p == "search": return "search"
     if p == "crawl":  return "crawl"
     if p == "report": return "report"
-    if p == "stop":   return END
+    if p == "stop":   return "stop"
     return "plan"
 
 workflow = StateGraph(S)
@@ -238,12 +261,14 @@ workflow.add_node("plan",   plan_node)
 workflow.add_node("search", search_node)
 workflow.add_node("crawl",  crawl_node)
 workflow.add_node("report", report_node)
+workflow.add_node("final",  final_node)
 
 workflow.set_entry_point("plan")
-workflow.add_conditional_edges("plan",   router, {"search":"search","crawl":"crawl","report":"report","stop":END,"plan":"plan"})
-workflow.add_conditional_edges("search", router, {"search":"search","crawl":"crawl","report":"report","stop":END})
-workflow.add_conditional_edges("crawl",  router, {"search":"search","crawl":"crawl","report":"report","stop":END})
-workflow.add_conditional_edges("report", router, {"stop":END,"report":"report"})
+workflow.add_conditional_edges("plan",   router, ["search", "crawl", "report", "stop"])
+workflow.add_conditional_edges("search", router, ["search", "crawl", "report", "stop"])
+workflow.add_conditional_edges("crawl",  router, ["search", "crawl", "report", "stop"])
+workflow.add_conditional_edges("report", router, ["search", "stop"])
+workflow.add_edge("final", END)
 
 app = workflow.compile()
 
@@ -264,6 +289,7 @@ def run(prompt: str) -> dict:
         "visited_urls": [],
         "new_domains": [],
         "visits": 0,
+        "search_count": 0,
         "phase": "plan",
         "args": {},
     })
@@ -271,8 +297,15 @@ def run(prompt: str) -> dict:
     recursion = int(os.getenv("GRAPH_RECURSION_LIMIT","80"))
     try:
         res = app.invoke(init, config={"recursion_limit": recursion})
+        log(f"[SUP] RES phase: {res.get('phase')}")
     except Exception as e:
         log("[SUP] GRAPH ERROR:", repr(e))
+        rep = quick_report([])
+        return {"action":"stop","visited_urls":[], "new_domains":[], "report": rep,
+                "visited_file": None, "report_file": None}
+
+    if not res or res.get("phase") != "stop":
+        log("[SUP] GRAPH did not reach final phase")
         rep = quick_report([])
         return {"action":"stop","visited_urls":[], "new_domains":[], "report": rep,
                 "visited_file": None, "report_file": None}

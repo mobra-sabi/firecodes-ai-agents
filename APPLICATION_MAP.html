@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🗺️ AI SEO Intelligence Platform - Application Map</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(255,255,255,0.2);
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: rgba(255,255,255,0.15);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255,255,255,0.25);
+        }
+        
+        .stat-number {
+            font-size: 3em;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            opacity: 0.9;
+        }
+        
+        .section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .module-card {
+            background: rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        
+        .module-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(255,255,255,0.5);
+            background: rgba(255,255,255,0.25);
+        }
+        
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .module-name {
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+        
+        .module-status {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        
+        .status-production {
+            background: #10b981;
+        }
+        
+        .status-alpha {
+            background: #f59e0b;
+        }
+        
+        .status-skeleton {
+            background: #6b7280;
+        }
+        
+        .module-description {
+            opacity: 0.9;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        
+        .module-files {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .file-tag {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+        }
+        
+        .workflow-diagram {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+        
+        .workflow-steps {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            min-width: max-content;
+        }
+        
+        .workflow-step {
+            background: rgba(255,255,255,0.15);
+            padding: 20px;
+            border-radius: 12px;
+            min-width: 180px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .workflow-step::after {
+            content: '→';
+            position: absolute;
+            right: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 2em;
+            opacity: 0.5;
+        }
+        
+        .workflow-step:last-child::after {
+            display: none;
+        }
+        
+        .step-number {
+            background: rgba(255,255,255,0.3);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        .architecture {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .arch-layer {
+            flex: 1;
+            min-width: 250px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .layer-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(255,255,255,0.2);
+        }
+        
+        .layer-items {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .layer-item {
+            background: rgba(255,255,255,0.15);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.9em;
+        }
+        
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .tech-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            .modules-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .workflow-steps {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .workflow-step::after {
+                content: '↓';
+                right: 50%;
+                top: auto;
+                bottom: -25px;
+                transform: translateX(50%);
+            }
+        }
+        
+        .toggle-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+            margin: 10px 5px;
+        }
+        
+        .toggle-btn:hover {
+            background: rgba(255,255,255,0.35);
+            transform: scale(1.05);
+        }
+        
+        .toggle-btn.active {
+            background: #10b981;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🗺️ AI SEO Intelligence Platform</h1>
+            <div class="subtitle">Complete Application Map & Architecture</div>
+        </header>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <span class="stat-number">16</span>
+                <span class="stat-label">Total Modules</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">4,267</span>
+                <span class="stat-label">Lines of Code</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">11</span>
+                <span class="stat-label">Production Files</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">8</span>
+                <span class="stat-label">Phases Workflow</span>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">🎯 Complete Workflow</div>
+            <div class="workflow-diagram">
+                <div class="workflow-steps">
+                    <div class="workflow-step">
+                        <div class="step-number">1</div>
+                        <strong>Agent Creation</strong>
+                        <div style="font-size:0.85em;opacity:0.8;margin-top:8px">Scraping + GPU Embeddings</div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">2</div>
+                        <strong>DeepSeek Analysis</strong>
+                        <div style="font-size:0.85em;opacity:0.8;margin-top:8px">Subdomains + Keywords</div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">3</div>
+                        <strong>Competitor Discovery</strong>
+                        <div style="font-size:0.85em;opacity:0.8;margin-top:8px">Google Search 100+ sites</div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">4</div>
+                        <strong>Intent Analysis</strong>
+                        <div style="font-size:0.85em;opacity:0.8;margin-top:8px">Commercial/Informational</div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">5</div>
+                        <strong>Opportunity Scoring</strong>
+                        <div style="font-size:0.85em;opacity:0.8;margin-top:8px">0-10 scale priority</div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">6</div>
+                        <strong>Strategy Generation</strong>
+                        <div style="font-size:0.85em;opacity:0.8;margin-top:8px">30/90 day plans</div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">7</div>
+                        <strong>Content Creation</strong>
+                        <div style="font-size:0.85em;opacity:0.8;margin-top:8px">Auto-generate articles</div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">8</div>
+                        <strong>CEO Report</strong>
+                        <div style="font-size:0.85em;opacity:0.8;margin-top:8px">Monthly summary</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">🏗️ System Architecture</div>
+            <div class="architecture">
+                <div class="arch-layer">
+                    <div class="layer-title">🎨 Frontend</div>
+                    <div class="layer-items">
+                        <div class="layer-item">📊 Professional Control Panel (HTML/JS)</div>
+                        <div class="layer-item">📝 Agent Creation Interface</div>
+                        <div class="layer-item">🗺️ Application Map (This page!)</div>
+                    </div>
+                </div>
+                
+                <div class="arch-layer">
+                    <div class="layer-title">⚙️ Backend API</div>
+                    <div class="layer-items">
+                        <div class="layer-item">🚀 FastAPI (agent_api.py)</div>
+                        <div class="layer-item">🔗 REST Endpoints</div>
+                        <div class="layer-item">🤖 LLM Orchestrator</div>
+                    </div>
+                </div>
+                
+                <div class="arch-layer">
+                    <div class="layer-title">🧠 AI/ML Layer</div>
+                    <div class="layer-items">
+                        <div class="layer-item">💬 DeepSeek Chat</div>
+                        <div class="layer-item">🎯 Qwen Local (5x GPU)</div>
+                        <div class="layer-item">📐 SentenceTransformers</div>
+                    </div>
+                </div>
+                
+                <div class="arch-layer">
+                    <div class="layer-title">💾 Data Layer</div>
+                    <div class="layer-items">
+                        <div class="layer-item">🗄️ MongoDB</div>
+                        <div class="layer-item">🔍 Qdrant Vector DB</div>
+                        <div class="layer-item">📊 Time-series Collections</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">📦 V2.0 Modules (SEO Intelligence)</div>
+            <div style="margin-bottom: 20px;">
+                <button class="toggle-btn active" onclick="filterModules('all')">All</button>
+                <button class="toggle-btn" onclick="filterModules('production')">Production Only</button>
+                <button class="toggle-btn" onclick="filterModules('v3')">V3.0 Only</button>
+            </div>
+            <div class="modules-grid" id="modulesGrid"></div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">🛠️ Technology Stack</div>
+            <div class="tech-stack">
+                <div class="tech-badge">🐍 Python 3.12</div>
+                <div class="tech-badge">⚡ FastAPI</div>
+                <div class="tech-badge">🧠 DeepSeek API</div>
+                <div class="tech-badge">🎯 Qwen vLLM</div>
+                <div class="tech-badge">🔍 Qdrant</div>
+                <div class="tech-badge">🗄️ MongoDB</div>
+                <div class="tech-badge">🌐 BeautifulSoup</div>
+                <div class="tech-badge">🎭 Playwright</div>
+                <div class="tech-badge">🔗 LangChain</div>
+                <div class="tech-badge">📊 SentenceTransformers</div>
+                <div class="tech-badge">🎨 HTML/CSS/JS</div>
+                <div class="tech-badge">🚀 Brave Search API</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const modules = [
+            {
+                name: "Keyword Intent Analyzer",
+                version: "V2.0",
+                status: "production",
+                description: "Analyzes keywords to determine intent (informational, commercial, transactional), funnel stage (awareness, consideration, decision), and traffic type (B2B/B2C).",
+                files: ["keyword_intent_analyzer.py"],
+                loc: 300,
+                category: "seo_intelligence"
+            },
+            {
+                name: "Opportunity Scorer",
+                version: "V2.0",
+                status: "production",
+                description: "Calculates opportunity scores (0-10) for keywords based on search volume, competition, difficulty, and business relevance. Uses Qwen GPU for SERP analysis.",
+                files: ["opportunity_scorer.py"],
+                loc: 500,
+                category: "seo_intelligence"
+            },
+            {
+                name: "Content Gap Analyzer",
+                version: "V2.0",
+                status: "production",
+                description: "Identifies content gaps by comparing master site with competitors. Finds missing subtopics, content types, and unanswered questions.",
+                files: ["content_gap_analyzer.py"],
+                loc: 450,
+                category: "seo_intelligence"
+            },
+            {
+                name: "SEO Strategist Agent",
+                version: "V2.0",
+                status: "production",
+                description: "Analyzes competitive map and generates strategic plans with quick wins, 30-day action plans, and 90-day roadmaps.",
+                files: ["seo_strateg_agent.py"],
+                loc: 600,
+                category: "multi_agent"
+            },
+            {
+                name: "Qwen GPU Orchestrator",
+                version: "V2.0",
+                status: "production",
+                description: "Manages parallel Qwen workers across multiple GPUs (6-10), with DeepSeek for planning and synthesis. Enables 5x faster processing.",
+                files: ["qwen_gpu_orchestrator.py"],
+                loc: 500,
+                category: "qwen_orchestration"
+            },
+            {
+                name: "Copywriter Agent",
+                version: "V3.0",
+                status: "production",
+                description: "Auto-generates SEO content: briefs, outlines, full articles (500-2000 words), meta tags, and SEO optimization. Ready for WordPress publishing.",
+                files: ["copywriter_agent.py"],
+                loc: 556,
+                category: "multi_agent"
+            },
+            {
+                name: "SERP Timeline Tracker",
+                version: "V3.0",
+                status: "production",
+                description: "Tracks SERP evolution over time with daily/weekly snapshots, change detection, trend analysis, and ranking predictions.",
+                files: ["serp_timeline_tracker.py"],
+                loc: 559,
+                category: "temporal_tracking"
+            },
+            {
+                name: "Executive Summary Generator",
+                version: "V3.0",
+                status: "production",
+                description: "Generates monthly CEO reports with KPIs, top wins/opportunities/risks, competitor moves, and recommended actions. HTML export included.",
+                files: ["executive_summary_generator.py"],
+                loc: 550,
+                category: "ceo_decision"
+            },
+            {
+                name: "SERP Monitoring Scheduler",
+                version: "V3.0",
+                status: "production",
+                description: "Automated 24/7 SERP monitoring with daily critical keyword tracking, weekly comprehensive scans, trend analysis, and alert generation.",
+                files: ["serp_monitoring_scheduler.py"],
+                loc: 400,
+                category: "automation"
+            },
+            {
+                name: "CEO Master Workflow",
+                version: "V2.0",
+                status: "production",
+                description: "Complete 8-phase workflow orchestrating all modules from agent creation to competitive intelligence and reporting.",
+                files: ["ceo_master_workflow.py"],
+                loc: 800,
+                category: "core"
+            },
+            {
+                name: "Agent Scoring System",
+                version: "V3.0",
+                status: "skeleton",
+                description: "Calculates visibility, authority, and focus scores for each agent based on SERP data and content analysis.",
+                files: ["agent_scoring_system.py"],
+                loc: 150,
+                category: "ceo_decision"
+            },
+            {
+                name: "Trend Analyzer Agent",
+                version: "V3.0",
+                status: "skeleton",
+                description: "Analyzes ranking velocity, emerging competitors, decay patterns, and seasonal trends for predictive insights.",
+                files: ["trend_analyzer_agent.py"],
+                loc: 0,
+                category: "temporal_tracking"
+            },
+            {
+                name: "Feedback Loop Engine",
+                version: "V3.0",
+                status: "skeleton",
+                description: "Self-optimization system that learns from results and adjusts strategies using reinforcement learning.",
+                files: ["feedback_loop_engine.py"],
+                loc: 0,
+                category: "automation"
+            },
+            {
+                name: "Market Knowledge Graph",
+                version: "V3.0",
+                status: "skeleton",
+                description: "Graph database (Neo4j) with brands, sites, keywords, and their relationships for advanced market analysis.",
+                files: ["market_knowledge_graph.py"],
+                loc: 200,
+                category: "knowledge_graph"
+            },
+            {
+                name: "WordPress Publisher",
+                version: "V3.0",
+                status: "skeleton",
+                description: "Automatic content publishing to WordPress via REST API with draft creation and meta tag management.",
+                files: ["wordpress_publisher.py"],
+                loc: 0,
+                category: "automation"
+            },
+            {
+                name: "Performance Monitor",
+                version: "V3.0",
+                status: "skeleton",
+                description: "Integrates with Google Search Console and Google Analytics to track real performance metrics and ROI.",
+                files: ["performance_monitor.py"],
+                loc: 0,
+                category: "automation"
+            }
+        ];
+        
+        function renderModules(filter = 'all') {
+            const grid = document.getElementById('modulesGrid');
+            grid.innerHTML = '';
+            
+            let filtered = modules;
+            if (filter === 'production') {
+                filtered = modules.filter(m => m.status === 'production');
+            } else if (filter === 'v3') {
+                filtered = modules.filter(m => m.version === 'V3.0');
+            }
+            
+            filtered.forEach(module => {
+                const card = document.createElement('div');
+                card.className = 'module-card';
+                
+                const statusClass = {
+                    'production': 'status-production',
+                    'alpha': 'status-alpha',
+                    'skeleton': 'status-skeleton'
+                }[module.status];
+                
+                const statusText = {
+                    'production': '✅ PRODUCTION',
+                    'alpha': '🟡 ALPHA',
+                    'skeleton': '⚪ SKELETON'
+                }[module.status];
+                
+                card.innerHTML = `
+                    <div class="module-header">
+                        <div class="module-name">${module.name}</div>
+                        <div class="module-status ${statusClass}">${statusText}</div>
+                    </div>
+                    <div style="color: #fbbf24; font-size: 0.9em; margin-bottom: 10px;">${module.version} • ${module.category}</div>
+                    <div class="module-description">${module.description}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <div style="font-size: 0.9em; opacity: 0.8;">${module.loc} LOC</div>
+                        <div class="module-files">
+                            ${module.files.map(f => `<span class="file-tag">${f}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+        
+        function filterModules(type) {
+            // Update button states
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            renderModules(type);
+        }
+        
+        // Initial render
+        renderModules();
+    </script>
+</body>
+</html>

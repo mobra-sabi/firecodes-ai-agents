@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agents Platform - Control Panel Professional</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .logo-text h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-text p {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        /* Main Content */
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .panel-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        /* Agent Creation Form */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .form-checkbox:hover {
+            background: #e9ecef;
+        }
+
+        .form-checkbox input {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        /* Agents List */
+        .agents-grid {
+            display: grid;
+            gap: 15px;
+            max-height: none; /* No height limit */
+            overflow-y: visible; /* All agents visible */
+        }
+
+        .agent-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .agent-card:hover {
+            border-color: #667eea;
+            background: white;
+            transform: translateX(5px);
+        }
+
+        .agent-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+
+        .agent-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .agent-url {
+            font-size: 13px;
+            color: #666;
+            word-break: break-all;
+        }
+
+        .agent-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-ready {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-validated {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .status-created {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .agent-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .agent-stat {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .agent-stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .agent-stat-label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            margin-top: 3px;
+        }
+
+        .agent-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-small {
+            padding: 8px 14px;
+            font-size: 12px;
+            border-radius: 8px;
+        }
+
+        /* Progress Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .progress-steps {
+            margin-bottom: 30px;
+        }
+
+        .progress-step {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 12px;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+
+        .progress-step.active {
+            background: #e7f3ff;
+            border: 2px solid #667eea;
+        }
+
+        .progress-step.completed {
+            background: #d4edda;
+        }
+
+        .step-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            background: #dee2e6;
+            color: #666;
+        }
+
+        .progress-step.active .step-icon {
+            background: #667eea;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        .progress-step.completed .step-icon {
+            background: #28a745;
+            color: white;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .step-info h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .step-info p {
+            font-size: 13px;
+            color: #666;
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Report Section */
+        .report-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .subcategories {
+            display: grid;
+            gap: 10px;
+        }
+
+        .subcategory-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .subcategory-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .subcategory-desc {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: white;
+            padding: 20px 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: none;
+            align-items: center;
+            gap: 15px;
+            z-index: 2000;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.show {
+            display: flex;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .toast-success {
+            border-left: 4px solid #28a745;
+        }
+
+        .toast-error {
+            border-left: 4px solid #dc3545;
+        }
+
+        .toast-info {
+            border-left: 4px solid #17a2b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-top">
+                <div class="logo">
+                    <div class="logo-icon">🤖</div>
+                    <div class="logo-text">
+                        <h1>AI Agents Platform</h1>
+                        <p>Professional Control Panel</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="location.href='/static/workflow_monitor.html'">
+                        📊 System Monitor
+                    </button>
+                    <button class="btn btn-secondary" onclick="location.href='/static/production_dashboard.html'">
+                        🎯 Production
+                    </button>
+                    <button class="btn btn-primary" onclick="showCreateModal()">
+                        ➕ Create New Agent
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-value" id="totalAgents">0</div>
+                            <div class="stat-label">Total Agents</div>
+                        </div>
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                            🤖
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-value" id="totalPages">0</div>
+                            <div class="stat-label">Pages Indexed</div>
+                        </div>
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
+                            📄
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-value" id="totalChunks">0</div>
+                            <div class="stat-label">GPU Chunks</div>
+                        </div>
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">
+                            🔥
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-value" id="systemStatus">✅</div>
+                            <div class="stat-label">System Health</div>
+                        </div>
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b, #38f9d7);">
+                            💚
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Agents List -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Active Agents <span id="agentCount" style="color: #667eea; font-size: 18px;">(0)</span></h2>
+                    <button class="btn btn-secondary btn-small" onclick="loadAgents()">
+                        🔄 Refresh
+                    </button>
+                </div>
+                <div class="agents-grid" id="agentsList">
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <div class="loading"></div>
+                        <p style="margin-top: 15px;">Loading agents...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Quick Actions</h2>
+                </div>
+                
+                <div style="display: grid; gap: 15px;">
+                    <button class="btn btn-primary" onclick="showCreateModal()">
+                        ➕ Create New Agent
+                    </button>
+                    <button class="btn btn-secondary" onclick="location.href='/static/competitive_intelligence_dashboard.html'">
+                        🔍 Competitive Intelligence
+                    </button>
+                    <button class="btn btn-secondary" onclick="generateSystemReport()">
+                        📊 Generate System Report
+                    </button>
+                    <button class="btn btn-secondary" onclick="verifySystem()">
+                        ✅ Verify System Status
+                    </button>
+                </div>
+
+                <div class="report-section" id="reportSection" style="display: none;">
+                    <div class="report-header">
+                        <h3>System Report</h3>
+                        <button class="btn btn-small btn-secondary" onclick="downloadReport()">
+                            💾 Download
+                        </button>
+                    </div>
+                    <div id="reportContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Agent Modal -->
+    <div class="modal" id="createModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Create New AI Agent</h2>
+                <p style="color: #666;">Enter website URL to create intelligent agent</p>
+            </div>
+
+            <form onsubmit="createAgent(event)">
+                <div class="form-group">
+                    <label class="form-label">Website URL</label>
+                    <input type="text" class="form-input" id="agentUrl" placeholder="https://example.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Max Pages to Scrape</label>
+                    <input type="number" class="form-input" id="maxPages" value="300" min="10" max="5000">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Workflow Options</label>
+                    <div class="form-checkbox">
+                        <input type="checkbox" id="optDeepSeek" checked>
+                        <label for="optDeepSeek">🧠 DeepSeek Analysis</label>
+                    </div>
+                    <div class="form-checkbox">
+                        <input type="checkbox" id="optCompetitors" checked>
+                        <label for="optCompetitors">🔍 Competitor Discovery</label>
+                    </div>
+                    <div class="form-checkbox">
+                        <input type="checkbox" id="optSlaves" checked>
+                        <label for="optSlaves">🤖 Create Slave Agents</label>
+                    </div>
+                    <div class="form-checkbox">
+                        <input type="checkbox" id="optImprovement" checked>
+                        <label for="optImprovement">📈 Improvement Analysis</label>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">
+                        🚀 Create Agent
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateModal()">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Progress Modal -->
+    <div class="modal" id="progressModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Creating AI Agent</h2>
+                <p style="color: #666;" id="progressUrl"></p>
+            </div>
+
+            <div class="progress-steps" id="progressSteps">
+                <div class="progress-step" id="step1">
+                    <div class="step-icon">1</div>
+                    <div class="step-info">
+                        <h4>Initialization</h4>
+                        <p>Preparing agent creation...</p>
+                    </div>
+                </div>
+                <div class="progress-step" id="step2">
+                    <div class="step-icon">2</div>
+                    <div class="step-info">
+                        <h4>Scraping Website</h4>
+                        <p>Extracting content from pages...</p>
+                    </div>
+                </div>
+                <div class="progress-step" id="step3">
+                    <div class="step-icon">3</div>
+                    <div class="step-info">
+                        <h4>GPU Embeddings</h4>
+                        <p>Creating vector embeddings...</p>
+                    </div>
+                </div>
+                <div class="progress-step" id="step4">
+                    <div class="step-icon">4</div>
+                    <div class="step-info">
+                        <h4>DeepSeek Analysis</h4>
+                        <p>AI-powered site analysis...</p>
+                    </div>
+                </div>
+                <div class="progress-step" id="step5">
+                    <div class="step-icon">5</div>
+                    <div class="step-info">
+                        <h4>Competitor Discovery</h4>
+                        <p>Finding competitors via SERP...</p>
+                    </div>
+                </div>
+                <div class="progress-step" id="step6">
+                    <div class="step-icon">6</div>
+                    <div class="step-info">
+                        <h4>Slave Agents</h4>
+                        <p>Creating competitor agents...</p>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-secondary" onclick="closeProgressModal()" style="width: 100%;">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <div id="toastIcon">ℹ️</div>
+        <div id="toastMessage">Notification</div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://100.66.157.27:5000';
+
+        // Load agents on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAgents();
+            loadStats();
+            setInterval(loadStats, 30000); // Refresh every 30s
+        });
+
+        async function loadAgents() {
+            try {
+                const response = await fetch(`${API_BASE}/api/agents`);
+                const agents = await response.json();
+
+                const container = document.getElementById('agentsList');
+                
+                // Update agent count
+                document.getElementById('agentCount').textContent = `(${agents.length})`;
+
+                if (!agents || agents.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #666;">
+                            <div style="font-size: 48px; margin-bottom: 15px;">🤖</div>
+                            <h3>No agents yet</h3>
+                            <p>Create your first AI agent to get started!</p>
+                        </div>
+                    `;
+                    document.getElementById('agentCount').textContent = '(0)';
+                    return;
+                }
+
+                console.log(`Loading ${agents.length} agents...`); // Debug
+                container.innerHTML = agents.map(agent => `
+                    <div class="agent-card">
+                        <div class="agent-header">
+                            <div>
+                                <div class="agent-title">${agent.domain || agent.url}</div>
+                                <div class="agent-url">${agent.url}</div>
+                            </div>
+                            <span class="agent-status status-${agent.status || 'created'}">
+                                ${agent.status || 'created'}
+                            </span>
+                        </div>
+                        <div class="agent-stats">
+                            <div class="agent-stat">
+                                <div class="agent-stat-value">${agent.pages_indexed || 0}</div>
+                                <div class="agent-stat-label">Pages</div>
+                            </div>
+                            <div class="agent-stat">
+                                <div class="agent-stat-value">${agent.chunks_indexed || 0}</div>
+                                <div class="agent-stat-label">Chunks</div>
+                            </div>
+                            <div class="agent-stat">
+                                <div class="agent-stat-value">${agent.has_embeddings ? '✅' : '❌'}</div>
+                                <div class="agent-stat-label">Embeddings</div>
+                            </div>
+                        </div>
+                        <div class="agent-actions">
+                            <button class="btn btn-primary btn-small" onclick="openChat('${agent._id}')">
+                                💬 Chat
+                            </button>
+                            <button class="btn btn-secondary btn-small" onclick="viewDashboard('${agent._id}')">
+                                📊 Dashboard
+                            </button>
+                            <button class="btn btn-secondary btn-small" onclick="generateAgentReport('${agent._id}')">
+                                📋 Report
+                            </button>
+                            <button class="btn btn-secondary btn-small" onclick="runFullAnalysis('${agent._id}')">
+                                🔍 Analyze
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading agents:', error);
+                showToast('Error loading agents', 'error');
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/api/agents`);
+                const agents = await response.json();
+
+                document.getElementById('totalAgents').textContent = agents.length;
+                
+                const totalPages = agents.reduce((sum, a) => sum + (a.pages_indexed || 0), 0);
+                document.getElementById('totalPages').textContent = totalPages.toLocaleString();
+                
+                const totalChunks = agents.reduce((sum, a) => sum + (a.chunks_indexed || 0), 0);
+                document.getElementById('totalChunks').textContent = totalChunks.toLocaleString();
+
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        function showCreateModal() {
+            document.getElementById('createModal').classList.add('show');
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createModal').classList.remove('show');
+        }
+
+        async function createAgent(event) {
+            event.preventDefault();
+
+            const url = document.getElementById('agentUrl').value;
+            const maxPages = parseInt(document.getElementById('maxPages').value);
+
+            closeCreateModal();
+            showProgressModal(url);
+
+            try {
+                updateProgressStep(1, 'active');
+
+                const response = await fetch(`${API_BASE}/api/agents/create`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ site_url: url, max_pages: maxPages })
+                });
+
+                if (!response.ok) throw new Error('Failed to create agent');
+
+                updateProgressStep(1, 'completed');
+                updateProgressStep(2, 'active');
+
+                // Simulate progress (in real app, use WebSocket)
+                await simulateProgress();
+
+                showToast('Agent created successfully!', 'success');
+                closeProgressModal();
+                loadAgents();
+                loadStats();
+
+            } catch (error) {
+                console.error('Error creating agent:', error);
+                showToast('Error creating agent: ' + error.message, 'error');
+                closeProgressModal();
+            }
+        }
+
+        function showProgressModal(url) {
+            document.getElementById('progressUrl').textContent = url;
+            document.getElementById('progressModal').classList.add('show');
+            
+            // Reset all steps
+            for (let i = 1; i <= 6; i++) {
+                const step = document.getElementById(`step${i}`);
+                step.classList.remove('active', 'completed');
+            }
+        }
+
+        function closeProgressModal() {
+            document.getElementById('progressModal').classList.remove('show');
+        }
+
+        function updateProgressStep(stepNum, status) {
+            const step = document.getElementById(`step${stepNum}`);
+            step.classList.remove('active', 'completed');
+            if (status) {
+                step.classList.add(status);
+            }
+        }
+
+        async function simulateProgress() {
+            const steps = [2, 3, 4, 5, 6];
+            for (const step of steps) {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                updateProgressStep(step - 1, 'completed');
+                updateProgressStep(step, 'active');
+            }
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            updateProgressStep(6, 'completed');
+        }
+
+        function openChat(agentId) {
+            window.open(`/static/chat.html?agent=${agentId}`, '_blank');
+        }
+
+        function viewDashboard(agentId) {
+            window.open(`/static/competitive_intelligence_dashboard.html?agent=${agentId}`, '_blank');
+        }
+
+        async function generateAgentReport(agentId) {
+            showToast('Generating report...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/agents/${agentId}/report`);
+                const report = await response.json();
+                
+                displayReport(report);
+                showToast('Report generated!', 'success');
+            } catch (error) {
+                showToast('Error generating report', 'error');
+            }
+        }
+
+        async function runFullAnalysis(agentId) {
+            showToast('Starting full analysis...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/competitive-intelligence/run-full-workflow/${agentId}`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) throw new Error('Analysis failed');
+                
+                showToast('Analysis started! Check dashboard for progress.', 'success');
+            } catch (error) {
+                showToast('Error starting analysis', 'error');
+            }
+        }
+
+        async function generateSystemReport() {
+            showToast('Generating system report...', 'info');
+            
+            try {
+                const agents = await fetch(`${API_BASE}/api/agents`).then(r => r.json());
+                
+                const report = {
+                    timestamp: new Date().toISOString(),
+                    total_agents: agents.length,
+                    total_pages: agents.reduce((sum, a) => sum + (a.pages_indexed || 0), 0),
+                    total_chunks: agents.reduce((sum, a) => sum + (a.chunks_indexed || 0), 0),
+                    agents: agents.map(a => ({
+                        domain: a.domain || a.url,
+                        status: a.status,
+                        pages: a.pages_indexed || 0,
+                        chunks: a.chunks_indexed || 0,
+                        has_embeddings: a.has_embeddings,
+                        subcategories: a.subcategories || []
+                    }))
+                };
+                
+                displayReport(report);
+                showToast('Report generated!', 'success');
+            } catch (error) {
+                showToast('Error generating report', 'error');
+            }
+        }
+
+        function displayReport(report) {
+            const section = document.getElementById('reportSection');
+            const content = document.getElementById('reportContent');
+            
+            let html = `
+                <div style="margin-bottom: 20px;">
+                    <h4>Generated: ${new Date(report.timestamp).toLocaleString()}</h4>
+                    <p><strong>Total Agents:</strong> ${report.total_agents}</p>
+                    <p><strong>Total Pages:</strong> ${report.total_pages?.toLocaleString()}</p>
+                    <p><strong>Total Chunks:</strong> ${report.total_chunks?.toLocaleString()}</p>
+                </div>
+            `;
+            
+            if (report.agents) {
+                html += '<div class="subcategories">';
+                report.agents.forEach(agent => {
+                    html += `
+                        <div class="subcategory-item">
+                            <div class="subcategory-title">${agent.domain}</div>
+                            <div class="subcategory-desc">
+                                Status: ${agent.status} | 
+                                Pages: ${agent.pages} | 
+                                Chunks: ${agent.chunks} |
+                                Embeddings: ${agent.has_embeddings ? '✅' : '❌'}
+                            </div>
+                            ${agent.subcategories?.length > 0 ? `
+                                <div style="margin-top: 10px; padding-left: 15px;">
+                                    <strong>Subcategories:</strong>
+                                    ${agent.subcategories.map(s => `<div>• ${s}</div>`).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+            
+            content.innerHTML = html;
+            section.style.display = 'block';
+            
+            // Store for download
+            window.currentReport = report;
+        }
+
+        function downloadReport() {
+            if (!window.currentReport) return;
+            
+            const dataStr = JSON.stringify(window.currentReport, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `system-report-${Date.now()}.json`;
+            link.click();
+            
+            showToast('Report downloaded!', 'success');
+        }
+
+        async function verifySystem() {
+            showToast('Verifying system...', 'info');
+            
+            try {
+                // Check API
+                await fetch(`${API_BASE}/api/agents`);
+                
+                // Check agents
+                const agents = await fetch(`${API_BASE}/api/agents`).then(r => r.json());
+                
+                const issues = [];
+                agents.forEach(agent => {
+                    if (!agent.has_embeddings) {
+                        issues.push(`${agent.domain}: Missing embeddings`);
+                    }
+                    if ((agent.pages_indexed || 0) === 0) {
+                        issues.push(`${agent.domain}: No pages indexed`);
+                    }
+                });
+                
+                if (issues.length === 0) {
+                    showToast('✅ System is healthy!', 'success');
+                    document.getElementById('systemStatus').textContent = '✅';
+                } else {
+                    showToast(`⚠️ ${issues.length} issues found`, 'error');
+                    console.log('Issues:', issues);
+                }
+                
+            } catch (error) {
+                showToast('❌ System check failed', 'error');
+                document.getElementById('systemStatus').textContent = '❌';
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            const msg = document.getElementById('toastMessage');
+            
+            const icons = {
+                success: '✅',
+                error: '❌',
+                info: 'ℹ️'
+            };
+            
+            icon.textContent = icons[type] || icons.info;
+            msg.textContent = message;
+            
+            toast.className = `toast toast-${type} show`;
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
+
