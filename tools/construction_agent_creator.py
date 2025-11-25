@@ -266,10 +266,14 @@ class ConstructionAgentCreator:
             'despre', 'contact', 'preturi', 'oferta'
         ]
         
-        with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
-            while queue and len(pages_data) < 100:
+        # 100 pagini max, 15 workeri paraleli
+        MAX_PAGES = 100
+        MAX_WORKERS = 15
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+            while queue and len(pages_data) < MAX_PAGES:
                 batch_urls = []
-                for _ in range(min(15, len(queue), 100 - len(pages_data))):
+                for _ in range(min(MAX_WORKERS, len(queue), MAX_PAGES - len(pages_data))):
                     if queue:
                         url = queue.popleft()
                         if url not in visited:
@@ -313,58 +317,44 @@ class ConstructionAgentCreator:
             "scraped_at": datetime.now().isoformat()
         }
 
-    def scrape_single_page(self, url: str, headers: dict, max_retries: int = 3) -> Optional[Dict]:
-        """Scraping pentru o singură pagină cu focus pe construcții"""
+    def scrape_single_page(self, url: str, headers: dict, max_retries: int = 2) -> Optional[Dict]:
+        """Scraping RAPID - direct primul, ScraperAPI doar ca fallback"""
         resp = None
         
-        # Folosește ScraperAPI dacă este disponibil
-        if self.use_scraperapi:
+        # STRATEGIA: Direct PRIMUL (rapid), ScraperAPI doar pentru site-uri problematice
+        FAST_TIMEOUT = 5  # Timeout agresiv pentru viteză
+        
+        # 1. ÎNCEARCĂ DIRECT (RAPID)
+        try:
+            resp = requests.get(url, headers=headers, timeout=FAST_TIMEOUT, allow_redirects=True)
+            if resp.status_code == 200:
+                print(f"  ⚡ Direct OK: {url[:55]}...")
+            elif resp.status_code == 403 or resp.status_code == 429:
+                # Site blochează - folosește ScraperAPI
+                resp = None
+            else:
+                resp = None
+        except requests.exceptions.Timeout:
+            # Timeout - skip sau încearcă ScraperAPI
+            resp = None
+        except Exception:
+            resp = None
+        
+        # 2. FALLBACK la ScraperAPI doar dacă direct a eșuat
+        if resp is None and self.use_scraperapi:
             try:
                 scraperapi_url = f"http://api.scraperapi.com?api_key={self.scraperapi_key}&url={requests.utils.quote(url)}"
-                print(f"  🔧 Folosind ScraperAPI pentru {url[:60]}...")
-                resp = requests.get(scraperapi_url, timeout=30, allow_redirects=True)
+                resp = requests.get(scraperapi_url, timeout=10, allow_redirects=True)
                 if resp.status_code == 200:
-                    # ScraperAPI a reușit, continuă cu procesarea
-                    print(f"  ✅ ScraperAPI success pentru {url[:60]} (status: {resp.status_code})")
-                    pass
+                    print(f"  🔧 ScraperAPI OK: {url[:50]}...")
                 else:
-                    print(f"  ⚠️ ScraperAPI returned status {resp.status_code} pentru {url[:60]}, încerc direct...")
-                    resp = None  # Forțează fallback
-            except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
-                print(f"  ⚠️ ScraperAPI timeout/error pentru {url[:60]}: {type(e).__name__}, încerc direct...")
-                resp = None  # Fallback la requests direct
-            except Exception as e:
-                print(f"  ⚠️ Eroare ScraperAPI pentru {url[:60]}: {e}, încerc direct...")
-                resp = None  # Fallback la requests direct
+                    resp = None
+            except Exception:
+                resp = None
         
-        # Fallback la requests direct dacă ScraperAPI nu a funcționat
+        # 3. Dacă tot nu merge, skip rapid (nu pierde timp)
         if resp is None:
-            for attempt in range(max_retries):
-                try:
-                    resp = requests.get(url, headers=headers, timeout=15, allow_redirects=True)
-                    if resp.status_code == 200:
-                        break
-                    elif resp.status_code in [301, 302, 303, 307, 308]:
-                        # Follow redirects
-                        url = resp.headers.get('Location', url)
-                        continue
-                    else:
-                        if attempt < max_retries - 1:
-                            time.sleep(1 * (attempt + 1))  # Exponential backoff
-                            continue
-                        return None
-                except (requests.exceptions.ConnectionError, requests.exceptions.Timeout, 
-                        requests.exceptions.SSLError, requests.exceptions.TooManyRedirects) as e:
-                    if attempt < max_retries - 1:
-                        print(f"  ⚠️ Retry {attempt + 1}/{max_retries} pentru {url[:60]}...")
-                        time.sleep(1 * (attempt + 1))  # Exponential backoff
-                        continue
-                    else:
-                        print(f"  ❌ Eroare finală la {url[:60]}: {type(e).__name__}")
-                        return None
-                except Exception as e:
-                    print(f"  ⚠️ Eroare neașteptată la {url[:60]}: {e}")
-                    return None
+            return None
         
         # Verifică dacă avem un răspuns valid
         if resp is None or resp.status_code != 200:
@@ -720,7 +710,7 @@ CONȚINUT: {content}
         return model
     
     def create_site_embeddings(self, domain: str, site_data: Dict, analysis: Dict, gpu_id: Optional[int] = None) -> int:
-        """Creează embeddings cu GPU pentru FIECARE pagină. Returnează numărul de embeddings create."""
+        """Creează embeddings cu GPU BATCH pentru FIECARE pagină. Returnează numărul de embeddings create."""
         embeddings_created = 0
         
         # Obține modelul pentru GPU-ul specificat
@@ -741,12 +731,12 @@ CONȚINUT: {content}
                 )
                 print(f"📦 Colecție Qdrant creată: {collection_name}")
             
-            # 2. Creează chunks pentru FIECARE pagină
+            # 2. Colectează TOATE chunks-urile mai întâi (pentru batch processing)
             pages = site_data.get('pages', [])
-            print(f"🧩 Creez chunks pentru {len(pages)} pagini pe GPU {gpu_id if gpu_id is not None else 0}...")
+            print(f"🧩 Pregătesc chunks pentru {len(pages)} pagini (GPU {gpu_id if gpu_id is not None else 0})...")
             
-            points = []
-            chunk_id = 0
+            all_chunks = []  # Lista cu toate textele
+            all_metadata = []  # Metadata pentru fiecare chunk
             
             for page_idx, page in enumerate(pages):
                 page_content = page.get('content', '')
@@ -765,31 +755,52 @@ CONȚINUT: {content}
                     if len(chunk_text) < 100:  # Skip chunks prea mici
                         continue
                     
-                    # Generează embedding cu GPU (SentenceTransformer)
-                    embedding = embedding_model.encode(chunk_text).tolist()
-                    
-                    # Creează point pentru Qdrant
-                    point = PointStruct(
-                        id=chunk_id,
-                        vector=embedding,
-                        payload={
-                            "domain": domain,
-                            "url": page_url,
-                            "chunk_text": chunk_text[:500],  # First 500 chars
-                            "chunk_index": chunk_id,
-                            "page_index": page_idx,
-                            "timestamp": time.time()
-                        }
-                    )
-                    points.append(point)
-                    chunk_id += 1
-                    
-                    # Upsert în batch-uri de 100
-                    if len(points) >= 100:
-                        self.qdrant.upsert(collection_name=collection_name, points=points)
-                        embeddings_created += len(points)
-                        print(f"   ✅ {embeddings_created} chunks procesate cu GPU...")
-                        points = []
+                    all_chunks.append(chunk_text)
+                    all_metadata.append({
+                        "domain": domain,
+                        "url": page_url,
+                        "chunk_text": chunk_text[:500],
+                        "page_index": page_idx,
+                        "timestamp": time.time()
+                    })
+            
+            if not all_chunks:
+                print(f"⚠️ Nu sunt chunks de procesat pentru {domain}")
+                return 0
+            
+            print(f"🚀 BATCH ENCODING: {len(all_chunks)} chunks pe GPU {gpu_id if gpu_id is not None else 0}...")
+            
+            # 3. BATCH ENCODING - toate embedding-urile dintr-o dată pe GPU!
+            # batch_size mare pentru a utiliza GPU-ul la maxim
+            batch_size = 256  # Optimal pentru RTX 3080 Ti
+            all_embeddings = embedding_model.encode(
+                all_chunks, 
+                batch_size=batch_size,
+                show_progress_bar=True,
+                convert_to_numpy=True
+            )
+            
+            print(f"✅ Batch encoding complet: {len(all_embeddings)} embeddings generate")
+            
+            # 4. Creează points și upsert în batch-uri
+            points = []
+            for chunk_id, (embedding, metadata) in enumerate(zip(all_embeddings, all_metadata)):
+                point = PointStruct(
+                    id=chunk_id,
+                    vector=embedding.tolist(),
+                    payload={
+                        **metadata,
+                        "chunk_index": chunk_id
+                    }
+                )
+                points.append(point)
+                
+                # Upsert în batch-uri de 500 pentru Qdrant
+                if len(points) >= 500:
+                    self.qdrant.upsert(collection_name=collection_name, points=points)
+                    embeddings_created += len(points)
+                    print(f"   ✅ {embeddings_created}/{len(all_chunks)} chunks salvate în Qdrant...")
+                    points = []
             
             # Upsert ultimele chunks
             if points:

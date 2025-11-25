@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pymongo import MongoClient
 from bson import ObjectId
 from pydantic import BaseModel
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 import os
 import requests
 import socket
@@ -7149,3 +7149,957 @@ async def get_discovery_questions(agent_id: str, category: str = Query(None)):
         return {"ok": True, "category": category, "questions": questions[category]}
     
     return {"ok": True, "questions": questions}
+
+
+# ============================================================================
+# 🎯 BUSINESS INTELLIGENCE ENDPOINTS
+# Gap Analysis, Positioning Score, Action Plan, Alerts, AI Coach
+# ============================================================================
+
+from business_intelligence import (
+    GapAnalyzer, 
+    PositioningScorer, 
+    ActionPlanGenerator,
+    BusinessDiscoveryWizard,
+    CompetitorAlertSystem,
+    AICoach
+)
+
+@app.get("/api/agents/{agent_id}/business-intelligence/gap-analysis")
+async def get_gap_analysis(agent_id: str):
+    """
+    🔍 Gap Analysis - Ce au competitorii și tu nu
+    Identifică keywords, servicii și topicuri lipsă
+    """
+    try:
+        analyzer = GapAnalyzer(agent_id)
+        content_gaps = analyzer.analyze_content_gaps()
+        keyword_opportunities = analyzer.analyze_keyword_opportunities()
+        
+        return {
+            "ok": True,
+            "agent_id": agent_id,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "content_gaps": content_gaps,
+            "keyword_opportunities": keyword_opportunities,
+            "summary": {
+                "total_keyword_gaps": len(content_gaps.get("keyword_gaps", [])),
+                "total_service_gaps": len(content_gaps.get("service_gaps", [])),
+                "total_topic_gaps": len(content_gaps.get("topic_gaps", [])),
+                "total_opportunities": len(keyword_opportunities)
+            }
+        }
+    except Exception as e:
+        logger.error(f"Error in gap analysis: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/agents/{agent_id}/business-intelligence/positioning-score")
+async def get_positioning_score(agent_id: str):
+    """
+    📊 Positioning Score - Scorul tău de poziționare în piață (0-100)
+    Include breakdown pe categorii și comparație cu competitorii
+    """
+    try:
+        scorer = PositioningScorer(agent_id)
+        score = scorer.calculate_score()
+        comparison = scorer.get_comparison_with_top(top_n=3)
+        
+        return {
+            "ok": True,
+            "agent_id": agent_id,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "positioning": score,
+            "comparison_with_top": comparison
+        }
+    except Exception as e:
+        logger.error(f"Error calculating positioning score: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/agents/{agent_id}/business-intelligence/action-plan")
+async def get_action_plan(agent_id: str):
+    """
+    📋 Action Plan - Plan de acțiune prioritizat
+    Quick Wins, Medium Term, Long Term cu pași concreți
+    """
+    try:
+        generator = ActionPlanGenerator(agent_id)
+        plan = generator.generate_plan()
+        
+        return {
+            "ok": True,
+            "agent_id": agent_id,
+            **plan
+        }
+    except Exception as e:
+        logger.error(f"Error generating action plan: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/agents/{agent_id}/business-intelligence/alerts")
+async def get_competitor_alerts(agent_id: str):
+    """
+    🚨 Competitor Alerts - Alerte despre mișcări competitori
+    Competitori noi, schimbări poziții, gap-uri critice
+    """
+    try:
+        alert_system = CompetitorAlertSystem(agent_id)
+        alerts = alert_system.get_alert_summary()
+        
+        return {
+            "ok": True,
+            "agent_id": agent_id,
+            **alerts
+        }
+    except Exception as e:
+        logger.error(f"Error getting alerts: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/agents/{agent_id}/business-intelligence/discovery-wizard")
+async def get_discovery_wizard(agent_id: str):
+    """
+    🧙 Business Discovery Wizard - Întrebări pentru personalizare
+    Returnează întrebările pentru a înțelege mai bine afacerea
+    """
+    try:
+        questions = BusinessDiscoveryWizard.get_questions()
+        
+        return {
+            "ok": True,
+            "agent_id": agent_id,
+            "total_questions": len(questions),
+            "questions": questions,
+            "instructions": "Răspunde la toate întrebările pentru recomandări personalizate"
+        }
+    except Exception as e:
+        logger.error(f"Error getting discovery wizard: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class DiscoveryAnswers(BaseModel):
+    answers: Dict[str, Any]
+
+
+@app.post("/api/agents/{agent_id}/business-intelligence/discovery-wizard/submit")
+async def submit_discovery_answers(agent_id: str, data: DiscoveryAnswers):
+    """
+    📝 Submit Discovery Answers - Trimite răspunsurile și primește recomandări personalizate
+    """
+    try:
+        # Obține gap analysis și scor pentru context
+        analyzer = GapAnalyzer(agent_id)
+        scorer = PositioningScorer(agent_id)
+        
+        gap_analysis = analyzer.analyze_content_gaps()
+        score = scorer.calculate_score()
+        
+        # Generează recomandări personalizate
+        recommendations = BusinessDiscoveryWizard.generate_personalized_recommendations(
+            data.answers, gap_analysis, score
+        )
+        
+        # Salvează răspunsurile în DB
+        db.business_discovery.update_one(
+            {"agent_id": agent_id},
+            {
+                "$set": {
+                    "answers": data.answers,
+                    "submitted_at": datetime.now(timezone.utc),
+                    "recommendations": recommendations
+                }
+            },
+            upsert=True
+        )
+        
+        return {
+            "ok": True,
+            "agent_id": agent_id,
+            "answers_saved": True,
+            **recommendations
+        }
+    except Exception as e:
+        logger.error(f"Error submitting discovery answers: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/agents/{agent_id}/business-intelligence/coach/weekly-checkin")
+async def get_weekly_checkin(agent_id: str):
+    """
+    🤖 AI Coach Weekly Check-in - Verificare săptămânală cu sugestii
+    """
+    try:
+        coach = AICoach(agent_id)
+        checkin = coach.get_weekly_checkin()
+        
+        return {
+            "ok": True,
+            "agent_id": agent_id,
+            **checkin
+        }
+    except Exception as e:
+        logger.error(f"Error getting weekly checkin: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class CoachQuestion(BaseModel):
+    question: str
+
+
+@app.post("/api/agents/{agent_id}/business-intelligence/coach/ask")
+async def ask_ai_coach(agent_id: str, data: CoachQuestion):
+    """
+    💬 Ask AI Coach - Pune o întrebare coach-ului AI
+    """
+    try:
+        coach = AICoach(agent_id)
+        response = coach.ask_coach(data.question)
+        
+        return {
+            "ok": True,
+            "agent_id": agent_id,
+            **response
+        }
+    except Exception as e:
+        logger.error(f"Error asking AI coach: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/agents/{agent_id}/business-intelligence/dashboard")
+async def get_business_intelligence_dashboard(agent_id: str):
+    """
+    📊 Full BI Dashboard - Toate datele într-un singur endpoint
+    Combină scor, gaps, alerts și sugestii
+    """
+    try:
+        # Colectează toate datele
+        scorer = PositioningScorer(agent_id)
+        analyzer = GapAnalyzer(agent_id)
+        alert_system = CompetitorAlertSystem(agent_id)
+        coach = AICoach(agent_id)
+        
+        score = scorer.calculate_score()
+        comparison = scorer.get_comparison_with_top(top_n=3)
+        gaps = analyzer.analyze_content_gaps()
+        opportunities = analyzer.analyze_keyword_opportunities()
+        alerts = alert_system.get_alert_summary()
+        
+        # Top 3 acțiuni prioritare
+        generator = ActionPlanGenerator(agent_id)
+        plan = generator.generate_plan()
+        top_actions = plan.get("quick_wins", {}).get("actions", [])[:3]
+        
+        return {
+            "ok": True,
+            "agent_id": agent_id,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            
+            # Scor principal
+            "positioning_score": {
+                "score": score["score"],
+                "max": 100,
+                "ranking": score.get("ranking"),
+                "total_competitors": score.get("total_competitors"),
+                "interpretation": score.get("interpretation"),
+                "breakdown": score.get("breakdown")
+            },
+            
+            # Comparație cu top
+            "vs_top_competitors": comparison,
+            
+            # Sumar gaps
+            "gaps_summary": {
+                "keyword_gaps": len(gaps.get("keyword_gaps", [])),
+                "service_gaps": len(gaps.get("service_gaps", [])),
+                "opportunities": len(opportunities),
+                "top_keyword_gap": gaps.get("keyword_gaps", [{}])[0] if gaps.get("keyword_gaps") else None,
+                "top_service_gap": gaps.get("service_gaps", [{}])[0] if gaps.get("service_gaps") else None
+            },
+            
+            # Alerte
+            "alerts": {
+                "total": alerts.get("total_alerts", 0),
+                "critical": alerts.get("by_severity", {}).get("critical", 0),
+                "warning": alerts.get("by_severity", {}).get("warning", 0),
+                "latest": alerts.get("alerts", [])[:3]
+            },
+            
+            # Top acțiuni
+            "recommended_actions": top_actions,
+            
+            # Quick stats
+            "quick_stats": {
+                "your_pages": score.get("breakdown", {}).get("content", {}).get("score", 0),
+                "your_keywords": score.get("breakdown", {}).get("keywords", {}).get("score", 0),
+                "your_services": score.get("breakdown", {}).get("services", {}).get("score", 0)
+            }
+        }
+    except Exception as e:
+        logger.error(f"Error getting BI dashboard: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/agents/{agent_id}/business-intelligence/competitor-comparison/{competitor_domain}")
+async def compare_with_competitor(agent_id: str, competitor_domain: str):
+    """
+    ⚔️ Tu vs Competitor - Comparație directă cu un competitor specific
+    """
+    try:
+        master = db.site_agents.find_one({"_id": ObjectId(agent_id)})
+        if not master:
+            raise HTTPException(status_code=404, detail="Agent not found")
+        
+        # Găsește competitorul
+        competitor = db.site_agents.find_one({
+            "master_agent_id": ObjectId(agent_id),
+            "domain": {"$regex": competitor_domain, "$options": "i"}
+        })
+        
+        if not competitor:
+            raise HTTPException(status_code=404, detail=f"Competitor {competitor_domain} not found")
+        
+        # Construiește comparația
+        comparison = {
+            "you": {
+                "domain": master.get("domain"),
+                "pages": master.get("pages_indexed", 0),
+                "keywords": len(master.get("keywords", [])),
+                "services": len(master.get("services", [])),
+                "chunks": master.get("chunks_indexed", 0),
+                "subdomains": len(master.get("subdomains", []))
+            },
+            "competitor": {
+                "domain": competitor.get("domain"),
+                "pages": competitor.get("pages_indexed", 0),
+                "keywords": len(competitor.get("keywords", [])),
+                "services": len(competitor.get("services", [])),
+                "chunks": competitor.get("chunks_indexed", 0),
+                "subdomains": len(competitor.get("subdomains", []))
+            }
+        }
+        
+        # Calculează diferențele
+        differences = {}
+        for metric in ["pages", "keywords", "services", "chunks", "subdomains"]:
+            your_val = comparison["you"][metric]
+            comp_val = comparison["competitor"][metric]
+            diff = your_val - comp_val
+            diff_percent = ((your_val - comp_val) / max(comp_val, 1)) * 100
+            
+            differences[metric] = {
+                "difference": diff,
+                "percent": round(diff_percent, 1),
+                "winner": "you" if diff > 0 else ("competitor" if diff < 0 else "tie"),
+                "label": "📈" if diff > 0 else ("📉" if diff < 0 else "➖")
+            }
+        
+        # Keywords unice
+        your_keywords = set(master.get("keywords", []))
+        comp_keywords = set(competitor.get("keywords", []))
+        
+        return {
+            "ok": True,
+            "comparison": comparison,
+            "differences": differences,
+            "keywords_analysis": {
+                "only_you_have": list(your_keywords - comp_keywords)[:10],
+                "only_competitor_has": list(comp_keywords - your_keywords)[:10],
+                "both_have": list(your_keywords & comp_keywords)[:10]
+            },
+            "verdict": {
+                "wins": sum(1 for d in differences.values() if d["winner"] == "you"),
+                "losses": sum(1 for d in differences.values() if d["winner"] == "competitor"),
+                "ties": sum(1 for d in differences.values() if d["winner"] == "tie")
+            },
+            "recommendations": [
+                f"Adaugă {abs(differences['pages']['difference'])} pagini pentru a egala competitorul" 
+                if differences['pages']['winner'] == 'competitor' else None,
+                f"Targetează {len(comp_keywords - your_keywords)} keywords noi de la competitor"
+                if comp_keywords - your_keywords else None
+            ]
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error comparing with competitor: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# 🚀 ADVANCED BUSINESS INTELLIGENCE ENDPOINTS
+# Trend Tracking, Goals, Checklist, AI Content, ROI, Watchlist, Notifications
+# ============================================================================
+
+from business_intelligence_advanced import (
+    TrendTracker,
+    GoalTracker,
+    ActionChecklist,
+    AIContentGenerator,
+    ROICalculator,
+    CompetitorWatchlist,
+    NotificationSystem
+)
+
+# ------------ TREND TRACKING ------------
+
+@app.post("/api/agents/{agent_id}/business-intelligence/trends/snapshot")
+async def record_trend_snapshot(agent_id: str):
+    """📊 Salvează un snapshot al poziționării curente"""
+    try:
+        tracker = TrendTracker(agent_id)
+        snapshot = tracker.record_snapshot()
+        return {"ok": True, "snapshot": snapshot}
+    except Exception as e:
+        logger.error(f"Error recording snapshot: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/agents/{agent_id}/business-intelligence/trends/history")
+async def get_trend_history(agent_id: str, days: int = Query(30)):
+    """📈 Returnează istoricul trendurilor"""
+    try:
+        tracker = TrendTracker(agent_id)
+        history = tracker.get_history(days)
+        return {"ok": True, "history": history, "count": len(history)}
+    except Exception as e:
+        logger.error(f"Error getting trend history: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/agents/{agent_id}/business-intelligence/trends/analysis")
+async def get_trend_analysis(agent_id: str):
+    """📊 Analiză completă a trendurilor"""
+    try:
+        tracker = TrendTracker(agent_id)
+        analysis = tracker.get_trend_analysis()
+        return {"ok": True, **analysis}
+    except Exception as e:
+        logger.error(f"Error analyzing trends: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ------------ GOAL TRACKING ------------
+
+class GoalCreate(BaseModel):
+    goal_type: str
+    target_value: int
+    deadline_days: int
+    notes: Optional[str] = ""
+
+
+@app.post("/api/agents/{agent_id}/business-intelligence/goals")
+async def create_goal(agent_id: str, data: GoalCreate):
+    """🎯 Setează un obiectiv nou"""
+    try:
+        tracker = GoalTracker(agent_id)
+        goal = tracker.set_goal(
+            data.goal_type,
+            data.target_value,
+            data.deadline_days,
+            data.notes
+        )
+        return {"ok": True, "goal": goal}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error creating goal: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/agents/{agent_id}/business-intelligence/goals")
+async def get_goals(agent_id: str, status: str = Query(None)):
+    """📋 Returnează toate obiectivele"""
+    try:
+        tracker = GoalTracker(agent_id)
+        goals = tracker.get_goals(status)
+        return {
+            "ok": True,
+            "goals": goals,
+            "goal_types": GoalTracker.GOAL_TYPES
+        }
+    except Exception as e:
+        logger.error(f"Error getting goals: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/agents/{agent_id}/business-intelligence/goals/{goal_id}/complete")
+async def complete_goal(agent_id: str, goal_id: str):
+    """✅ Marchează un obiectiv ca completat"""
+    try:
+        tracker = GoalTracker(agent_id)
+        result = tracker.complete_goal(goal_id)
+        return {"ok": True, **result}
+    except Exception as e:
+        logger.error(f"Error completing goal: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ------------ CHECKLIST ------------
+
+@app.post("/api/agents/{agent_id}/business-intelligence/checklist/generate")
+async def generate_checklist(agent_id: str):
+    """📝 Generează checklist din planul de acțiune"""
+    try:
+        from business_intelligence import ActionPlanGenerator
+        
+        generator = ActionPlanGenerator(agent_id)
+        plan = generator.generate_plan()
+        
+        checklist_manager = ActionChecklist(agent_id)
+        checklist = checklist_manager.create_checklist_from_plan(plan)
+        
+        return {"ok": True, "checklist": checklist}
+    except Exception as e:
+        logger.error(f"Error generating checklist: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/agents/{agent_id}/business-intelligence/checklist")
+async def get_checklist(agent_id: str):
+    """📋 Returnează checklist-ul curent"""
+    try:
+        checklist_manager = ActionChecklist(agent_id)
+        checklist = checklist_manager.get_checklist()
+        return {"ok": True, **checklist}
+    except Exception as e:
+        logger.error(f"Error getting checklist: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/agents/{agent_id}/business-intelligence/checklist/{item_id}/toggle")
+async def toggle_checklist_item(agent_id: str, item_id: str):
+    """✅ Toggle completare item din checklist"""
+    try:
+        checklist_manager = ActionChecklist(agent_id)
+        result = checklist_manager.toggle_item(item_id)
+        return {"ok": True, **result}
+    except Exception as e:
+        logger.error(f"Error toggling checklist item: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class ChecklistItemCreate(BaseModel):
+    title: str
+    description: Optional[str] = ""
+    priority: Optional[str] = "medium"
+
+
+@app.post("/api/agents/{agent_id}/business-intelligence/checklist/item")
+async def add_checklist_item(agent_id: str, data: ChecklistItemCreate):
+    """➕ Adaugă item custom în checklist"""
+    try:
+        checklist_manager = ActionChecklist(agent_id)
+        item = checklist_manager.add_custom_item(data.title, data.description, data.priority)
+        return {"ok": True, "item": item}
+    except Exception as e:
+        logger.error(f"Error adding checklist item: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ------------ AI CONTENT GENERATOR ------------
+
+class ContentGenerateRequest(BaseModel):
+    keyword: str
+    count: Optional[int] = 5
+
+
+@app.post("/api/agents/{agent_id}/business-intelligence/content/titles")
+async def generate_titles(agent_id: str, data: ContentGenerateRequest):
+    """📝 Generează titluri SEO pentru un keyword"""
+    try:
+        generator = AIContentGenerator(agent_id)
+        titles = generator.generate_page_titles(data.keyword, data.count)
+        return {"ok": True, "keyword": data.keyword, "titles": titles}
+    except Exception as e:
+        logger.error(f"Error generating titles: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class MetaDescriptionRequest(BaseModel):
+    title: str
+    keyword: str
+
+
+@app.post("/api/agents/{agent_id}/business-intelligence/content/meta-description")
+async def generate_meta_description(agent_id: str, data: MetaDescriptionRequest):
+    """📄 Generează meta description optimizată"""
+    try:
+        generator = AIContentGenerator(agent_id)
+        description = generator.generate_meta_description(data.title, data.keyword)
+        return {"ok": True, "meta_description": description}
+    except Exception as e:
+        logger.error(f"Error generating meta description: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class OutlineRequest(BaseModel):
+    topic: str
+    target_words: Optional[int] = 1500
+
+
+@app.post("/api/agents/{agent_id}/business-intelligence/content/outline")
+async def generate_article_outline(agent_id: str, data: OutlineRequest):
+    """📑 Generează outline pentru articol"""
+    try:
+        generator = AIContentGenerator(agent_id)
+        outline = generator.generate_article_outline(data.topic, data.target_words)
+        return {"ok": True, "topic": data.topic, "outline": outline}
+    except Exception as e:
+        logger.error(f"Error generating outline: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/agents/{agent_id}/business-intelligence/content/ideas")
+async def generate_content_ideas(agent_id: str, count: int = Query(10)):
+    """💡 Generează idei de conținut bazate pe gaps"""
+    try:
+        from business_intelligence import GapAnalyzer
+        
+        analyzer = GapAnalyzer(agent_id)
+        gaps = analyzer.analyze_content_gaps()
+        
+        # Extrage keywords din gaps
+        gap_keywords = [g["keyword"] for g in gaps.get("keyword_gaps", [])]
+        gap_keywords += [g["service"] for g in gaps.get("service_gaps", [])]
+        gap_keywords += [g["topic"] for g in gaps.get("topic_gaps", [])]
+        
+        generator = AIContentGenerator(agent_id)
+        ideas = generator.generate_content_ideas(gap_keywords[:15], count)
+        
+        return {"ok": True, "ideas": ideas, "based_on_gaps": len(gap_keywords)}
+    except Exception as e:
+        logger.error(f"Error generating content ideas: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ------------ ROI CALCULATOR ------------
+
+@app.get("/api/agents/{agent_id}/business-intelligence/roi/keyword/{keyword}")
+async def calculate_keyword_roi(agent_id: str, keyword: str, position: int = Query(5)):
+    """💰 Calculează ROI pentru un keyword"""
+    try:
+        calculator = ROICalculator(agent_id)
+        roi = calculator.calculate_keyword_roi(keyword, position)
+        return {"ok": True, **roi}
+    except Exception as e:
+        logger.error(f"Error calculating keyword ROI: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/agents/{agent_id}/business-intelligence/roi/plan")
+async def calculate_plan_roi(agent_id: str):
+    """💰 Calculează ROI total pentru planul de acțiune"""
+    try:
+        from business_intelligence import ActionPlanGenerator
+        
+        generator = ActionPlanGenerator(agent_id)
+        plan = generator.generate_plan()
+        
+        calculator = ROICalculator(agent_id)
+        roi = calculator.calculate_total_plan_roi(plan)
+        
+        return {"ok": True, **roi}
+    except Exception as e:
+        logger.error(f"Error calculating plan ROI: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ------------ COMPETITOR WATCHLIST ------------
+
+class WatchlistAdd(BaseModel):
+    competitor_domain: str
+    notes: Optional[str] = ""
+
+
+@app.post("/api/agents/{agent_id}/business-intelligence/watchlist")
+async def add_to_watchlist(agent_id: str, data: WatchlistAdd):
+    """👁️ Adaugă competitor în watchlist"""
+    try:
+        watchlist = CompetitorWatchlist(agent_id)
+        entry = watchlist.add_to_watchlist(data.competitor_domain, data.notes)
+        return {"ok": True, "entry": entry}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error adding to watchlist: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/agents/{agent_id}/business-intelligence/watchlist")
+async def get_watchlist(agent_id: str):
+    """📋 Returnează watchlist-ul"""
+    try:
+        watchlist = CompetitorWatchlist(agent_id)
+        items = watchlist.get_watchlist()
+        return {"ok": True, "watchlist": items, "count": len(items)}
+    except Exception as e:
+        logger.error(f"Error getting watchlist: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/agents/{agent_id}/business-intelligence/watchlist/{competitor_domain}")
+async def remove_from_watchlist(agent_id: str, competitor_domain: str):
+    """🗑️ Elimină competitor din watchlist"""
+    try:
+        watchlist = CompetitorWatchlist(agent_id)
+        result = watchlist.remove_from_watchlist(competitor_domain)
+        return {"ok": True, **result}
+    except Exception as e:
+        logger.error(f"Error removing from watchlist: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/agents/{agent_id}/business-intelligence/leaderboard")
+async def get_leaderboard(agent_id: str):
+    """🏆 Returnează leaderboard-ul competitorilor"""
+    try:
+        watchlist = CompetitorWatchlist(agent_id)
+        leaderboard = watchlist.get_leaderboard()
+        
+        # Găsește poziția ta
+        your_position = next((e["position"] for e in leaderboard if e.get("is_you")), None)
+        
+        return {
+            "ok": True,
+            "leaderboard": leaderboard,
+            "total_competitors": len(leaderboard),
+            "your_position": your_position
+        }
+    except Exception as e:
+        logger.error(f"Error getting leaderboard: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ------------ NOTIFICATIONS ------------
+
+@app.get("/api/agents/{agent_id}/business-intelligence/notifications")
+async def get_notifications(agent_id: str, unread_only: bool = Query(False), limit: int = Query(50)):
+    """🔔 Returnează notificările"""
+    try:
+        notif_system = NotificationSystem(agent_id)
+        notifications = notif_system.get_notifications(unread_only, limit)
+        unread_count = notif_system.get_unread_count()
+        
+        return {
+            "ok": True,
+            "notifications": notifications,
+            "unread_count": unread_count
+        }
+    except Exception as e:
+        logger.error(f"Error getting notifications: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/agents/{agent_id}/business-intelligence/notifications/read")
+async def mark_notifications_read(agent_id: str, notification_id: str = Query(None)):
+    """✅ Marchează notificările ca citite"""
+    try:
+        notif_system = NotificationSystem(agent_id)
+        result = notif_system.mark_as_read(notification_id)
+        return {"ok": True, **result}
+    except Exception as e:
+        logger.error(f"Error marking notifications read: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/agents/{agent_id}/business-intelligence/notifications/check")
+async def check_and_create_alerts(agent_id: str):
+    """🔍 Verifică și creează alerte automate"""
+    try:
+        notif_system = NotificationSystem(agent_id)
+        alerts = notif_system.check_and_create_alerts()
+        return {"ok": True, "alerts_created": len(alerts), "alerts": alerts}
+    except Exception as e:
+        logger.error(f"Error checking alerts: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class NotificationSettings(BaseModel):
+    email: Optional[str] = ""
+    webhook_url: Optional[str] = ""
+    email_enabled: Optional[bool] = False
+    webhook_enabled: Optional[bool] = False
+    alert_types: Optional[List[str]] = ["critical", "warning"]
+
+
+@app.put("/api/agents/{agent_id}/business-intelligence/notifications/settings")
+async def save_notification_settings(agent_id: str, data: NotificationSettings):
+    """⚙️ Salvează setările de notificări"""
+    try:
+        notif_system = NotificationSystem(agent_id)
+        result = notif_system.save_settings(data.dict())
+        return {"ok": True, **result}
+    except Exception as e:
+        logger.error(f"Error saving notification settings: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/agents/{agent_id}/business-intelligence/notifications/settings")
+async def get_notification_settings(agent_id: str):
+    """⚙️ Returnează setările de notificări"""
+    try:
+        notif_system = NotificationSystem(agent_id)
+        settings = notif_system.get_settings()
+        return {"ok": True, "settings": settings}
+    except Exception as e:
+        logger.error(f"Error getting notification settings: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ------------ PDF REPORTS ------------
+
+from fastapi.responses import StreamingResponse
+import io
+
+@app.get("/api/agents/{agent_id}/business-intelligence/report/generate")
+async def generate_bi_report(agent_id: str, format: str = Query("json")):
+    """📄 Generează raport Business Intelligence complet"""
+    try:
+        from business_intelligence import (
+            GapAnalyzer, PositioningScorer, ActionPlanGenerator
+        )
+        
+        # Colectează toate datele
+        scorer = PositioningScorer(agent_id)
+        analyzer = GapAnalyzer(agent_id)
+        plan_generator = ActionPlanGenerator(agent_id)
+        watchlist = CompetitorWatchlist(agent_id)
+        
+        score = scorer.calculate_score()
+        comparison = scorer.get_comparison_with_top(3)
+        gaps = analyzer.analyze_content_gaps()
+        opportunities = analyzer.analyze_keyword_opportunities()
+        plan = plan_generator.generate_plan()
+        leaderboard = watchlist.get_leaderboard()
+        
+        # Obține date agent
+        master = db.site_agents.find_one({"_id": ObjectId(agent_id)})
+        
+        report = {
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "agent": {
+                "domain": master.get("domain") if master else "N/A",
+                "industry": master.get("industry") if master else "N/A",
+                "pages_indexed": master.get("pages_indexed", 0) if master else 0,
+                "keywords_count": len(master.get("keywords", [])) if master else 0
+            },
+            "positioning": {
+                "score": score.get("score", 0),
+                "ranking": score.get("ranking"),
+                "total_competitors": score.get("total_competitors"),
+                "interpretation": score.get("interpretation"),
+                "breakdown": score.get("breakdown")
+            },
+            "gaps_analysis": {
+                "keyword_gaps": gaps.get("keyword_gaps", [])[:10],
+                "service_gaps": gaps.get("service_gaps", [])[:10],
+                "topic_gaps": gaps.get("topic_gaps", [])[:10],
+                "opportunities": opportunities[:10]
+            },
+            "action_plan": {
+                "quick_wins": plan.get("quick_wins", {}).get("actions", []),
+                "medium_term": plan.get("medium_term", {}).get("actions", []),
+                "long_term": plan.get("long_term", {}).get("actions", [])
+            },
+            "competition": {
+                "top_competitors": comparison.get("top_competitors", [])[:5],
+                "leaderboard_position": next(
+                    (e["position"] for e in leaderboard if e.get("is_you")), None
+                )
+            },
+            "recommendations": [
+                "Concentrează-te pe Quick Wins pentru rezultate rapide",
+                f"Ai {len(gaps.get('keyword_gaps', []))} keywords de adăugat",
+                f"Poziția ta în leaderboard: #{next((e['position'] for e in leaderboard if e.get('is_you')), 'N/A')}"
+            ]
+        }
+        
+        if format == "html":
+            # Generează HTML report
+            html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Business Intelligence Report - {report['agent']['domain']}</title>
+    <style>
+        body {{ font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; padding: 40px; background: #1a1a2e; color: #eee; }}
+        h1 {{ color: #8b5cf6; border-bottom: 2px solid #8b5cf6; padding-bottom: 10px; }}
+        h2 {{ color: #60a5fa; margin-top: 30px; }}
+        .score-card {{ background: linear-gradient(135deg, #8b5cf620, #3b82f620); padding: 30px; border-radius: 15px; text-align: center; margin: 20px 0; }}
+        .score {{ font-size: 72px; font-weight: bold; color: #8b5cf6; }}
+        .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }}
+        .card {{ background: #2d2d44; padding: 20px; border-radius: 10px; }}
+        .card h3 {{ margin-top: 0; color: #8b5cf6; }}
+        .tag {{ display: inline-block; background: #8b5cf620; color: #8b5cf6; padding: 4px 12px; border-radius: 20px; margin: 4px; font-size: 12px; }}
+        .action {{ background: #2d2d44; padding: 15px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #8b5cf6; }}
+        .high {{ border-left-color: #22c55e; }}
+        .medium {{ border-left-color: #eab308; }}
+        table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
+        th, td {{ padding: 12px; text-align: left; border-bottom: 1px solid #3d3d5c; }}
+        th {{ background: #2d2d44; }}
+        .footer {{ margin-top: 40px; padding-top: 20px; border-top: 1px solid #3d3d5c; text-align: center; color: #666; }}
+    </style>
+</head>
+<body>
+    <h1>📊 Business Intelligence Report</h1>
+    <p><strong>Domeniu:</strong> {report['agent']['domain']}</p>
+    <p><strong>Generat:</strong> {report['generated_at'][:10]}</p>
+    
+    <div class="score-card">
+        <div class="score">{report['positioning']['score']}</div>
+        <div>Scor Poziționare din 100</div>
+        <div style="margin-top:10px;">Poziția #{report['positioning']['ranking']} din {report['positioning']['total_competitors']} competitori</div>
+    </div>
+    
+    <h2>📈 Breakdown Scor</h2>
+    <div class="grid">
+        {''.join(f'<div class="card"><h3>{v.get("label", k)}</h3><div style="font-size:24px;font-weight:bold;">{v.get("score", 0)}/{v.get("max", 25)}</div></div>' for k, v in report['positioning'].get('breakdown', {}).items())}
+    </div>
+    
+    <h2>🔍 Gap Analysis</h2>
+    <h3>Keywords Lipsă ({len(report['gaps_analysis']['keyword_gaps'])})</h3>
+    <div>{''.join(f'<span class="tag">{g.get("keyword", "")}</span>' for g in report['gaps_analysis']['keyword_gaps'][:10])}</div>
+    
+    <h3>Servicii Lipsă ({len(report['gaps_analysis']['service_gaps'])})</h3>
+    <div>{''.join(f'<span class="tag">{g.get("service", "")}</span>' for g in report['gaps_analysis']['service_gaps'][:10])}</div>
+    
+    <h2>🚀 Plan de Acțiune</h2>
+    <h3>Quick Wins</h3>
+    {''.join(f'<div class="action high"><strong>{a.get("title", "")}</strong><br><small>{a.get("description", "")}</small></div>' for a in report['action_plan']['quick_wins'][:5])}
+    
+    <h3>Termen Mediu</h3>
+    {''.join(f'<div class="action medium"><strong>{a.get("title", "")}</strong><br><small>{a.get("description", "")}</small></div>' for a in report['action_plan']['medium_term'][:5])}
+    
+    <h2>🏆 Top Competitori</h2>
+    <table>
+        <tr><th>Domeniu</th><th>Scor</th><th>Pagini</th><th>Keywords</th></tr>
+        {''.join(f'<tr><td>{c.get("domain", "")}</td><td>{c.get("score", 0)}</td><td>{c.get("pages", 0)}</td><td>{c.get("keywords", 0)}</td></tr>' for c in report['competition']['top_competitors'][:5])}
+    </table>
+    
+    <h2>💡 Recomandări</h2>
+    <ul>
+        {''.join(f'<li>{r}</li>' for r in report['recommendations'])}
+    </ul>
+    
+    <div class="footer">
+        <p>Generat de AI Business Intelligence System</p>
+        <p>{report['generated_at']}</p>
+    </div>
+</body>
+</html>
+"""
+            return StreamingResponse(
+                io.BytesIO(html_content.encode()),
+                media_type="text/html",
+                headers={"Content-Disposition": f"attachment; filename=bi_report_{report['agent']['domain']}.html"}
+            )
+        
+        return {"ok": True, "report": report}
+        
+    except Exception as e:
+        logger.error(f"Error generating BI report: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))

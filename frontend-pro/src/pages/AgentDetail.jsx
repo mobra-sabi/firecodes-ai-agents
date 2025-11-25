@@ -14,7 +14,8 @@ import AgentChat from './AgentChat'
 import SubdomainEditor from '@/components/SubdomainEditor'
 import AgentConscienceTab from '@/components/features/conscience/AgentConscienceTab'
 import AIConsultingTab from '@/components/features/consulting/AIConsultingTab'
-import { Plus, Brain } from 'lucide-react'
+import BusinessIntelligenceDashboard from '@/components/features/business-intelligence/BusinessIntelligenceDashboard'
+import { Plus, Brain, Target } from 'lucide-react'
 
 const AgentDetail = () => {
   const { id } = useParams()
@@ -52,6 +53,7 @@ const AgentDetail = () => {
     { id: 'serp', label: 'SERP Rankings' },
     { id: 'strategy', label: 'Strategy' },
     { id: 'consulting', label: '🧠 AI Consulting', highlight: true },
+    { id: 'business-intelligence', label: '🎯 Business Intelligence', highlight: true },
     { id: 'conscience', label: 'Conscience' },
     { id: 'chat', label: 'Chat' },
     { id: 'reports', label: 'Reports' },
@@ -109,6 +111,13 @@ const AgentDetail = () => {
             </div>
           </div>
           <div className="flex gap-2">
+            <Button 
+              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
+              icon={<Target className="w-4 h-4" />}
+              onClick={() => navigate(`/agents/${id}/business-intelligence`)}
+            >
+              Business Intelligence
+            </Button>
             <Button 
               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
               icon={<Brain className="w-4 h-4" />}
@@ -379,6 +388,10 @@ const AgentDetail = () => {
 
       {activeTab === 'consulting' && (
         <AIConsultingTab agentId={id} />
+      )}
+
+      {activeTab === 'business-intelligence' && (
+        <BusinessIntelligenceDashboard />
       )}
 
       {activeTab === 'conscience' && (
