@@ -658,56 +658,52 @@ CONȚINUT: {content}
         except Exception as e:
             print(f"⚠️ Eroare salvare analiză: {e}")
 
+    # Lock global pentru inițializarea embedding-ului (evită race conditions)
+    _embedding_lock = None
+    _global_embedding_model = None  # Model partajat pentru toate instanțele
+    
+    @classmethod
+    def _get_embedding_lock(cls):
+        """Obține lock-ul pentru embedding (lazy init)"""
+        if cls._embedding_lock is None:
+            import threading
+            cls._embedding_lock = threading.Lock()
+        return cls._embedding_lock
+    
     def get_embedding_model(self, gpu_id: Optional[int] = None):
-        """Obține modelul de embeddings pentru GPU-ul specificat"""
+        """Obține modelul de embeddings - folosește un singur model partajat pe CPU pentru stabilitate"""
         import torch
         
-        # Dacă nu este specificat GPU, folosește GPU 0
-        if gpu_id is None:
-            gpu_id = 0
+        # ✅ SOLUȚIE: Folosim un singur model pe CPU partajat între toate procesele
+        # Acest lucru evită complet eroarea "meta tensor" și race conditions
         
-        # Verifică dacă avem deja modelul pentru acest GPU în dict
-        if gpu_id in self.embedding_models:
-            return self.embedding_models[gpu_id]
+        lock = self._get_embedding_lock()
         
-        # Creează model nou pentru GPU-ul specificat
-        # ✅ CORECTARE: Inițializează direct pe device-ul dorit pentru a evita eroarea "meta tensor"
-        print(f"🔧 Creând embedding model (instance: {id(self)}) pentru GPU {gpu_id}")
-        
-        # Mută modelul pe GPU dacă este disponibil
-        if torch.cuda.is_available() and gpu_id < torch.cuda.device_count():
-            device = f"cuda:{gpu_id}"
-            print(f"🔧 Inițializând embedding model direct pe {device}")
+        with lock:
+            # Verifică dacă avem deja modelul global
+            if ConstructionAgentCreator._global_embedding_model is not None:
+                return ConstructionAgentCreator._global_embedding_model
+            
+            # Creează model pe CPU (stabil, fără erori meta tensor)
+            print(f"🔧 Inițializând embedding model global pe CPU (stabil)")
+            
             try:
-                # ✅ Încearcă să inițializeze direct pe GPU (evită problema "meta tensor")
-                model = SentenceTransformer('all-MiniLM-L6-v2', device=device)
-            except Exception as e:
-                print(f"⚠️ Eroare la inițializare directă pe GPU {gpu_id}: {e}. Folosesc CPU apoi mut pe GPU.")
-                # Fallback: inițializează pe CPU și mută manual cu atenție
+                # Inițializează pe CPU - cel mai stabil
                 model = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')
-                try:
-                    # Mută modelul pe GPU - dacă apare eroarea meta tensor, folosește CPU
-                    model = model.to(device)
-                except Exception as e2:
-                    if "meta tensor" in str(e2).lower():
-                        print(f"⚠️ Eroare 'meta tensor' detectată. Reinițializez modelul pe CPU.")
-                        # Reinițializează modelul complet pe CPU
-                        model = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')
-                        device = "cpu"
-                    else:
-                        print(f"⚠️ Eroare la mutarea modelului pe GPU: {e2}. Folosesc CPU.")
-                        device = "cpu"
-        else:
-            device = "cpu"
-            print(f"⚠️ GPU {gpu_id} nu este disponibil, folosesc CPU")
-            model = SentenceTransformer('all-MiniLM-L6-v2', device=device)
-        self.embedding_models[gpu_id] = model
-        
-        # Backward compatibility
-        self.embedding_model = model
-        self.embedding_model_gpu = gpu_id
-        
-        return model
+                print(f"✅ Embedding model inițializat pe CPU")
+                
+                # Salvează global
+                ConstructionAgentCreator._global_embedding_model = model
+                
+                # Backward compatibility
+                self.embedding_model = model
+                self.embedding_model_gpu = None
+                
+                return model
+                
+            except Exception as e:
+                print(f"❌ Eroare la inițializare embedding model: {e}")
+                raise
     
     def create_site_embeddings(self, domain: str, site_data: Dict, analysis: Dict, gpu_id: Optional[int] = None) -> int:
         """Creează embeddings cu GPU BATCH pentru FIECARE pagină. Returnează numărul de embeddings create."""
