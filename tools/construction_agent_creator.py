@@ -833,25 +833,34 @@ CONȚINUT: {content}
         # Salvează GPU ID pentru a-l folosi în create_site_embeddings
         self._current_gpu_id = gpu_id
         
-        # Analizează site-ul (returnează analysis care conține toate datele)
-        analysis = self.analyze_construction_site(site_url)
+        # 1. Scraping site
+        site_data = self.scrape_construction_site(site_url)
         
-        # Extrage statistici din analysis pentru validation
+        # 2. Analizează site-ul
+        analysis = self.analyze_construction_site_internal(site_url, site_data)
+        
+        # 3. Extrage domain pentru embeddings
+        domain = tldextract.extract(site_url).top_domain_under_public_suffix.lower()
+        
+        # 4. ✅ CREEAZĂ EMBEDDINGS - aceasta era partea lipsă!
+        print(f"🧠 Creez embeddings pentru {domain}...")
+        embeddings_count = self.create_site_embeddings(domain, site_data, analysis, gpu_id=gpu_id)
+        
+        # 5. Extrage statistici din analysis pentru validation
         site_content = analysis.get('site_content', {})
         if isinstance(site_content, dict):
             pages_scraped = len(site_content.get('pages', []))
         else:
-            pages_scraped = 0
-        embeddings_count = analysis.get('embeddings_created', 0)
+            pages_scraped = site_data.get('total_pages', 0)
         
-        # Creează personalitatea agentului
+        # 6. Creează personalitatea agentului
         agent_config = self.create_agent_personality(analysis)
         
         # ✅ IMPORTANT: Adaugă statistici pentru validation
         agent_config['pages_scraped'] = pages_scraped
         agent_config['embeddings_count'] = embeddings_count
         
-        # Salvează agentul (va seta validation_passed based pe aceste valori)
+        # 7. Salvează agentul (va seta validation_passed based pe aceste valori)
         self.save_agent_config(site_url, agent_config)
         
         print(f"✅ Agent AI creat pentru {site_url}")
