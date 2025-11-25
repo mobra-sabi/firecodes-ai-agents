@@ -52,12 +52,66 @@ const CompetitiveStrategyTab = ({ agentId }) => {
     enabled: !!agentId,
     refetchInterval: (isExecuting || isAnalyzingRelevance || isCreatingAgents) ? 1000 : 10000, // Refresh foarte des (1s) în timpul execuției/analizei/creării agenților
   })
+  
+  // ✅ Actualizează executionProgress când se schimbă competitiveMap (pentru polling automat)
+  useEffect(() => {
+    if (competitiveMap && isExecuting) {
+      const executionStatus = competitiveMap.execution_status || 'not_started'
+      const executionProgress = competitiveMap.execution_progress || {}
+      
+      console.log('🔄 CompetitiveMap changed:', {
+        executionStatus,
+        executionProgress,
+        isExecuting,
+        keywords_processed: competitiveMap.keywords_processed
+      })
+      
+      // Dacă există execution_progress, actualizează state-ul
+      if (executionProgress && (executionProgress.keywords_processed !== undefined || executionProgress.percentage !== undefined)) {
+        const processed = executionProgress.keywords_processed || competitiveMap.keywords_processed || 0
+        const total = executionProgress.keywords_total || selectedKeywords.length
+        const percentage = executionProgress.percentage !== undefined ? executionProgress.percentage : (total > 0 ? Math.round((processed / total) * 100) : 0)
+        
+        console.log('📊 Updating executionProgress:', { processed, total, percentage, executionStatus })
+        
+        if (executionStatus === 'running') {
+          setExecutionProgress({
+            status: 'running',
+            message: `Searching... (${total} keywords)`,
+            keywords_processed: processed,
+            total_keywords: total,
+            percentage: percentage,
+            sites_found: competitiveMap.sites_found || competitiveMap.competitive_map?.length || 0
+          })
+        } else if (executionStatus === 'completed') {
+          setExecutionProgress({
+            status: 'completed',
+            message: `✅ Search completed! Found ${competitiveMap.sites_found || competitiveMap.competitive_map?.length || 0} sites. Review and select sites below.`,
+            keywords_processed: processed,
+            total_keywords: total,
+            percentage: 100,
+            sites_found: competitiveMap.sites_found || competitiveMap.competitive_map?.length || 0,
+            slave_agents_created: 0
+          })
+          setIsExecuting(false)
+        }
+      }
+    }
+  }, [competitiveMap, isExecuting, selectedKeywords.length])
 
   // Actualizează progresul relevanței când se schimbă competitiveMap
   useEffect(() => {
+    // ✅ Actualizează progresul dacă există (chiar și când este completed)
     if (competitiveMap?.relevance_analysis_progress) {
       setRelevanceProgress(competitiveMap.relevance_analysis_progress)
+    } else if (competitiveMap?.analyzed_sites_count !== undefined && competitiveMap?.sites_found !== undefined) {
+      // ✅ Fallback: calculează progresul din analyzed_sites_count și sites_found
+      const analyzed = competitiveMap.analyzed_sites_count || 0
+      const total = competitiveMap.sites_found || competitiveMap.competitive_map?.length || 0
+      const percentage = total > 0 ? Math.round((analyzed / total) * 100) : 0
+      setRelevanceProgress({ analyzed, total, percentage })
     }
+    
     if (competitiveMap?.relevance_analysis_status === 'completed' || competitiveMap?.relevance_analysis_status === 'failed') {
       setIsAnalyzingRelevance(false)
       if (competitiveMap?.relevance_analysis_status === 'completed') {
@@ -68,9 +122,24 @@ const CompetitiveStrategyTab = ({ agentId }) => {
       setIsAnalyzingRelevance(true)
     }
     
-    // Actualizează progresul creării agenților
+    // ✅ Actualizează progresul creării agenților - LIVE UPDATE
     if (competitiveMap?.agent_creation_progress) {
-      setAgentCreationProgress(competitiveMap.agent_creation_progress)
+      const progress = competitiveMap.agent_creation_progress
+      // Actualizează cu datele cele mai recente
+      setAgentCreationProgress({
+        completed: progress.completed || competitiveMap?.slave_agents_created || 0,
+        total: progress.total || 0,
+        percentage: progress.percentage || 0
+      })
+    } else if (competitiveMap?.slave_agents_created !== undefined) {
+      // Fallback: folosește slave_agents_created dacă agent_creation_progress nu există
+      const total = competitiveMap?.agent_creation_progress?.total || competitiveMap?.sites_found || 0
+      const completed = competitiveMap.slave_agents_created || 0
+      setAgentCreationProgress({
+        completed: completed,
+        total: total,
+        percentage: total > 0 ? Math.round((completed / total) * 100) : 0
+      })
     } else {
       setAgentCreationProgress(null)
     }
@@ -154,42 +223,103 @@ const CompetitiveStrategyTab = ({ agentId }) => {
         // Poll pentru progres - așteaptă să apară site-urile
         const progressInterval = setInterval(async () => {
           try {
+            console.log('🔄 Polling competitive map...')
             const mapResponse = await api.get(`/agents/${agentId}/competitive-map`)
-            if (mapResponse.data && mapResponse.data.competitive_map) {
-              const map = mapResponse.data.competitive_map
-              if (map.length > 0) {
-                // Site-uri găsite! Oprește polling și afișează rezultatele
+            if (mapResponse.data) {
+              const data = mapResponse.data
+              const executionStatus = data.execution_status || 'not_started'
+              const executionProgress = data.execution_progress || {}
+              const map = data.competitive_map || []
+              
+              console.log('📊 Poll response:', {
+                executionStatus,
+                executionProgress,
+                keywords_processed: data.keywords_processed,
+                sites_found: data.sites_found || map.length
+              })
+              
+              // ✅ Actualizează progresul dacă există execution_progress (chiar și când statusul este 'running' sau 'completed')
+              if (executionProgress && (executionProgress.keywords_processed !== undefined || executionProgress.percentage !== undefined)) {
+                const processed = executionProgress.keywords_processed || data.keywords_processed || 0
+                const total = executionProgress.keywords_total || selectedKeywords.length
+                const percentage = executionProgress.percentage !== undefined ? executionProgress.percentage : (total > 0 ? Math.round((processed / total) * 100) : 0)
+                
+                console.log('✅ Updating progress:', { processed, total, percentage, executionStatus })
+                
+                // Dacă execuția este în desfășurare, afișează progresul live
+                if (executionStatus === 'running') {
+                  setExecutionProgress({
+                    status: 'running',
+                    message: `Searching... (${total} keywords)`,
+                    keywords_processed: processed,
+                    total_keywords: total,
+                    percentage: percentage,
+                    sites_found: data.sites_found || map.length || 0
+                  })
+                } else if (executionStatus === 'completed' || map.length > 0) {
+                  // Site-uri găsite! Oprește polling și afișează rezultatele
+                  console.log('✅ Execution completed!')
+                  setExecutionProgress({
+                    status: 'completed',
+                    message: `✅ Search completed! Found ${data.sites_found || map.length} sites. Review and select sites below.`,
+                    keywords_processed: processed,
+                    total_keywords: total,
+                    percentage: 100,
+                    sites_found: data.sites_found || map.length,
+                    slave_agents_created: 0  // Nu creăm agenți automat
+                  })
+                  setIsExecuting(false)
+                  clearInterval(progressInterval)
+                  refetchMap()
+                  
+                  // Scroll la secțiunea cu site-uri
+                  setTimeout(() => {
+                    const sitesSection = document.getElementById('sites-found-section')
+                    if (sitesSection) {
+                      sitesSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    }
+                  }, 500)
+                } else {
+                  // Status 'not_started' sau alt status - continuă să afișeze progresul dacă există
+                  if (processed > 0 || percentage > 0) {
+                    setExecutionProgress(prev => ({
+                      ...prev,
+                      keywords_processed: processed,
+                      total_keywords: total,
+                      percentage: percentage,
+                      message: `Searching... (${total} keywords)`
+                    }))
+                  } else {
+                    setExecutionProgress(prev => ({
+                      ...prev,
+                      message: `Searching... (${selectedKeywords.length} keywords)`
+                    }))
+                  }
+                }
+              } else if (executionStatus === 'completed' || map.length > 0) {
+                // Fallback: dacă nu există execution_progress dar există site-uri, consideră completat
+                console.log('✅ Execution completed (fallback)!')
                 setExecutionProgress({
                   status: 'completed',
-                  message: `✅ Search completed! Found ${map.length} sites. Review and select sites below.`,
-                  keywords_processed: selectedKeywords.length,
+                  message: `✅ Search completed! Found ${data.sites_found || map.length} sites. Review and select sites below.`,
+                  keywords_processed: data.keywords_processed || selectedKeywords.length,
                   total_keywords: selectedKeywords.length,
-                  sites_found: mapResponse.data.sites_found || map.length,
-                  slave_agents_created: 0  // Nu creăm agenți automat
+                  percentage: 100,
+                  sites_found: data.sites_found || map.length,
+                  slave_agents_created: 0
                 })
                 setIsExecuting(false)
                 clearInterval(progressInterval)
                 refetchMap()
-                
-                // Scroll la secțiunea cu site-uri
-                setTimeout(() => {
-                  const sitesSection = document.getElementById('sites-found-section')
-                  if (sitesSection) {
-                    sitesSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                  }
-                }, 500)
               } else {
-                // Încă se caută, actualizează progresul
-                setExecutionProgress(prev => ({
-                  ...prev,
-                  message: `Searching... (${selectedKeywords.length} keywords)`
-                }))
+                console.log('⚠️ No execution_progress found, status:', executionStatus)
               }
             }
           } catch (e) {
-            // Continuă polling
+            console.error('❌ Error polling competitive map:', e)
+            // Continuă polling chiar și la erori, poate e temporar
           }
-        }, 3000) // Poll la fiecare 3 secunde (mai des pentru feedback mai bun)
+        }, 1000) // Poll la fiecare 1 secundă pentru actualizări mai rapide
 
         // Timeout după 15 minute (doar căutare, mai rapid)
         setTimeout(() => {
@@ -212,6 +342,54 @@ const CompetitiveStrategyTab = ({ agentId }) => {
       setIsExecuting(false)
       setExecutionProgress(null)
     }
+  }
+
+  const formatRelativeTime = (timestamp) => {
+    if (!timestamp) return null
+    const time = typeof timestamp === 'string' ? new Date(timestamp) : new Date(timestamp * 1000)
+    if (Number.isNaN(time.getTime())) return null
+    const now = new Date()
+    const diffMs = now - time
+    const diffMinutes = Math.floor(diffMs / (1000 * 60))
+    if (diffMinutes < 1) return 'just now'
+    if (diffMinutes < 60) return `${diffMinutes}m ago`
+    const diffHours = Math.floor(diffMinutes / 60)
+    if (diffHours < 24) return `${diffHours}h ago`
+    const diffDays = Math.floor(diffHours / 24)
+    return `${diffDays}d ago`
+  }
+
+  const formatDuration = (minutes) => {
+    if (minutes === undefined || minutes === null) return '-'
+    if (minutes < 1) return `${Math.max(1, Math.round(minutes * 60))}s`
+    if (minutes < 60) return `${minutes.toFixed(1)}m`
+    const hours = Math.floor(minutes / 60)
+    const mins = Math.round(minutes % 60)
+    return `${hours}h ${mins}m`
+  }
+
+  const renderStatusBadge = (status) => {
+    const badgeStyles = {
+      created: 'bg-green-900/30 text-green-300 border border-green-700',
+      processing: 'bg-blue-900/30 text-blue-300 border border-blue-700',
+      queued: 'bg-yellow-900/30 text-yellow-200 border border-yellow-700',
+      failed: 'bg-red-900/30 text-red-300 border border-red-700',
+      ready: 'bg-primary-700 text-text-muted border border-primary-600'
+    }
+    const labels = {
+      created: 'Created',
+      processing: 'Processing',
+      queued: 'Queued',
+      failed: 'Failed',
+      ready: 'Ready'
+    }
+    const style = badgeStyles[status] || badgeStyles.ready
+    const label = labels[status] || labels.ready
+    return (
+      <span className={`px-2 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${style}`}>
+        {label}
+      </span>
+    )
   }
 
   // Sortează site-urile după relevanță (cel mai mare score primul)
@@ -246,6 +424,34 @@ const CompetitiveStrategyTab = ({ agentId }) => {
   const keywordSiteMapping = competitiveMap?.keyword_site_mapping || {}
   const keywordsUsed = competitiveMap?.keywords_used || []
   
+  const timingInfo = competitiveMap?.agent_creation_timing
+  const selectedSites = mapData.filter(site => site.selected)
+  const createdSites = selectedSites.filter(site => site.has_agent || site.slave_agent_id)
+  const failedSites = selectedSites.filter(site => site.creation_status === 'failed' || site.creation_error || site.error || site.error_message)
+  const createdDomains = new Set(createdSites.map(site => site.domain))
+  const failedDomains = new Set(failedSites.map(site => site.domain))
+  const pendingSites = selectedSites.filter(site => !createdDomains.has(site.domain) && !failedDomains.has(site.domain))
+
+  const deriveSiteStatus = (site) => {
+    if (site.has_agent || site.slave_agent_id) return 'created'
+    if (failedDomains.has(site.domain)) return 'failed'
+    if (isCreatingAgents) return 'processing'
+    return 'queued'
+  }
+
+  const liveSiteStatuses = selectedSites
+    .map(site => ({
+      domain: site.domain || site.url || 'unknown',
+      status: deriveSiteStatus(site),
+      relevance: site.relevance_score || 0,
+      keyword: site.keyword_positions?.[0]?.keyword,
+      updatedAt: site.updated_at || site.last_updated || site.scraped_at || competitiveMap?.updated_at
+    }))
+    .sort((a, b) => {
+      const priority = { processing: 1, queued: 2, created: 3, failed: 4 }
+      return (priority[a.status] || 5) - (priority[b.status] || 5)
+    })
+
   // Filtrează site-urile relevante în funcție de threshold
   const relevantSites = mapData.filter(site => (site.relevance_score || 0) >= relevanceThreshold)
   
@@ -424,14 +630,19 @@ const CompetitiveStrategyTab = ({ agentId }) => {
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-text-muted">Progress:</span>
                     <span className="text-text-primary">
-                      {executionProgress.keywords_processed} / {executionProgress.total_keywords} keywords
+                      {executionProgress.keywords_processed || 0} / {executionProgress.total_keywords || 0} keywords
+                      {executionProgress.percentage !== undefined && ` (${executionProgress.percentage}%)`}
                     </span>
                   </div>
                   <div className="w-full bg-primary-700 rounded-full h-2">
                     <div
                       className="bg-blue-500 h-2 rounded-full transition-all"
                       style={{
-                        width: `${(executionProgress.keywords_processed / executionProgress.total_keywords) * 100}%`
+                        width: `${executionProgress.percentage !== undefined 
+                          ? executionProgress.percentage 
+                          : (executionProgress.keywords_processed && executionProgress.total_keywords 
+                            ? (executionProgress.keywords_processed / executionProgress.total_keywords) * 100 
+                            : 0)}%`
                       }}
                     />
                   </div>
@@ -464,26 +675,28 @@ const CompetitiveStrategyTab = ({ agentId }) => {
       </Card>
 
           {/* Relevance Analysis Progress Bar */}
-          {isAnalyzingRelevance && relevanceProgress && (
+          {relevanceProgress && (isAnalyzingRelevance || competitiveMap?.relevance_analysis_status === 'completed') && (
             <Card>
               <Card.Body className="p-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-text-primary">
-                      Analyzing Relevance...
+                      {isAnalyzingRelevance ? 'Analyzing Relevance...' : 'Relevance Analysis'}
                     </span>
                     <span className="text-sm text-text-muted">
-                      {relevanceProgress.analyzed} / {relevanceProgress.total} sites ({relevanceProgress.percentage}%)
+                      {relevanceProgress.analyzed || 0} / {relevanceProgress.total || competitiveMap?.sites_found || competitiveMap?.competitive_map?.length || 0} sites ({relevanceProgress.percentage || 0}%)
                     </span>
                   </div>
                   <div className="w-full bg-primary-700 rounded-full h-3 overflow-hidden">
                     <div
                       className="bg-purple-600 h-full transition-all duration-500 ease-out"
-                      style={{ width: `${relevanceProgress.percentage}%` }}
+                      style={{ width: `${relevanceProgress.percentage || 0}%` }}
                     />
                   </div>
                   <p className="text-xs text-text-muted">
-                    Sites are being analyzed and sorted by relevance in real-time...
+                    {isAnalyzingRelevance 
+                      ? 'Sites are being analyzed and sorted by relevance in real-time...'
+                      : 'Relevance analysis completed. Review sites below.'}
                   </p>
                 </div>
               </Card.Body>
@@ -494,29 +707,141 @@ const CompetitiveStrategyTab = ({ agentId }) => {
           {isCreatingAgents && agentCreationProgress && (
             <Card>
               <Card.Body className="p-4">
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-text-primary">
                       Creating Agents...
                     </span>
-                    <span className="text-sm text-text-muted">
-                      {agentCreationProgress.completed} / {agentCreationProgress.total} agents ({agentCreationProgress.percentage}%)
+                    <span className="text-sm text-text-muted font-semibold">
+                      {agentCreationProgress.completed || competitiveMap?.slave_agents_created || 0} / {agentCreationProgress.total || competitiveMap?.agent_creation_progress?.total || 0} agents ({agentCreationProgress.percentage || competitiveMap?.agent_creation_progress?.percentage || 0}%)
                     </span>
                   </div>
                   <div className="w-full bg-primary-700 rounded-full h-3 overflow-hidden">
                     <div
-                      className="bg-green-600 h-full transition-all duration-500 ease-out"
-                      style={{ width: `${agentCreationProgress.percentage}%` }}
+                      className="bg-green-600 h-full transition-all duration-300 ease-out"
+                      style={{ width: `${agentCreationProgress.percentage || competitiveMap?.agent_creation_progress?.percentage || 0}%` }}
                     />
                   </div>
-                  <p className="text-xs text-text-muted">
-                    Agents are being created in parallel using GPU acceleration. Each agent includes full scraping, chunks, and embeddings...
-                  </p>
-                  {competitiveMap?.slave_agents_created && (
-                    <p className="text-xs text-green-400 mt-1">
-                      ✓ {competitiveMap.slave_agents_created} agents created successfully
+                  <div className="flex items-center justify-between text-xs">
+                    <p className="text-text-muted">
+                      Agents are being created in parallel using GPU acceleration. Each agent includes full scraping, chunks, and embeddings...
                     </p>
+                    {competitiveMap?.slave_agents_created > 0 && (
+                      <p className="text-green-400 font-semibold">
+                        ✓ {competitiveMap.slave_agents_created} created
+                      </p>
+                    )}
+                  </div>
+                  {timingInfo && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs text-text-muted">
+                      <div>
+                        <p className="uppercase tracking-wide text-[11px]">Elapsed</p>
+                        <p className="text-text-primary font-semibold">{formatDuration(timingInfo.elapsed_minutes)}</p>
+                      </div>
+                      <div>
+                        <p className="uppercase tracking-wide text-[11px]">Remaining</p>
+                        <p className="text-text-primary font-semibold">{formatDuration(timingInfo.remaining_minutes)}</p>
+                      </div>
+                      <div>
+                        <p className="uppercase tracking-wide text-[11px]">Estimated Total</p>
+                        <p className="text-text-primary font-semibold">{formatDuration(timingInfo.estimated_total_minutes)}</p>
+                      </div>
+                      <div>
+                        <p className="uppercase tracking-wide text-[11px]">Started</p>
+                        <p className="text-text-primary font-semibold">
+                          {timingInfo.start_time ? new Date(timingInfo.start_time).toLocaleTimeString() : '-'}
+                        </p>
+                      </div>
+                    </div>
                   )}
+                  
+                  {/* ✅ Fereastră de log-uri live */}
+                  <div className="mt-3 border border-primary-600 rounded-lg bg-primary-800/50 max-h-48 overflow-y-auto">
+                    <div className="p-2 text-xs font-mono">
+                      <div className="text-text-muted mb-1 font-semibold">Live Progress:</div>
+                      <div className="space-y-1 text-text-primary">
+                        {competitiveMap?.slave_agents_created > 0 ? (
+                          <div className="text-green-400">
+                            ✓ {competitiveMap.slave_agents_created} agents created successfully
+                          </div>
+                        ) : (
+                          <div className="text-yellow-400">
+                            ⏳ Processing... (GPU acceleration active)
+                          </div>
+                        )}
+                        {competitiveMap?.agent_creation_status === 'in_progress' && (
+                          <div className="text-blue-400">
+                            🔄 Status: In Progress - {agentCreationProgress.completed || 0}/{agentCreationProgress.total || 0} agents
+                          </div>
+                        )}
+                        {competitiveMap?.agent_creation_status === 'completed' && (
+                          <div className="text-green-400">
+                            ✅ Status: Completed - All agents created successfully
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card.Body>
+            </Card>
+          )}
+
+          {selectedSites.length > 0 && (
+            <Card>
+              <Card.Header>
+                <Card.Title>Live Creation Insights</Card.Title>
+              </Card.Header>
+              <Card.Body className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  {[
+                    { label: 'Selected Sites', value: selectedSites.length },
+                    { label: 'Created Agents', value: createdSites.length },
+                    { label: 'Pending Queue', value: pendingSites.length },
+                    { label: 'Failures', value: failedSites.length },
+                    { label: 'Remaining Time', value: timingInfo ? formatDuration(timingInfo.remaining_minutes) : '-' }
+                  ].map((metric) => (
+                    <div key={metric.label} className="p-3 rounded-lg border border-primary-600 bg-primary-800/40">
+                      <p className="text-xs text-text-muted uppercase tracking-wide">{metric.label}</p>
+                      <p className="text-2xl font-bold text-text-primary mt-1">{metric.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-text-primary">Live Site Status</p>
+                      {(timingInfo?.last_update || competitiveMap?.updated_at) && (
+                        <span className="text-xs text-text-muted">
+                          Updated {formatRelativeTime(timingInfo?.last_update || competitiveMap?.updated_at)}
+                        </span>
+                    )}
+                  </div>
+                  <div className="border border-primary-600 rounded-lg max-h-64 overflow-y-auto divide-y divide-primary-700/60">
+                    {liveSiteStatuses.length > 0 ? (
+                      liveSiteStatuses.map((site) => (
+                        <div key={site.domain} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                          <div>
+                            <p className="font-semibold text-text-primary">
+                              {site.domain}
+                              {site.keyword && (
+                                <span className="ml-2 text-xs text-text-muted">• {site.keyword}</span>
+                              )}
+                            </p>
+                            <p className="text-xs text-text-muted">
+                              Relevance {Math.round(site.relevance)}%
+                              {site.updatedAt && ` • ${formatRelativeTime(site.updatedAt)}`}
+                            </p>
+                          </div>
+                          {renderStatusBadge(site.status)}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="py-6 text-center text-sm text-text-muted">
+                        No sites selected yet. Select sites to see live status.
+                      </div>
+                    )}
+                  </div>
                 </div>
               </Card.Body>
             </Card>
@@ -597,7 +922,7 @@ const CompetitiveStrategyTab = ({ agentId }) => {
               </Button>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2 bg-primary-700 rounded-lg px-3 py-1.5">
-                  <label className="text-xs text-text-muted">Select all >=</label>
+                    <label className="text-xs text-text-muted">Select all &gt;=</label>
                   <input
                     type="number"
                     min="0"
@@ -647,6 +972,14 @@ const CompetitiveStrategyTab = ({ agentId }) => {
               </div>
               <Button
                 onClick={async () => {
+                  // ✅ Verifică dacă analiza este deja completă
+                  if (competitiveMap?.relevance_analysis_status === 'completed' && competitiveMap?.relevance_analyzed) {
+                    const confirmed = confirm('Relevance analysis is already completed. Do you want to re-analyze all sites?')
+                    if (!confirmed) {
+                      return
+                    }
+                  }
+                  
                   const sitesToAnalyze = mapData && mapData.length > 0 ? mapData.length : 0
                   if (sitesToAnalyze === 0) {
                     alert('No sites to analyze. Add sites manually or execute the strategy to discover sites.')
@@ -659,6 +992,13 @@ const CompetitiveStrategyTab = ({ agentId }) => {
                       timeout: 10000  // Timeout scurt - răspuns imediat
                     })
                     if (response.data.ok) {
+                      // Verifică dacă analiza este deja completă
+                      if (response.data.already_completed) {
+                        setIsAnalyzingRelevance(false)
+                        alert('Relevance analysis is already completed. All sites have been analyzed.')
+                        refetchMap()
+                        return
+                      }
                       // Nu mai afișăm alert, doar pornim polling-ul
                       // Polling-ul se face automat prin refetchInterval din useQuery
                       refetchMap()
@@ -727,41 +1067,84 @@ const CompetitiveStrategyTab = ({ agentId }) => {
               <Button
                 onClick={async () => {
                   const selectedCount = mapData.filter(s => s.selected).length
+                  
+                  // ✅ Dacă nu sunt site-uri selectate, verifică dacă există site-uri cu relevance >= 70%
                   if (selectedCount === 0) {
-                    // Dacă nu sunt site-uri selectate, oferă opțiunea de a crea direct pentru recomandate
-                    if (competitiveMap?.relevance_analyzed && competitiveMap?.recommended_sites_count > 0) {
-                      const recommendedCount = competitiveMap.recommended_sites_count
-                      if (confirm(`No sites selected. Would you like to create agents for all ${recommendedCount} recommended sites directly?`)) {
-                        try {
-                          setIsCreatingAgents(true)
-                          setAgentCreationProgress({ completed: 0, total: recommendedCount, percentage: 0 })
-                          // Selectează și creează direct pentru recomandate
-                          const selectResponse = await api.post(`/agents/${agentId}/competitive-map/select-recommended`)
-                          if (selectResponse.data.ok) {
-                            await refetchMap()
-                            // Apoi creează agenții
-                            const createResponse = await api.post(`/agents/${agentId}/competitive-map/create-agents`)
-                            if (createResponse.data.ok) {
-                              refetchMap()
+                    // Verifică dacă există site-uri cu relevance >= 70% (high relevance)
+                    const highRelevanceSites = mapData.filter(s => (s.relevance_score || 0) >= 70 && !s.has_agent)
+                    const recommendedSites = mapData.filter(s => s.recommended && !s.has_agent)
+                    
+                    if (competitiveMap?.relevance_analyzed) {
+                      // Dacă analiza este completă, oferă opțiuni
+                      if (recommendedSites.length > 0) {
+                        // Există site-uri recomandate
+                        if (confirm(`No sites selected. Would you like to create agents for all ${recommendedSites.length} recommended sites (relevance >= 70%)?`)) {
+                          try {
+                            setIsCreatingAgents(true)
+                            setAgentCreationProgress({ completed: 0, total: recommendedSites.length, percentage: 0 })
+                            // Selectează și creează direct pentru recomandate
+                            const selectResponse = await api.post(`/agents/${agentId}/competitive-map/select-recommended`)
+                            if (selectResponse.data.ok) {
+                              await refetchMap()
+                              // Apoi creează agenții
+                              const createResponse = await api.post(`/agents/${agentId}/competitive-map/create-agents`)
+                              if (createResponse.data.ok) {
+                                refetchMap()
+                              } else {
+                                setIsCreatingAgents(false)
+                                setAgentCreationProgress(null)
+                                alert('Failed to start agent creation: ' + (createResponse.data.error || 'Unknown error'))
+                              }
                             } else {
                               setIsCreatingAgents(false)
                               setAgentCreationProgress(null)
-                              alert('Failed to start agent creation: ' + (createResponse.data.error || 'Unknown error'))
+                              alert('Failed to select recommended sites: ' + (selectResponse.data.error || 'Unknown error'))
                             }
-                          } else {
+                          } catch (error) {
                             setIsCreatingAgents(false)
                             setAgentCreationProgress(null)
-                            alert('Failed to select recommended sites: ' + (selectResponse.data.error || 'Unknown error'))
+                            alert('Error: ' + (error.response?.data?.detail || error.message))
                           }
-                        } catch (error) {
-                          setIsCreatingAgents(false)
-                          setAgentCreationProgress(null)
-                          alert('Error: ' + (error.response?.data?.detail || error.message))
                         }
+                        return
+                      } else if (highRelevanceSites.length > 0) {
+                        // Există site-uri cu relevance >= 70% dar nu sunt marcate ca recommended
+                        if (confirm(`No sites selected. Would you like to create agents for all ${highRelevanceSites.length} sites with relevance >= 70%?`)) {
+                          try {
+                            setIsCreatingAgents(true)
+                            setAgentCreationProgress({ completed: 0, total: highRelevanceSites.length, percentage: 0 })
+                            // Selectează site-urile cu relevance >= 70%
+                            const selectResponse = await api.post(`/agents/${agentId}/competitive-map/select-multiple`, {
+                              threshold: 70
+                            })
+                            if (selectResponse.data.ok) {
+                              await refetchMap()
+                              // Apoi creează agenții
+                              const createResponse = await api.post(`/agents/${agentId}/competitive-map/create-agents`)
+                              if (createResponse.data.ok) {
+                                refetchMap()
+                              } else {
+                                setIsCreatingAgents(false)
+                                setAgentCreationProgress(null)
+                                alert('Failed to start agent creation: ' + (createResponse.data.error || 'Unknown error'))
+                              }
+                            } else {
+                              setIsCreatingAgents(false)
+                              setAgentCreationProgress(null)
+                              alert('Failed to select sites: ' + (selectResponse.data.error || 'Unknown error'))
+                            }
+                          } catch (error) {
+                            setIsCreatingAgents(false)
+                            setAgentCreationProgress(null)
+                            alert('Error: ' + (error.response?.data?.detail || error.message))
+                          }
+                        }
+                        return
                       }
-                      return
                     }
-                    alert('Please select at least one site to create agents')
+                    
+                    // Dacă nu există site-uri relevante sau analiza nu este completă
+                    alert('Please select at least one site to create agents, or wait for relevance analysis to complete.')
                     return
                   }
                   
@@ -788,8 +1171,19 @@ const CompetitiveStrategyTab = ({ agentId }) => {
                     alert('Error: ' + (error.response?.data?.detail || error.message))
                   }
                 }}
-                disabled={isCreatingAgents || !mapData || (mapData.filter(s => s.selected).length === 0 && (!competitiveMap?.relevance_analyzed || !competitiveMap?.recommended_sites_count))}
+                disabled={isCreatingAgents || !mapData || mapData.length === 0}
                 className="bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                title={
+                  isCreatingAgents 
+                    ? 'Creating agents...'
+                    : !mapData || mapData.length === 0
+                    ? 'No sites available. Execute strategy first.'
+                    : mapData.filter(s => s.selected).length === 0
+                    ? competitiveMap?.relevance_analyzed 
+                      ? `Click to create agents for sites with relevance >= 70% (${mapData.filter(s => (s.relevance_score || 0) >= 70 && !s.has_agent).length} available)`
+                      : 'Select sites first, or wait for relevance analysis to complete'
+                    : `Create agents for ${mapData.filter(s => s.selected).length} selected sites`
+                }
                 icon={isCreatingAgents ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
                 title={
                   mapData.filter(s => s.selected).length === 0 && competitiveMap?.relevance_analyzed && competitiveMap?.recommended_sites_count > 0

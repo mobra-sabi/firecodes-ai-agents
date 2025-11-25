@@ -23,7 +23,7 @@ class SERPMongoDBSchemas:
     5. serp_alerts - Alerte automate (rank drops, new competitors, etc.)
     """
     
-    def __init__(self, mongo_uri: str = "mongodb://localhost:27017/", db_name: str = "ai_agents_db"):
+    def __init__(self, mongo_uri: str = "mongodb://localhost:27018/", db_name: str = "ai_agents_db"):
         """
         Initialize MongoDB schemas manager
         

@@ -40,7 +40,7 @@ class SERPMonitor:
     
     def __init__(self):
         """Initialize SERP Monitor"""
-        self.mongo = MongoClient('mongodb://localhost:27017/')
+        self.mongo = MongoClient('mongodb://localhost:27018/')
         self.db = self.mongo.ai_agents_db
         self.schemas = SERPMongoDBSchemas()
         self.scorer = SERPScorer()

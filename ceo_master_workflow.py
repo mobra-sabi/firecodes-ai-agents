@@ -53,9 +53,11 @@ class CEOMasterWorkflow:
     """
     
     def __init__(self):
-        # Use MongoDB 8.0 on port 27017 (with real data)
-        self.mongo_client = MongoClient("mongodb://localhost:27017/")
-        self.db = self.mongo_client["ai_agents_db"]
+        # Use MongoDB 8.0 on port 27018 (with real data)
+        from config.database_config import MONGODB_URI, MONGODB_DATABASE
+        mongo_uri = os.getenv("MONGODB_URI", MONGODB_URI)
+        self.mongo_client = MongoClient(mongo_uri)
+        self.db = self.mongo_client[MONGODB_DATABASE]
         
         # Componente
         self.agent_creator = ConstructionAgentCreator()

@@ -287,12 +287,8 @@ async def debug_search(q: str, domain: Optional[str] = None):
 # <<< CHANGED: unificare Mongo și colecții >>>
 mongo_client = MongoClient(MONGODB_URI)
 db = mongo_client[MONGODB_DATABASE]
-# Try site_agents first (where data actually is), fallback to agents
-try:
-    collections = db.list_collection_names()
-    agents_collection = db.site_agents if 'site_agents' in collections else db.agents
-except:
-    agents_collection = db.agents  # Fallback if can't list collections
+# Folosește colecția actuală `site_agents` (agents vechi rămân ca backup)
+agents_collection = db.site_agents
 conversations_collection = db.conversations
 site_content_col = db[MONGODB_COLLECTION]
 
@@ -1224,6 +1220,347 @@ async def get_agent_by_site_url(site_url: str = Query(...)):
         logger.error(f"Error finding agent by site_url: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# ============================================================================
+# LIVE PROGRESS TRACKING - Pentru afișare în timp real în UI
+# ============================================================================
+
+# Global dict pentru a stoca progresul în memorie (mai rapid decât MongoDB)
+_agent_progress_cache = {}
+
+def update_agent_progress(agent_id: str, progress_data: dict):
+    """Actualizează progresul unui agent (apelat din workflow-uri)"""
+    global _agent_progress_cache
+    if agent_id not in _agent_progress_cache:
+        _agent_progress_cache[agent_id] = {
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "logs": []
+        }
+    
+    _agent_progress_cache[agent_id].update(progress_data)
+    _agent_progress_cache[agent_id]["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    # Adaugă log entry dacă există mesaj
+    if "message" in progress_data:
+        _agent_progress_cache[agent_id]["logs"].append({
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "message": progress_data["message"],
+            "step": progress_data.get("current_step", "unknown")
+        })
+        # Păstrează doar ultimele 100 de log-uri
+        _agent_progress_cache[agent_id]["logs"] = _agent_progress_cache[agent_id]["logs"][-100:]
+
+
+@app.get("/api/agents/{agent_id}/progress")
+async def get_agent_progress(agent_id: str):
+    """
+    Returnează progresul în timp real al creării unui agent.
+    Folosit de UI pentru Live Monitor.
+    Format compatibil cu LiveMonitor.jsx
+    """
+    try:
+        # Definește pașii standard pentru workflow
+        def build_steps(current_step: str, pages: int, embeddings: int, keywords_count: int = 0):
+            steps = [
+                {
+                    "id": "scraping",
+                    "name": "🕷️ Web Scraping",
+                    "status": "completed" if pages > 0 else ("in_progress" if current_step == "scraping" else "pending"),
+                    "progress": 100 if pages > 0 else (50 if current_step == "scraping" else 0),
+                    "details": f"{pages} pages extracted" if pages > 0 else "Extracting website content..."
+                },
+                {
+                    "id": "analysis",
+                    "name": "🔬 Content Analysis",
+                    "status": "completed" if pages > 10 else ("in_progress" if current_step == "analysis" else "pending"),
+                    "progress": 100 if pages > 10 else 0,
+                    "details": "Analyzing content structure and topics"
+                },
+                {
+                    "id": "embeddings",
+                    "name": "🧠 Creating Embeddings",
+                    "status": "completed" if embeddings > 0 else ("in_progress" if current_step == "creating_embeddings" else "pending"),
+                    "progress": 100 if embeddings > 0 else (50 if current_step == "creating_embeddings" else 0),
+                    "details": f"{embeddings} embeddings created" if embeddings > 0 else "Generating vector embeddings..."
+                },
+                {
+                    "id": "keywords",
+                    "name": "🔑 Keyword Discovery",
+                    "status": "completed" if keywords_count > 0 else "pending",
+                    "progress": 100 if keywords_count > 0 else 0,
+                    "details": f"{keywords_count} keywords identified" if keywords_count > 0 else "Discovering relevant keywords..."
+                },
+                {
+                    "id": "competitors",
+                    "name": "🎯 Competitor Analysis",
+                    "status": "pending",
+                    "progress": 0,
+                    "details": "Analyzing competition landscape..."
+                },
+                {
+                    "id": "strategy",
+                    "name": "📋 Strategy Generation",
+                    "status": "pending",
+                    "progress": 0,
+                    "details": "Creating strategic recommendations..."
+                }
+            ]
+            return steps
+        
+        # 1. Verifică cache-ul în memorie (cel mai rapid)
+        if agent_id in _agent_progress_cache:
+            cached = _agent_progress_cache[agent_id]
+            pages = cached.get("pages_scraped", 0)
+            embeddings = cached.get("embeddings_created", 0)
+            steps = build_steps(cached.get("current_step", "initializing"), pages, embeddings)
+            completed_steps = len([s for s in steps if s["status"] == "completed"])
+            overall = int((completed_steps / len(steps)) * 100)
+            
+            return {
+                "ok": True,
+                "agent_id": agent_id,
+                "domain": cached.get("domain", ""),
+                "status": cached.get("status", "in_progress"),
+                "current_step": cached.get("current_step", "initializing"),
+                "overall_progress": overall,
+                "completed_steps": completed_steps,
+                "total_steps": len(steps),
+                "steps": steps,
+                "pages_scraped": pages,
+                "embeddings_created": embeddings,
+                "message": cached.get("message", "Processing..."),
+                "logs": cached.get("logs", [])[-20:],
+                "updated_at": cached.get("updated_at"),
+                "source": "cache"
+            }
+        
+        # 2. Verifică în MongoDB - colecția agents
+        try:
+            agent = agents_collection.find_one({"_id": ObjectId(agent_id)})
+        except:
+            agent = None
+        
+        if agent:
+            status = agent.get("status", "unknown")
+            # Verifică pages_indexed sau pages_scraped
+            pages_scraped = agent.get("pages_indexed", agent.get("pages_scraped", 0))
+            if pages_scraped == 0 and "agent_config" in agent:
+                pages_scraped = agent.get("agent_config", {}).get("pages_scraped", 0)
+            
+            embeddings = agent.get("chunks_indexed", agent.get("embeddings_count", agent.get("total_embeddings", 0)))
+            keywords = agent.get("keywords", agent.get("overall_keywords", []))
+            keywords_count = len(keywords) if isinstance(keywords, list) else 0
+            
+            # Determină step-ul curent bazat pe date
+            if status == "completed" or status == "active":
+                current_step = "completed"
+            elif embeddings > 0:
+                current_step = "creating_embeddings"
+            elif pages_scraped > 0:
+                current_step = "scraping"
+            else:
+                current_step = "initializing"
+            
+            steps = build_steps(current_step, pages_scraped, embeddings, keywords_count)
+            completed_steps = len([s for s in steps if s["status"] == "completed"])
+            overall = int((completed_steps / len(steps)) * 100) if len(steps) > 0 else 0
+            
+            # Calculează progres mai detaliat
+            if pages_scraped > 0 and embeddings == 0:
+                overall = max(overall, 30)  # Minim 30% dacă avem pagini
+            if pages_scraped > 50:
+                overall = max(overall, 40)
+            
+            return {
+                "ok": True,
+                "agent_id": agent_id,
+                "domain": agent.get("domain"),
+                "site_url": agent.get("site_url"),
+                "status": status,
+                "current_step": current_step,
+                "overall_progress": overall,
+                "completed_steps": completed_steps,
+                "total_steps": len(steps),
+                "steps": steps,
+                "pages_scraped": pages_scraped,
+                "embeddings_created": embeddings,
+                "keywords_count": keywords_count,
+                "message": f"Agent {status}. Pages: {pages_scraped}, Embeddings: {embeddings}",
+                "source": "mongodb"
+            }
+        
+        # 3. Verifică în colecția workflows
+        workflow = db.workflows.find_one(
+            {"$or": [
+                {"agent_id": agent_id},
+                {"_id": agent_id}
+            ]},
+            sort=[("created_at", -1)]
+        )
+        
+        if workflow:
+            steps = build_steps(workflow.get("current_step", "processing"), 0, 0)
+            return {
+                "ok": True,
+                "agent_id": agent_id,
+                "domain": workflow.get("domain", ""),
+                "status": workflow.get("status", "in_progress"),
+                "current_step": workflow.get("current_step", "processing"),
+                "overall_progress": workflow.get("progress", {}).get("percent", 50),
+                "completed_steps": 0,
+                "total_steps": len(steps),
+                "steps": steps,
+                "message": workflow.get("message", "Workflow in progress..."),
+                "source": "workflow"
+            }
+        
+        # 4. Nu s-a găsit nimic - returnează status pending cu steps goale
+        steps = build_steps("pending", 0, 0)
+        return {
+            "ok": True,
+            "agent_id": agent_id,
+            "domain": "",
+            "status": "pending",
+            "current_step": "waiting",
+            "overall_progress": 0,
+            "completed_steps": 0,
+            "total_steps": len(steps),
+            "steps": steps,
+            "message": "Agent creation pending or not found",
+            "source": "none"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting agent progress: {e}")
+        return {
+            "ok": False,
+            "error": str(e),
+            "status": "error"
+        }
+
+
+@app.get("/api/agents/{agent_id}/live-logs")
+async def get_agent_live_logs(agent_id: str, limit: int = Query(50, ge=1, le=200)):
+    """
+    Returnează log-urile live ale procesului de creare agent.
+    Citește din fișierul de log și filtrează pentru acest agent.
+    """
+    try:
+        logs = []
+        
+        # 1. Log-uri din cache
+        if agent_id in _agent_progress_cache:
+            logs.extend(_agent_progress_cache[agent_id].get("logs", []))
+        
+        # 2. Citește din fișierul de log pentru mai multe detalii
+        log_file = "/srv/hf/ai_agents/logs/backend_main.log"
+        if os.path.exists(log_file):
+            try:
+                # Citește ultimele linii din log
+                import subprocess
+                result = subprocess.run(
+                    ["tail", "-500", log_file],
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+                
+                if result.returncode == 0:
+                    lines = result.stdout.strip().split("\n")
+                    for line in lines:
+                        # Filtrează linii relevante (scraping, embeddings, etc.)
+                        if any(keyword in line.lower() for keyword in ["scraperapi", "pagina", "embedding", "gpu", "qdrant", "agent"]):
+                            logs.append({
+                                "timestamp": datetime.now(timezone.utc).isoformat(),
+                                "message": line[:200],  # Limitează lungimea
+                                "step": "log"
+                            })
+            except Exception as e:
+                logger.debug(f"Could not read log file: {e}")
+        
+        # Returnează ultimele N log-uri
+        return {
+            "ok": True,
+            "agent_id": agent_id,
+            "logs": logs[-limit:],
+            "total_logs": len(logs)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting live logs: {e}")
+        return {"ok": False, "error": str(e), "logs": []}
+
+
+@app.get("/api/agents/{agent_id}/stats")
+async def get_agent_stats(agent_id: str):
+    """
+    Returnează statistici detaliate pentru un agent specific.
+    Folosit de Live Monitor pentru afișare în timp real.
+    """
+    try:
+        # Caută agentul
+        try:
+            agent = agents_collection.find_one({"_id": ObjectId(agent_id)})
+        except:
+            agent = None
+        
+        if not agent:
+            # Returnează statistici default dacă agentul nu există încă
+            return {
+                "ok": True,
+                "agent_id": agent_id,
+                "status": "pending",
+                "pages_scraped": 0,
+                "total_pages": 0,
+                "embeddings_count": 0,
+                "keywords_count": 0,
+                "competitors_count": 0,
+                "serp_rankings_count": 0,
+                "message": "Agent not found or still being created"
+            }
+        
+        # Calculează statistici
+        pages_scraped = agent.get("pages_scraped", 0)
+        if pages_scraped == 0 and "pages_content" in agent:
+            pages_scraped = len(agent.get("pages_content", []))
+        
+        embeddings = agent.get("embeddings_count", agent.get("total_embeddings", 0))
+        keywords = agent.get("keywords", agent.get("overall_keywords", []))
+        keywords_count = len(keywords) if isinstance(keywords, list) else 0
+        
+        # Numără competitorii (slave agents)
+        competitors_count = agents_collection.count_documents({"master_agent_id": ObjectId(agent_id)})
+        
+        # Verifică SERP rankings
+        serp_count = 0
+        try:
+            serp_data = db.serp_rankings.count_documents({"agent_id": agent_id})
+            serp_count = serp_data
+        except:
+            pass
+        
+        return {
+            "ok": True,
+            "agent_id": agent_id,
+            "domain": agent.get("domain"),
+            "site_url": agent.get("site_url"),
+            "status": agent.get("status", "unknown"),
+            "pages_scraped": pages_scraped,
+            "total_pages": agent.get("total_pages", pages_scraped),
+            "embeddings_count": embeddings,
+            "keywords_count": keywords_count,
+            "keywords": keywords[:20] if isinstance(keywords, list) else [],  # Primele 20
+            "competitors_count": competitors_count,
+            "serp_rankings_count": serp_count,
+            "created_at": str(agent.get("created_at", "")),
+            "updated_at": str(agent.get("updated_at", ""))
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting agent stats: {e}")
+        return {"ok": False, "error": str(e)}
+
+
 @app.get("/api/stats")
 async def get_stats():
     """Returnează statistici pentru dashboard"""
@@ -1503,6 +1840,20 @@ async def get_agent(agent_id: str):
         # Status complet
         is_complete = chunks_indexed > 0 and qdrant_status
         
+        # Calculează keywords totale (din subdomenii + overall_keywords)
+        subdomains = _normalize_subdomains(agent.get("subdomains", []))
+        overall_keywords = agent.get("overall_keywords", [])
+        
+        # Extrage toate keywords-urile din subdomenii
+        all_subdomain_keywords = []
+        for subdomain in subdomains:
+            if isinstance(subdomain, dict):
+                all_subdomain_keywords.extend(subdomain.get("keywords", []))
+        
+        # Combina keywords-urile (din subdomenii + overall)
+        all_keywords = list(set(all_subdomain_keywords + overall_keywords))  # Remove duplicates
+        keyword_count = len(all_keywords)
+        
         agent_data = {
             "_id": str(agent["_id"]),
             "domain": agent.get("domain", ""),
@@ -1512,10 +1863,10 @@ async def get_agent(agent_id: str):
             "industry": agent.get("industry", ""),
             "chunks_indexed": chunks_indexed,
             "pages_indexed": agent.get("pages_indexed", 0),
-            "keywords": agent.get("keywords", []),
-            "overall_keywords": agent.get("overall_keywords", []),
-            "keyword_count": len(agent.get("keywords", [])) + len(agent.get("overall_keywords", [])),
-            "subdomains": _normalize_subdomains(agent.get("subdomains", [])),
+            "keywords": all_subdomain_keywords,  # Keywords din subdomenii
+            "overall_keywords": overall_keywords,  # Keywords generale
+            "keyword_count": keyword_count,  # Total keywords (fără duplicate)
+            "subdomains": subdomains,
             "createdAt": agent.get("createdAt", agent.get("created_at")),
             "updatedAt": agent.get("updatedAt", agent.get("updated_at")),
             "status_complete": {
@@ -2239,16 +2590,28 @@ async def get_competitive_map(agent_id: str):
             high_relevance_sites = [s for s in sites if s.get("relevance_score", 0) >= 70]
             analyzed_sites = [s for s in sites if s.get("relevance_score", 50) != 50 or s.get("reasoning", "")]
             
-            return {
+            # ✅ Adaugă progresul execuției strategiei
+            execution_progress = competitive_map.get("execution_progress", {}) or {}
+            execution_status = competitive_map.get("execution_status", "not_started") or "not_started"
+            keywords_processed = competitive_map.get("keywords_processed", 0) or 0
+            
+            # Debug logging - FORCE LOG
+            logger.info(f"📊 Competitive map response for {agent_id}: execution_status={execution_status}, execution_progress={execution_progress}, keywords_processed={keywords_processed}")
+            print(f"📊 DEBUG: execution_status={execution_status}, execution_progress={execution_progress}, keywords_processed={keywords_processed}")
+            
+            response_data = {
                 "ok": True,
                 "competitive_map": sites,
                 "keywords_used": competitive_map.get("keywords_used", []),
                 "keyword_site_mapping": competitive_map.get("keyword_site_mapping", {}),  # Keyword → site-uri cu poziții
                 "sites_found": competitive_map.get("sites_found", len(sites)),
+                "keywords_processed": int(keywords_processed),  # ✅ Keywords procesate - FORCE INT
                 "slave_agents_created": completed_real,  # ✅ Număr real
+                "execution_status": str(execution_status),  # ✅ Status execuție (running, completed, failed) - FORCE STR
+                "execution_progress": dict(execution_progress) if execution_progress else {},  # ✅ Progres execuție {keywords_processed, keywords_total, percentage} - FORCE DICT
                 "relevance_analysis_status": competitive_map.get("relevance_analysis_status", "not_started"),
                 "relevance_analyzed": competitive_map.get("relevance_analyzed", False),
-                "relevance_analysis_date": competitive_map.get("relevance_analysis_date"),
+                "relevance_analysis_date": str(competitive_map.get("relevance_analysis_date")) if competitive_map.get("relevance_analysis_date") else None,  # ✅ Convert datetime to string
                 "relevance_analysis_progress": competitive_map.get("relevance_analysis_progress", None),
                 "recommended_sites_count": len(recommended_sites),  # ✅ Număr site-uri recomandate
                 "high_relevance_sites_count": len(high_relevance_sites),  # ✅ Număr site-uri cu relevance >= 70
@@ -2260,9 +2623,19 @@ async def get_competitive_map(agent_id: str):
                     "percentage": percentage_real
                 },
                 "status": competitive_map.get("agent_creation_status", "not_started"),  # Alias pentru compatibilitate
-                "created_at": competitive_map.get("created_at"),
-                "updated_at": competitive_map.get("updated_at")
+                "created_at": str(competitive_map.get("created_at")) if competitive_map.get("created_at") else None,  # ✅ Convert datetime to string
+                "updated_at": str(competitive_map.get("updated_at")) if competitive_map.get("updated_at") else None  # ✅ Convert datetime to string
             }
+            
+            # Debug - verifică ce se returnează
+            logger.info(f"📊 Response data keys: {list(response_data.keys())}")
+            logger.info(f"📊 Response execution_status: {response_data.get('execution_status')}")
+            logger.info(f"📊 Response execution_progress: {response_data.get('execution_progress')}")
+            logger.info(f"📊 Response keywords_processed: {response_data.get('keywords_processed')}")
+            
+            # ✅ FORCE JSONResponse pentru a asigura că toate câmpurile sunt returnate
+            from fastapi.responses import JSONResponse
+            return JSONResponse(content=response_data)
         else:
             return {
                 "ok": True,
@@ -2270,7 +2643,10 @@ async def get_competitive_map(agent_id: str):
                 "keywords_used": [],
                 "keyword_site_mapping": {},
                 "sites_found": 0,
-                "slave_agents_created": 0
+                "keywords_processed": 0,
+                "slave_agents_created": 0,
+                "execution_status": "not_started",
+                "execution_progress": None
             }
             
     except Exception as e:
@@ -2498,15 +2874,21 @@ async def create_agents_from_selected_sites(agent_id: str):
         # Detectează automat numărul real de GPU-uri disponibile
         import torch
         num_gpus = torch.cuda.device_count() if torch.cuda.is_available() else 0
+        reserved_gpu_ids = {6, 7}
+        available_gpu_ids = [gpu_id for gpu_id in range(num_gpus) if gpu_id not in reserved_gpu_ids]
+        available_gpu_count = len(available_gpu_ids)
         
-        # Optimizare pentru utilizare maximă: folosim toate GPU-urile + overhead pentru I/O
-        # Formula: num_gpus + overhead (2-3 worker-uri pentru I/O, scraping, etc.)
-        # Astfel fiecare GPU primește task-uri continuu, iar overhead-ul acoperă operațiile non-GPU
-        overhead_workers = 2  # Pentru I/O, scraping, MongoDB, etc.
-        optimal_parallel = num_gpus + overhead_workers if num_gpus > 0 else 5
+        overhead_workers = 2  # Pentru I/O, scraping, etc.
+        optimal_parallel = available_gpu_count + overhead_workers if available_gpu_count > 0 else 5
         
         parallel_gpu_agents = min(optimal_parallel, len(selected_sites))
-        logger.info(f"🚀 GPU-uri detectate: {num_gpus} | Worker-uri paralele: {parallel_gpu_agents} (optimizat pentru utilizare maximă)")
+        max_parallel_override = int(os.getenv("SLAVE_CREATION_MAX_PARALLEL", "0") or "0")
+        if max_parallel_override > 0:
+            parallel_gpu_agents = min(max_parallel_override, len(selected_sites))
+        logger.info(
+            f"🚀 GPU-uri detectate: {num_gpus} | GPU-uri disponibile: {available_gpu_count} "
+            f"(rezervate: {sorted(reserved_gpu_ids)}) | Worker-uri paralele: {parallel_gpu_agents}"
+        )
         
         db.ceo_workflow_executions.insert_one(workflow_doc)
         logger.info(f"📊 Workflow înregistrat: {workflow_id} pentru {len(selected_sites)} agenți")
@@ -2551,6 +2933,28 @@ async def create_agents_from_selected_sites(agent_id: str):
                     logger.info("   All sites already have agents")
                     return
                 
+                sites_target_total = len(sites_to_process)
+                start_time = datetime.now(timezone.utc)
+                estimated_total_minutes = max(5, sites_target_total * 2)
+
+                def compute_timing(created_count: int):
+                    now = datetime.now(timezone.utc)
+                    elapsed_minutes = max(0, (now - start_time).total_seconds() / 60)
+                    if created_count > 0:
+                        avg_time_per_site = elapsed_minutes / created_count
+                        remaining_minutes = max(0, avg_time_per_site * max(sites_target_total - created_count, 0))
+                    else:
+                        remaining_minutes = max(0, estimated_total_minutes - elapsed_minutes)
+                    return {
+                        "start_time": start_time.isoformat(),
+                        "estimated_total_minutes": estimated_total_minutes,
+                        "elapsed_minutes": round(elapsed_minutes, 2),
+                        "remaining_minutes": round(remaining_minutes, 2),
+                        "sites_to_create": sites_target_total,
+                        "sites_created": created_count,
+                        "last_update": now.isoformat()
+                    }
+                
                 # Setează status "in_progress" la început
                 db.competitive_map.update_one(
                     {"master_agent_id": agent_id},
@@ -2562,6 +2966,7 @@ async def create_agents_from_selected_sites(agent_id: str):
                                 "total": len(sites_to_process),
                                 "percentage": 0
                             },
+                            "agent_creation_timing": compute_timing(0),
                             "updated_at": datetime.now(timezone.utc)
                         }
                     }
@@ -2586,7 +2991,7 @@ async def create_agents_from_selected_sites(agent_id: str):
                         nonlocal slave_agents_created, failed_count
                         
                         # Procesează în batch-uri de parallel_gpu_agents pentru a controla paralelismul
-                        # Optimizat pentru utilizare maximă - folosește toate GPU-urile simultan
+                        # Optimizat pentru utilizare maximă - folosește toate GPU-urile disponibile simultan
                         total_batches = (len(sites_to_process) + parallel_gpu_agents - 1) // parallel_gpu_agents
                         
                         for batch_start in range(0, len(sites_to_process), parallel_gpu_agents):
@@ -2605,10 +3010,10 @@ async def create_agents_from_selected_sites(agent_id: str):
                                 keyword = site.get("keywords", [""])[0] if site.get("keywords") else "unknown"
                                 position = site.get("best_position", 100)
                                 
-                                # Distribuie pe GPU-uri diferite (round-robin) pentru utilizare uniformă
-                                # Dacă avem mai multe task-uri decât GPU-uri, distribuim uniform
-                                # Astfel fiecare GPU primește task-uri continuu pentru utilizare maximă
-                                gpu_id = idx % num_gpus if num_gpus > 0 else None
+                                # Distribuie pe GPU-uri disponibile (excludem GPU-urile rezervate pentru Qwen)
+                                gpu_id = None
+                                if available_gpu_ids:
+                                    gpu_id = available_gpu_ids[idx % len(available_gpu_ids)]
                                 
                                 # Log pentru debugging - verifică distribuția
                                 logger.info(f"   📍 Task {batch_start + idx}: {site.get('domain', 'unknown')[:30]}... → GPU {gpu_id}")
@@ -2640,6 +3045,32 @@ async def create_agents_from_selected_sites(agent_id: str):
                                         slave_agents_created += 1
                                         logger.info(f"   ✅ [{idx+1}/{len(sites_to_process)}] Created agent: {site['domain']} (Total: {slave_agents_created})")
                                         
+                                        # ✅ ACTUALIZARE LIVE: Actualizează progresul după fiecare agent creat
+                                        sites_with_agents_real = [s for s in competitive_map_data if s.get("has_agent", False) and s.get("slave_agent_id")]
+                                        completed_real = len(sites_with_agents_real)
+                                        total_selected = len([s for s in competitive_map_data if s.get("selected", False)])
+                                        percentage_real = int((completed_real / total_selected) * 100) if total_selected > 0 else 0
+                                        
+                                        # Actualizează imediat în MongoDB pentru progres live
+                                        db.competitive_map.update_one(
+                                            {"master_agent_id": agent_id},
+                                            {
+                                                "$set": {
+                                                    "competitive_map": competitive_map_data,
+                                                    "slave_agents_created": completed_real,
+                                                    "agent_creation_status": "in_progress",
+                                                    "agent_creation_progress": {
+                                                        "completed": completed_real,
+                                                        "total": total_selected,
+                                                        "percentage": percentage_real
+                                                    },
+                                                    "agent_creation_timing": compute_timing(slave_agents_created),
+                                                    "updated_at": datetime.now(timezone.utc)
+                                                }
+                                            }
+                                        )
+                                        logger.info(f"   📊 Progres LIVE actualizat: {completed_real}/{total_selected} ({percentage_real}%)")
+                                        
                                         # ✅ Track fiecare agent creat în workflow_tracking
                                         try:
                                             from workflow_tracking_system import WorkflowTracker, WorkflowStep, StepStatus
@@ -2667,7 +3098,7 @@ async def create_agents_from_selected_sites(agent_id: str):
                                     failed_count += 1
                                     logger.error(f"   ❌ [{idx+1}/{len(sites_to_process)}] Exception: {site['domain']} - {e}")
                             
-                            # ✅ SINCRONIZARE: Actualizează progresul real din site-uri (nu doar din batch)
+                            # ✅ ACTUALIZARE FINALĂ BATCH: Actualizează progresul după batch complet
                             sites_with_agents_real = [s for s in competitive_map_data if s.get("has_agent", False) and s.get("slave_agent_id")]
                             completed_real = len(sites_with_agents_real)
                             total_selected = len([s for s in competitive_map_data if s.get("selected", False)])
@@ -2685,11 +3116,12 @@ async def create_agents_from_selected_sites(agent_id: str):
                                             "total": total_selected,
                                             "percentage": percentage_real
                                         },
+                                        "agent_creation_timing": compute_timing(slave_agents_created),
                                         "updated_at": datetime.now(timezone.utc)
                                     }
                                 }
                             )
-                            logger.info(f"   📊 Progres actualizat: {completed_real}/{total_selected} ({percentage_real}%)")
+                            logger.info(f"   📊 Progres batch finalizat: {completed_real}/{total_selected} ({percentage_real}%)")
                     
                     # Rulează crearea agenților în paralel
                     loop.run_until_complete(create_agents_parallel())
@@ -2713,6 +3145,7 @@ async def create_agents_from_selected_sites(agent_id: str):
                                     "total": total_selected_final,
                                     "percentage": percentage_final
                                 },
+                                "agent_creation_timing": compute_timing(slave_agents_created),
                                 "status": "completed",  # Alias pentru compatibilitate
                                 "updated_at": datetime.now(timezone.utc)
                             }
@@ -2780,6 +3213,7 @@ async def create_agents_from_selected_sites(agent_id: str):
                             "agent_creation_status": "failed",
                             "status": "failed",  # Alias pentru compatibilitate
                             "error": str(e),
+                            "agent_creation_timing": compute_timing(slave_agents_created),
                             "updated_at": datetime.now(timezone.utc)
                         }
                     }
@@ -3118,12 +3552,23 @@ Răspunde întotdeauna în format JSON valid cu reasoning detaliat."""
         
         # Dacă analiza este deja completă, nu o reîncepe
         if existing_status == "completed":
-            return {
-                "ok": True,
-                "message": "Relevance analysis already completed",
-                "analyzed": existing_progress.get("analyzed", 0),
-                "total": existing_progress.get("total", 0)
-            }
+            # Verifică dacă toate site-urile sunt de fapt analizate
+            actually_analyzed = len([s for s in competitive_map_data 
+                                     if s.get("relevance_score", 50) != 50 or s.get("reasoning", "")])
+            total_sites = len(competitive_map_data)
+            
+            if actually_analyzed >= total_sites:
+                return {
+                    "ok": True,
+                    "message": "Relevance analysis already completed. All sites have been analyzed.",
+                    "analyzed": actually_analyzed,
+                    "total": total_sites,
+                    "already_completed": True
+                }
+            else:
+                # Dacă nu toate site-urile sunt analizate, continuă analiza
+                logger.info(f"⚠️  Analysis marked as completed but only {actually_analyzed}/{total_sites} sites analyzed. Continuing...")
+                # Continuă mai jos pentru a reanaliza site-urile lipsă
         
         # Dacă există progres parțial, continuă de unde a rămas
         if existing_analyzed > 0 and existing_status == "in_progress":
@@ -6422,3 +6867,285 @@ async def get_conscience_summary(agent_id: str):
         logger.error(f"Error getting conscience summary: {e}")
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#                     BUSINESS CONSULTING AI ENDPOINTS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.post("/api/agents/{agent_id}/consulting/generate-report")
+async def generate_consulting_report(agent_id: str, report_type: str = Query("full", enum=["full", "quick", "seo", "expansion"])):
+    """Generează un raport de consultanță AI pentru agentul specificat"""
+    try:
+        import requests as req
+        from qdrant_client import QdrantClient
+        
+        # Get agent data
+        agent = agents_collection.find_one({"_id": ObjectId(agent_id)})
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+        
+        domain = agent.get("domain", "unknown")
+        
+        # Get competitive map
+        cmap = db.competitive_map.find_one({"master_agent_id": agent_id})
+        keywords = cmap.get("keywords_used", []) if cmap else []
+        competitors = cmap.get("competitive_map", []) if cmap else []
+        
+        # Get competitor stats
+        competitor_stats = []
+        for comp in competitors[:15]:
+            slave = db.site_agents.find_one({"domain": comp.get("domain")})
+            cfg = slave.get("agent_config", {}) if slave else {}
+            competitor_stats.append({
+                "domain": comp.get("domain"),
+                "rank": comp.get("rank", 0),
+                "relevance": comp.get("relevance_score", 0),
+                "pages": cfg.get("pages_scraped", 0),
+                "chunks": cfg.get("embeddings_count", 0)
+            })
+        
+        # Build prompt based on report type
+        if report_type == "quick":
+            prompt = f"""Analizează rapid competiția pentru {domain} și oferă:
+1. Top 5 competitori și ce îi face puternici
+2. 3 acțiuni imediate de implementat
+3. Keywords de prioritizat
+
+Competitori: {json.dumps(competitor_stats[:10], ensure_ascii=False)}
+Keywords: {', '.join(keywords[:20])}"""
+        
+        elif report_type == "seo":
+            prompt = f"""Oferă un audit SEO pentru {domain} bazat pe analiza competiției:
+1. Gap analysis keywords
+2. Recomandări on-page
+3. Strategie de conținut
+4. Link building suggestions
+
+Competitori: {json.dumps(competitor_stats, ensure_ascii=False)}
+Keywords: {', '.join(keywords)}"""
+        
+        elif report_type == "expansion":
+            prompt = f"""Sugerează strategii de expansiune pentru {domain}:
+1. Subdomenii/micrositeuri noi de creat
+2. Servicii noi de adăugat
+3. Parteneriate B2B recomandate
+4. Nișe neexploatate
+
+Competitori: {json.dumps(competitor_stats, ensure_ascii=False)}
+Keywords: {', '.join(keywords)}"""
+        
+        else:  # full
+            prompt = f"""Oferă un raport complet de consultanță pentru {domain}:
+
+COMPETITORI ({len(competitor_stats)}):
+{json.dumps(competitor_stats, indent=2, ensure_ascii=False)}
+
+KEYWORDS ({len(keywords)}):
+{', '.join(keywords[:40])}
+
+Oferă:
+1. ÎNTREBĂRI BUSINESS DISCOVERY (15-20 întrebări pentru client)
+2. RECOMANDĂRI PE CANALE (digital + tradițional)
+3. PLAN DE ACȚIUNE 90 ZILE
+4. TEMPLATE OFERTE B2B (3 template-uri)
+5. SUBDOMENII SUGERATE (5-7 idei)
+
+Răspunde în română, structurat și acționabil."""
+
+        # Call DeepSeek
+        DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
+        DEEPSEEK_BASE_URL = os.getenv('DEEPSEEK_BASE_URL', 'https://api.deepseek.com')
+        
+        response = req.post(
+            f"{DEEPSEEK_BASE_URL}/v1/chat/completions",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {DEEPSEEK_API_KEY}"
+            },
+            json={
+                "model": "deepseek-chat",
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.7,
+                "max_tokens": 4000 if report_type == "full" else 2000
+            },
+            timeout=180
+        )
+        
+        if response.status_code != 200:
+            raise HTTPException(status_code=500, detail=f"DeepSeek API error: {response.text}")
+        
+        result = response.json()
+        report_content = result['choices'][0]['message']['content']
+        usage = result.get('usage', {})
+        
+        # Save to MongoDB
+        report_doc = {
+            "master_agent_id": agent_id,
+            "domain": domain,
+            "report_type": report_type,
+            "generated_by": "deepseek-chat",
+            "generated_at": datetime.now(timezone.utc),
+            "content": report_content,
+            "metadata": {
+                "tokens_input": usage.get('prompt_tokens', 0),
+                "tokens_output": usage.get('completion_tokens', 0),
+                "competitors_analyzed": len(competitor_stats),
+                "keywords_used": len(keywords)
+            }
+        }
+        
+        db.consulting_reports.insert_one(report_doc)
+        
+        return {
+            "ok": True,
+            "report": report_content,
+            "report_type": report_type,
+            "metadata": report_doc["metadata"]
+        }
+        
+    except Exception as e:
+        logger.error(f"Error generating consulting report: {e}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/agents/{agent_id}/consulting/reports")
+async def get_consulting_reports(agent_id: str, limit: int = Query(10, ge=1, le=50)):
+    """Obține rapoartele de consultanță anterioare"""
+    try:
+        reports = list(db.consulting_reports.find(
+            {"master_agent_id": agent_id},
+            {"content": 0}  # Exclude content for list view
+        ).sort("generated_at", -1).limit(limit))
+        
+        for r in reports:
+            r["_id"] = str(r["_id"])
+        
+        return {"ok": True, "reports": reports}
+    except Exception as e:
+        logger.error(f"Error getting consulting reports: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/agents/{agent_id}/consulting/reports/{report_id}")
+async def get_consulting_report(agent_id: str, report_id: str):
+    """Obține un raport specific de consultanță"""
+    try:
+        report = db.consulting_reports.find_one({
+            "_id": ObjectId(report_id),
+            "master_agent_id": agent_id
+        })
+        
+        if not report:
+            raise HTTPException(status_code=404, detail="Report not found")
+        
+        report["_id"] = str(report["_id"])
+        return {"ok": True, "report": report}
+    except Exception as e:
+        logger.error(f"Error getting consulting report: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/agents/{agent_id}/consulting/ask")
+async def ask_consulting_question(agent_id: str, question_data: dict = Body(...)):
+    """Pune o întrebare specifică consultantului AI"""
+    try:
+        import requests as req
+        
+        question = question_data.get("question", "")
+        context = question_data.get("context", "")
+        
+        if not question:
+            raise HTTPException(status_code=400, detail="Question is required")
+        
+        # Get agent data for context
+        agent = agents_collection.find_one({"_id": ObjectId(agent_id)})
+        domain = agent.get("domain", "unknown") if agent else "unknown"
+        
+        # Get competitive map for context
+        cmap = db.competitive_map.find_one({"master_agent_id": agent_id})
+        keywords = cmap.get("keywords_used", [])[:20] if cmap else []
+        competitors = [c.get("domain") for c in cmap.get("competitive_map", [])[:10]] if cmap else []
+        
+        prompt = f"""Ești un consultant de afaceri pentru industria construcțiilor din România.
+
+CLIENT: {domain}
+COMPETITORI: {', '.join(competitors)}
+KEYWORDS: {', '.join(keywords)}
+
+CONTEXT ADIȚIONAL: {context}
+
+ÎNTREBARE CLIENT: {question}
+
+Răspunde în română, concis și cu exemple concrete."""
+
+        # Call DeepSeek
+        DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
+        DEEPSEEK_BASE_URL = os.getenv('DEEPSEEK_BASE_URL', 'https://api.deepseek.com')
+        
+        response = req.post(
+            f"{DEEPSEEK_BASE_URL}/v1/chat/completions",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {DEEPSEEK_API_KEY}"
+            },
+            json={
+                "model": "deepseek-chat",
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.7,
+                "max_tokens": 1500
+            },
+            timeout=60
+        )
+        
+        if response.status_code != 200:
+            raise HTTPException(status_code=500, detail=f"DeepSeek API error: {response.text}")
+        
+        result = response.json()
+        answer = result['choices'][0]['message']['content']
+        
+        return {
+            "ok": True,
+            "question": question,
+            "answer": answer
+        }
+        
+    except Exception as e:
+        logger.error(f"Error asking consulting question: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/agents/{agent_id}/consulting/discovery-questions")
+async def get_discovery_questions(agent_id: str, category: str = Query(None)):
+    """Obține întrebările de business discovery pentru client"""
+    questions = {
+        "team_capacity": [
+            "Câți angajați permanenți și colaboratori externi aveți?",
+            "Ce specializări tehnice acoperă echipa?",
+            "Care este capacitatea maximă lunară de proiecte?",
+            "Aveți proiect manager dedicat pentru fiecare lucrare?",
+            "Ce echipamente și tehnologii utilizați?"
+        ],
+        "services_differentiation": [
+            "Care sunt cele 3 servicii cu cea mai mare marjă de profit?",
+            "Ce tip de proiecte preferați (apartamente, case, spații comerciale)?",
+            "Care este principalul factor care vă diferențiază de concurență?",
+            "Oferiți garanție pentru lucrările executate?",
+            "Aveți parteneriate cu furnizori de materiale?"
+        ],
+        "clients_market": [
+            "Care este profilul clientului ideal (vârstă, venit, locație)?",
+            "Ce zonă geografică acoperiți în mod regulat?",
+            "Care este bugetul mediu al unui proiect complet?",
+            "Care este principalul canal prin care vă găsesc clienții?",
+            "Ce procent din venituri provine de la clienți recurenți?"
+        ],
+        "objectives_resources": [
+            "Ce obiective de business aveți pentru următoarele 6-12 luni?",
+            "Există un buget alocat pentru marketing și promovare?",
+            "Aveți resurse interne pentru gestionarea conținutului online?",
+            "Care este punctul de durere cel mai mare în obținerea de noi clienți?",
+            "Sunteți deschiși să investiți în instrumente digitale?"
+        ]
+    }
+    
+    if category and category in questions:
+        return {"ok": True, "category": category, "questions": questions[category]}
+    
+    return {"ok": True, "questions": questions}

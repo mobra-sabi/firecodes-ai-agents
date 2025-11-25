@@ -28,6 +28,7 @@ import IndustryTransformationTest from './pages/IndustryTransformation.test'
 import ClientDashboard from './pages/ClientDashboard'
 import ClientChat from './pages/ClientChat'
 import ClientRecommendations from './pages/ClientRecommendations'
+import AIConsulting from './pages/AIConsulting'
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -64,6 +65,7 @@ function App() {
           <Route path="agents/:agentId/live" element={<LiveMonitor />} />
           <Route path="agents/workflow/:workflowId/live" element={<LiveMonitor />} />
           <Route path="agents/:agentId/chat" element={<AgentChat />} />
+          <Route path="agents/:agentId/consulting" element={<AIConsulting />} />
           <Route path="task-ai" element={<TaskAIAgent />} />
           <Route path="agents/:agentId/rankings" element={<GoogleRankingsMap />} />
           <Route path="agents/:agentId/serp" element={<SERPDashboard />} />

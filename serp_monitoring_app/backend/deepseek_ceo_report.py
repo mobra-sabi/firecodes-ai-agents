@@ -66,7 +66,7 @@ IMPORTANT:
 - Prioritizează acțiuni după impact × probabilitate de succes
 """
 
-    def __init__(self, mongo_uri: str = "mongodb://localhost:27017/", db_name: str = "ai_agents_db"):
+    def __init__(self, mongo_uri: str = "mongodb://localhost:27018/", db_name: str = "ai_agents_db"):
         """Initialize CEO Report Generator"""
         self.mongo = MongoClient(mongo_uri)
         self.db = self.mongo[db_name]

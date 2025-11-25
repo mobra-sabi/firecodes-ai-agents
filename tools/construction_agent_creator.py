@@ -12,6 +12,7 @@ from llm_orchestrator import get_orchestrator
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue
 from pymongo import MongoClient
+from bson import ObjectId
 import requests
 from bs4 import BeautifulSoup
 from collections import deque
@@ -48,7 +49,7 @@ class ConstructionAgentCreator:
         """Obține executor-ul partajat pentru toate task-urile"""
         if cls._shared_executor is None:
             import concurrent.futures
-            cls._shared_executor = concurrent.futures.ThreadPoolExecutor(max_workers=20)
+            cls._shared_executor = concurrent.futures.ThreadPoolExecutor(max_workers=40)
         return cls._shared_executor
     
     def __init__(self):
@@ -680,18 +681,36 @@ CONȚINUT: {content}
             return self.embedding_models[gpu_id]
         
         # Creează model nou pentru GPU-ul specificat
-        # IMPORTANT: Creează modelul pe CPU mai întâi, apoi mută-l pe GPU pentru a evita eroarea "meta tensor"
-        print(f"🔧 Creând embedding model (instance: {id(self)})")
-        model = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')
+        # ✅ CORECTARE: Inițializează direct pe device-ul dorit pentru a evita eroarea "meta tensor"
+        print(f"🔧 Creând embedding model (instance: {id(self)}) pentru GPU {gpu_id}")
         
         # Mută modelul pe GPU dacă este disponibil
         if torch.cuda.is_available() and gpu_id < torch.cuda.device_count():
             device = f"cuda:{gpu_id}"
-            print(f"🔧 Mutând embedding model pe {device}")
-            model = model.to(device)
+            print(f"🔧 Inițializând embedding model direct pe {device}")
+            try:
+                # ✅ Încearcă să inițializeze direct pe GPU (evită problema "meta tensor")
+                model = SentenceTransformer('all-MiniLM-L6-v2', device=device)
+            except Exception as e:
+                print(f"⚠️ Eroare la inițializare directă pe GPU {gpu_id}: {e}. Folosesc CPU apoi mut pe GPU.")
+                # Fallback: inițializează pe CPU și mută manual cu atenție
+                model = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')
+                try:
+                    # Mută modelul pe GPU - dacă apare eroarea meta tensor, folosește CPU
+                    model = model.to(device)
+                except Exception as e2:
+                    if "meta tensor" in str(e2).lower():
+                        print(f"⚠️ Eroare 'meta tensor' detectată. Reinițializez modelul pe CPU.")
+                        # Reinițializează modelul complet pe CPU
+                        model = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')
+                        device = "cpu"
+                    else:
+                        print(f"⚠️ Eroare la mutarea modelului pe GPU: {e2}. Folosesc CPU.")
+                        device = "cpu"
         else:
             device = "cpu"
             print(f"⚠️ GPU {gpu_id} nu este disponibil, folosesc CPU")
+            model = SentenceTransformer('all-MiniLM-L6-v2', device=device)
         self.embedding_models[gpu_id] = model
         
         # Backward compatibility
@@ -915,15 +934,12 @@ CONȚINUT: {content}
             print(f"   Pages scraped: {pages_scraped}")
             print(f"   Embeddings: {embeddings_count}")
             
-            # Returnează agent_config pentru compatibilitate
-            return agent_config
-            
-            # Log pentru debugging
             if gpu_id is not None:
                 print(f"✅ GPU {gpu_id} folosit pentru {site_url}")
             
-            # Extrage domain-ul
-            domain = tldextract.extract(site_url).domain + '.' + tldextract.extract(site_url).suffix
+            # Extrage domain-ul în format complet
+            extracted = tldextract.extract(site_url)
+            domain = f"{extracted.domain}.{extracted.suffix}".lower()
             
             # Găsește agentul creat în MongoDB
             agent_record = self.agents_collection.find_one({"domain": domain})
@@ -933,11 +949,13 @@ CONȚINUT: {content}
                 
                 # Actualizează cu master_agent_id dacă este furnizat
                 if master_agent_id:
+                    from bson import ObjectId
+                    master_oid = ObjectId(master_agent_id)
                     self.agents_collection.update_one(
                         {"_id": agent_record["_id"]},
                         {
                             "$set": {
-                                "master_agent_id": master_agent_id,
+                                "master_agent_id": master_oid,
                                 "agent_type": "slave",
                                 "last_updated": datetime.now()
                             }
@@ -948,7 +966,9 @@ CONȚINUT: {content}
                     "ok": True,
                     "agent_id": agent_id,
                     "domain": domain,
-                    "message": f"Agent created successfully for {domain}"
+                    "message": f"Agent created successfully for {domain}",
+                    "pages_scraped": pages_scraped,
+                    "embeddings_count": embeddings_count
                 }
             else:
                 return {

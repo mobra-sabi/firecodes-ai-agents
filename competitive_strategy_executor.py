@@ -11,6 +11,7 @@ import os
 from typing import Dict, List, Optional
 from datetime import datetime, timezone
 from pymongo import MongoClient
+from pymongo.operations import UpdateOne
 from bson import ObjectId
 import asyncio
 
@@ -107,14 +108,14 @@ class CompetitiveStrategyExecutor:
                     if formatted_results:
                         bulk_ops = []
                         for result in formatted_results:
-                            bulk_ops.append({
-                                "updateOne": {
-                                    "filter": {
+                            bulk_ops.append(
+                                UpdateOne(
+                                    {
                                         "agent_id": agent_id,
                                         "keyword": keyword,
                                         "url": result.get("url", "")
                                     },
-                                    "update": {
+                                    {
                                         "$set": {
                                             "agent_id": agent_id,
                                             "keyword": keyword,
@@ -126,9 +127,9 @@ class CompetitiveStrategyExecutor:
                                             "search_date": datetime.now(timezone.utc)
                                         }
                                     },
-                                    "upsert": True
-                                }
-                            })
+                                    upsert=True
+                                )
+                            )
                         
                         if bulk_ops:
                             self.serp_results_collection.bulk_write(bulk_ops)
@@ -144,6 +145,23 @@ class CompetitiveStrategyExecutor:
             all_serp_results = []
             keywords_processed = 0
             
+            # Inițializează progresul în competitive_map
+            self.competitive_map_collection.update_one(
+                {"master_agent_id": agent_id},
+                {
+                    "$set": {
+                        "execution_status": "running",
+                        "execution_progress": {
+                            "keywords_processed": 0,
+                            "keywords_total": len(keywords),
+                            "percentage": 0
+                        },
+                        "updated_at": datetime.now(timezone.utc)
+                    }
+                },
+                upsert=True
+            )
+            
             for i in range(0, len(keywords), batch_size):
                 batch = keywords[i:i+batch_size]
                 logger.info(f"   Processing batch {i//batch_size + 1}/{(len(keywords)-1)//batch_size + 1}: {len(batch)} keywords")
@@ -157,6 +175,22 @@ class CompetitiveStrategyExecutor:
                     keywords_processed += 1
                 
                 logger.info(f"   ✅ Batch completed: {keywords_processed}/{len(keywords)} keywords processed")
+                
+                # Actualizează progresul în MongoDB
+                percentage = int((keywords_processed / len(keywords)) * 100)
+                self.competitive_map_collection.update_one(
+                    {"master_agent_id": agent_id},
+                    {
+                        "$set": {
+                            "execution_progress": {
+                                "keywords_processed": keywords_processed,
+                                "keywords_total": len(keywords),
+                                "percentage": percentage
+                            },
+                            "updated_at": datetime.now(timezone.utc)
+                        }
+                    }
+                )
             
             # 2. Extrage site-uri unice și calculează ranking cu detalii complete
             unique_sites = {}
@@ -250,11 +284,18 @@ class CompetitiveStrategyExecutor:
                         "master_agent_id": agent_id,
                         "domain": domain,
                         "keywords_used": keywords,
+                        "keywords_processed": keywords_processed,  # ✅ Adaugă keywords_processed
                         "sites_found": len(unique_sites),
                         "slave_agents_created": 0,  # Nu creăm agenți automat
                         "competitive_map": competitive_map_data,
                         "keyword_site_mapping": keyword_site_mapping,  # Mapare keyword → site-uri cu poziții
                         "status": "pending_review",  # Așteaptă review de la utilizator
+                        "execution_status": "completed",  # ✅ Marchează ca completat
+                        "execution_progress": {
+                            "keywords_processed": keywords_processed,
+                            "keywords_total": len(keywords),
+                            "percentage": 100
+                        },
                         "created_at": datetime.now(timezone.utc),
                         "updated_at": datetime.now(timezone.utc)
                     }

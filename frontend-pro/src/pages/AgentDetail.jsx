@@ -13,7 +13,8 @@ import CompetitiveStrategyTab from '@/components/features/competitive/Competitiv
 import AgentChat from './AgentChat'
 import SubdomainEditor from '@/components/SubdomainEditor'
 import AgentConscienceTab from '@/components/features/conscience/AgentConscienceTab'
-import { Plus } from 'lucide-react'
+import AIConsultingTab from '@/components/features/consulting/AIConsultingTab'
+import { Plus, Brain } from 'lucide-react'
 
 const AgentDetail = () => {
   const { id } = useParams()
@@ -50,6 +51,7 @@ const AgentDetail = () => {
     { id: 'competitors', label: 'Competitors' },
     { id: 'serp', label: 'SERP Rankings' },
     { id: 'strategy', label: 'Strategy' },
+    { id: 'consulting', label: '🧠 AI Consulting', highlight: true },
     { id: 'conscience', label: 'Conscience' },
     { id: 'chat', label: 'Chat' },
     { id: 'reports', label: 'Reports' },
@@ -108,6 +110,13 @@ const AgentDetail = () => {
           </div>
           <div className="flex gap-2">
             <Button 
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+              icon={<Brain className="w-4 h-4" />}
+              onClick={() => navigate(`/agents/${id}/consulting`)}
+            >
+              AI Consulting
+            </Button>
+            <Button 
               variant="secondary" 
               icon={<MessageSquare className="w-4 h-4" />}
               onClick={() => navigate(`/agents/${id}/chat`)}
@@ -131,8 +140,12 @@ const AgentDetail = () => {
               onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-3 font-medium transition-colors border-b-2 ${
                 activeTab === tab.id
-                  ? 'border-accent-blue text-accent-blue'
-                  : 'border-transparent text-text-muted hover:text-text-primary'
+                  ? tab.highlight 
+                    ? 'border-purple-500 text-purple-400 bg-purple-500/10'
+                    : 'border-accent-blue text-accent-blue'
+                  : tab.highlight
+                    ? 'border-transparent text-purple-400 hover:text-purple-300 hover:bg-purple-500/5'
+                    : 'border-transparent text-text-muted hover:text-text-primary'
               }`}
             >
               {tab.label}
@@ -221,70 +234,34 @@ const AgentDetail = () => {
                 <Button
                   onClick={async () => {
                     setIsAnalyzing(true)
-                    setAnalysisStatus('')
-                    setAnalysisProgress(0)
+                    setAnalysisStatus('Pornire analiză...')
+                    setAnalysisProgress(10)
                     
                     try {
-                      // Folosește WebSocket pentru updates live
-                      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-                      const wsHost = window.location.host
-                      const wsUrl = `${wsProtocol}//${wsHost}/ws/agents/${id}/analyze`
+                      // Folosește direct POST (WebSocket nu funcționează prin Cloudflare Tunnel)
+                      setAnalysisStatus('Analizare cu DeepSeek...')
+                      setAnalysisProgress(30)
                       
-                      const ws = new WebSocket(wsUrl)
+                      const response = await api.post(`/agents/${id}/analyze`)
                       
-                      ws.onopen = () => {
-                        console.log('WebSocket connected for analysis')
-                      }
-                      
-                      ws.onmessage = (event) => {
-                        const data = JSON.parse(event.data)
-                        console.log('Analysis update:', data)
-                        
-                        if (data.type === 'status') {
-                          setAnalysisStatus(data.message)
-                          setAnalysisProgress(data.progress)
-                        } else if (data.type === 'complete') {
-                          setAnalysisStatus('✅ Analiză completă!')
-                          setAnalysisProgress(100)
-                          setIsAnalyzing(false)
-                          ws.close()
-                          // Reîncarcă datele agentului
-                          setTimeout(() => {
-                            window.location.reload()
-                          }, 1000)
-                        } else if (data.type === 'error') {
-                          setAnalysisStatus('❌ Eroare: ' + data.message)
-                          setIsAnalyzing(false)
-                          alert('Eroare: ' + data.message)
-                          ws.close()
-                        }
-                      }
-                      
-                      ws.onerror = (error) => {
-                        console.error('WebSocket error:', error)
+                      if (response.data.ok) {
+                        setAnalysisStatus('✅ Analiză completă!')
+                        setAnalysisProgress(100)
                         setIsAnalyzing(false)
-                        setAnalysisStatus('')
-                        // Fallback la POST dacă WebSocket nu funcționează
-                        api.post(`/agents/${id}/analyze`, {}, {
-                          timeout: 90000
-                        }).then(response => {
-                          if (response.data.ok) {
-                            alert('Analysis completed! Refresh to see results.')
-                            window.location.reload()
-                          }
-                        }).catch(err => {
-                          alert('Error: ' + (err.response?.data?.detail || err.message))
-                        })
-                      }
-                      
-                      ws.onclose = () => {
-                        console.log('WebSocket closed')
+                        
+                        // Reîncarcă datele agentului după 1 secundă
+                        setTimeout(() => {
+                          window.location.reload()
+                        }, 1000)
+                      } else {
+                        throw new Error(response.data.error || 'Analysis failed')
                       }
                     } catch (error) {
                       console.error('Analysis error:', error)
                       setIsAnalyzing(false)
                       setAnalysisStatus('')
-                      alert('Error: ' + (error.message || 'Unknown error'))
+                      setAnalysisProgress(0)
+                      alert('Error: ' + (error.response?.data?.detail || error.message || 'Unknown error'))
                     }
                   }}
                   disabled={isAnalyzing}
@@ -398,6 +375,10 @@ const AgentDetail = () => {
 
       {activeTab === 'strategy' && (
         <StrategyTab agentId={id} />
+      )}
+
+      {activeTab === 'consulting' && (
+        <AIConsultingTab agentId={id} />
       )}
 
       {activeTab === 'conscience' && (

@@ -16,7 +16,7 @@ def hash_password(password: str) -> str:
 
 def reset_password(email: str, new_password: str, create_if_not_exists: bool = False):
     """Reset password for a user or create new user"""
-    mongo = MongoClient("mongodb://localhost:27017")
+    mongo = MongoClient("mongodb://localhost:27018")
     db = mongo["ai_agents_db"]
     
     # Find user
@@ -58,7 +58,7 @@ def reset_password(email: str, new_password: str, create_if_not_exists: bool = F
 
 def list_users():
     """List all users"""
-    mongo = MongoClient("mongodb://localhost:27017")
+    mongo = MongoClient("mongodb://localhost:27018")
     db = mongo["ai_agents_db"]
     
     users = list(db.users.find({}))

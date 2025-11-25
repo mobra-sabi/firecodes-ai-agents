@@ -29,7 +29,7 @@ class SERPAlertingSystem:
         self,
         slack_webhook_url: Optional[str] = None,
         email_config: Optional[Dict] = None,
-        mongo_uri: str = "mongodb://localhost:27017/",
+        mongo_uri: str = "mongodb://localhost:27018/",
         db_name: str = "ai_agents_db"
     ):
         """

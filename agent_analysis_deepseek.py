@@ -40,12 +40,9 @@ class AgentAnalysisDeepSeek:
         
         self.mongo = MongoClient(mongo_uri)
         self.db = self.mongo[db_name]
-        # Folosește site_agents dacă există, altfel agents
-        collections = self.db.list_collection_names()
-        if 'site_agents' in collections:
-            self.agents_collection = self.db.site_agents
-        else:
-            self.agents_collection = self.db.agents
+        # Folosește agents (colecția principală folosită de API)
+        # site_agents este pentru backup/legacy, dar API-ul folosește agents
+        self.agents_collection = self.db.agents
     
     def get_agent_content_summary(self, agent_id: str) -> str:
         """Obține un rezumat al conținutului agentului din Qdrant"""

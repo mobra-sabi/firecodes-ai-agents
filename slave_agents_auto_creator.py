@@ -27,10 +27,34 @@ class SlaveAgentsAutoCreator:
     4. Progress tracking în MongoDB
     """
     
-    def __init__(self, max_parallel: int = 5):
+    def __init__(self, max_parallel: int = None):
+        """
+        Inițializează creator-ul de slave agents
+        
+        Args:
+            max_parallel: Număr maxim de agenți în paralel. Dacă None, detectează automat GPU-urile.
+        """
         self.mongo_client = MongoClient("mongodb://localhost:27017/")
         self.db = self.mongo_client["ai_agents_db"]
+        
+        # Detectează automat numărul de GPU-uri dacă max_parallel nu este specificat
+        if max_parallel is None:
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    num_gpus = torch.cuda.device_count()
+                    overhead_workers = 2  # Pentru I/O, scraping, MongoDB, etc.
+                    max_parallel = num_gpus + overhead_workers
+                    logger.info(f"✅ GPU-uri detectate: {num_gpus} | Worker-uri paralele: {max_parallel} (optimizat pentru utilizare maximă)")
+                else:
+                    max_parallel = 5  # Fallback dacă nu există GPU-uri
+                    logger.warning("⚠️  Nu s-au detectat GPU-uri, folosind max_parallel=5")
+            except (ImportError, Exception) as e:
+                max_parallel = 5  # Fallback dacă PyTorch nu este disponibil
+                logger.warning(f"⚠️  Nu s-a putut detecta numărul de GPU-uri ({e}), folosind max_parallel=5")
+        
         self.max_parallel = max_parallel
+        logger.info(f"🚀 SlaveAgentsAutoCreator inițializat cu max_parallel={self.max_parallel}")
         
     async def create_slave_agent(
         self, 

@@ -20,3 +20,21 @@ mongodb_export/
 data/
 *.db
 *.sqlite
+
+# Archive folders
+docs/archive/
+reports/archive/
+scripts/tests/
+scripts/utilities/
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+*.old
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
