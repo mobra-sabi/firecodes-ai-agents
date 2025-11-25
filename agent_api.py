@@ -8103,3 +8103,433 @@ async def generate_bi_report(agent_id: str, format: str = Query("json")):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==================== PRICING OFFERS SYSTEM ====================
+# Sistem de Management Oferte de Preț
+
+from pricing_offers_system import PricingOffersSystem, OfferPDFGenerator
+
+# Pydantic models pentru oferte
+class OfferItem(BaseModel):
+    name: str
+    description: Optional[str] = ""
+    quantity: float = 1
+    unit: str = "buc"
+    unit_price: float = 0
+    discount: float = 0
+    vat_rate: float = 19
+
+class CreateOfferRequest(BaseModel):
+    title: str = "Ofertă de preț"
+    description: Optional[str] = ""
+    recipient_name: Optional[str] = ""
+    recipient_company: Optional[str] = ""
+    recipient_email: Optional[str] = ""
+    recipient_phone: Optional[str] = ""
+    recipient_address: Optional[str] = ""
+    items: List[OfferItem] = []
+    currency: str = "RON"
+    payment_terms: Optional[str] = ""
+    delivery_terms: Optional[str] = ""
+    warranty_terms: Optional[str] = ""
+    notes: Optional[str] = ""
+    tags: List[str] = []
+    category: str = "general"
+    valid_until: Optional[str] = None
+    template_id: Optional[str] = None
+
+class GenerateOfferRequest(BaseModel):
+    description: str
+    context: Optional[Dict] = None
+
+class ImportOfferRequest(BaseModel):
+    text: str
+
+class CreateTemplateRequest(BaseModel):
+    name: str
+    description: Optional[str] = ""
+    category: str = "general"
+    items: List[OfferItem] = []
+    payment_terms: Optional[str] = ""
+    delivery_terms: Optional[str] = ""
+    warranty_terms: Optional[str] = ""
+    notes: Optional[str] = ""
+
+class CatalogItemRequest(BaseModel):
+    name: str
+    description: Optional[str] = ""
+    category: str = "general"
+    unit: str = "buc"
+    unit_price: float = 0
+    vat_rate: float = 19
+
+class ClientSettingsRequest(BaseModel):
+    company_name: Optional[str] = ""
+    company_address: Optional[str] = ""
+    company_phone: Optional[str] = ""
+    company_email: Optional[str] = ""
+    company_logo: Optional[str] = ""
+    default_currency: str = "RON"
+    default_vat_rate: float = 19
+    payment_terms: Optional[str] = ""
+    bank_details: Optional[str] = ""
+
+
+# ===== CLIENT SPACE =====
+
+@app.get("/api/offers/space/{client_id}")
+async def get_client_space(client_id: str):
+    """Obține spațiul dedicat al clientului"""
+    try:
+        system = PricingOffersSystem(client_id)
+        space = system.get_client_space()
+        return {"ok": True, "space": space}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/offers/space/{client_id}/settings")
+async def update_client_settings(client_id: str, settings: ClientSettingsRequest):
+    """Actualizează setările clientului"""
+    try:
+        system = PricingOffersSystem(client_id)
+        success = system.update_client_settings(settings.dict())
+        return {"ok": success}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ===== CRUD OFERTE =====
+
+@app.post("/api/offers/{client_id}")
+async def create_offer(client_id: str, offer: CreateOfferRequest):
+    """Creează o ofertă nouă"""
+    try:
+        system = PricingOffersSystem(client_id)
+        offer_data = offer.dict()
+        offer_data["items"] = [item.dict() if hasattr(item, 'dict') else item for item in offer_data.get("items", [])]
+        offer_id = system.create_offer(offer_data)
+        return {"ok": True, "offer_id": offer_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/offers/{client_id}")
+async def list_offers(
+    client_id: str,
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    status: Optional[str] = None,
+    category: Optional[str] = None,
+    search: Optional[str] = None
+):
+    """Listează ofertele clientului"""
+    try:
+        system = PricingOffersSystem(client_id)
+        filters = {}
+        if status:
+            filters["status"] = status
+        if category:
+            filters["category"] = category
+        if search:
+            filters["search"] = search
+        
+        result = system.list_offers(filters=filters, page=page, limit=limit)
+        return {"ok": True, **result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/offers/{client_id}/{offer_id}")
+async def get_offer(client_id: str, offer_id: str):
+    """Obține o ofertă specifică"""
+    try:
+        system = PricingOffersSystem(client_id)
+        offer = system.get_offer(offer_id)
+        if not offer:
+            raise HTTPException(status_code=404, detail="Oferta nu există")
+        return {"ok": True, "offer": offer}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/offers/{client_id}/{offer_id}")
+async def update_offer(client_id: str, offer_id: str, updates: Dict = Body(...)):
+    """Actualizează o ofertă"""
+    try:
+        system = PricingOffersSystem(client_id)
+        success = system.update_offer(offer_id, updates)
+        if not success:
+            raise HTTPException(status_code=404, detail="Oferta nu există sau nu a fost modificată")
+        return {"ok": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/offers/{client_id}/{offer_id}")
+async def delete_offer(client_id: str, offer_id: str):
+    """Șterge o ofertă"""
+    try:
+        system = PricingOffersSystem(client_id)
+        success = system.delete_offer(offer_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Oferta nu există")
+        return {"ok": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/offers/{client_id}/{offer_id}/duplicate")
+async def duplicate_offer(client_id: str, offer_id: str, modifications: Dict = Body(default={})):
+    """Duplică o ofertă existentă"""
+    try:
+        system = PricingOffersSystem(client_id)
+        new_offer_id = system.duplicate_offer(offer_id, modifications)
+        return {"ok": True, "offer_id": new_offer_id}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/offers/{client_id}/{offer_id}/status")
+async def update_offer_status(client_id: str, offer_id: str, status: str = Body(..., embed=True)):
+    """Actualizează statusul ofertei"""
+    try:
+        valid_statuses = ["draft", "sent", "accepted", "rejected", "expired"]
+        if status not in valid_statuses:
+            raise HTTPException(status_code=400, detail=f"Status invalid. Valori acceptate: {valid_statuses}")
+        
+        system = PricingOffersSystem(client_id)
+        success = system.update_offer(offer_id, {"status": status})
+        return {"ok": success}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ===== GENERARE AI =====
+
+@app.post("/api/offers/{client_id}/generate")
+async def generate_offer_ai(client_id: str, request: GenerateOfferRequest):
+    """Generează o ofertă cu AI din descriere text"""
+    try:
+        system = PricingOffersSystem(client_id)
+        offer_data = system.generate_offer_from_description(request.description, request.context)
+        return {"ok": True, "offer_data": offer_data}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/offers/{client_id}/generate-and-save")
+async def generate_and_save_offer(client_id: str, request: GenerateOfferRequest):
+    """Generează și salvează o ofertă cu AI"""
+    try:
+        system = PricingOffersSystem(client_id)
+        offer_data = system.generate_offer_from_description(request.description, request.context)
+        offer_id = system.create_offer(offer_data)
+        return {"ok": True, "offer_id": offer_id, "offer_data": offer_data}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/offers/{client_id}/{offer_id}/improve")
+async def improve_offer_ai(client_id: str, offer_id: str, instructions: str = Body(default=None, embed=True)):
+    """Îmbunătățește o ofertă cu AI"""
+    try:
+        system = PricingOffersSystem(client_id)
+        suggestions = system.improve_offer_with_ai(offer_id, instructions)
+        return {"ok": True, "suggestions": suggestions}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/offers/{client_id}/{offer_id}/generate-similar")
+async def generate_similar_offer(client_id: str, offer_id: str, adjustments: Dict = Body(default={})):
+    """Generează o ofertă similară bazată pe una existentă"""
+    try:
+        system = PricingOffersSystem(client_id)
+        new_offer_id = system.generate_similar_offer(offer_id, adjustments)
+        return {"ok": True, "offer_id": new_offer_id}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ===== IMPORT =====
+
+@app.post("/api/offers/{client_id}/import")
+async def import_offer(client_id: str, request: ImportOfferRequest):
+    """Importă o ofertă din text"""
+    try:
+        system = PricingOffersSystem(client_id)
+        offer_id = system.import_from_text(request.text)
+        return {"ok": True, "offer_id": offer_id}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ===== TEMPLATES =====
+
+@app.post("/api/offers/{client_id}/templates")
+async def create_template(client_id: str, template: CreateTemplateRequest):
+    """Creează un template de ofertă"""
+    try:
+        system = PricingOffersSystem(client_id)
+        template_data = template.dict()
+        template_data["items"] = [item.dict() if hasattr(item, 'dict') else item for item in template_data.get("items", [])]
+        template_id = system.create_template(template_data)
+        return {"ok": True, "template_id": template_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/offers/{client_id}/templates")
+async def list_templates(client_id: str):
+    """Listează template-urile disponibile"""
+    try:
+        system = PricingOffersSystem(client_id)
+        templates = system.list_templates()
+        return {"ok": True, "templates": templates}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/offers/{client_id}/templates/{template_id}/create-offer")
+async def create_offer_from_template(client_id: str, template_id: str, customizations: Dict = Body(default={})):
+    """Creează o ofertă din template"""
+    try:
+        system = PricingOffersSystem(client_id)
+        offer_id = system.create_offer_from_template(template_id, customizations)
+        return {"ok": True, "offer_id": offer_id}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ===== CATALOG ARTICOLE =====
+
+@app.post("/api/offers/{client_id}/catalog")
+async def add_catalog_item(client_id: str, item: CatalogItemRequest):
+    """Adaugă un articol în catalog"""
+    try:
+        system = PricingOffersSystem(client_id)
+        item_id = system.add_catalog_item(item.dict())
+        return {"ok": True, "item_id": item_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/offers/{client_id}/catalog")
+async def list_catalog_items(client_id: str, category: Optional[str] = None):
+    """Listează articolele din catalog"""
+    try:
+        system = PricingOffersSystem(client_id)
+        items = system.list_catalog_items(category)
+        return {"ok": True, "items": items}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ===== EXPORT PDF =====
+
+@app.get("/api/offers/{client_id}/{offer_id}/export")
+async def export_offer_pdf(client_id: str, offer_id: str, format: str = Query("html", regex="^(html|pdf)$")):
+    """Exportă oferta în format HTML/PDF"""
+    from fastapi.responses import StreamingResponse
+    import io
+    
+    try:
+        system = PricingOffersSystem(client_id)
+        offer = system.get_offer(offer_id)
+        if not offer:
+            raise HTTPException(status_code=404, detail="Oferta nu există")
+        
+        space = system.get_client_space()
+        client_settings = space.get("settings", {}) if space else {}
+        
+        html_content = OfferPDFGenerator.generate_html(offer, client_settings)
+        
+        if format == "html":
+            return StreamingResponse(
+                io.BytesIO(html_content.encode()),
+                media_type="text/html",
+                headers={"Content-Disposition": f"attachment; filename=oferta_{offer.get('reference_number', offer_id)}.html"}
+            )
+        
+        # Pentru PDF, returnăm HTML (clientul poate folosi un serviciu de conversie)
+        return StreamingResponse(
+            io.BytesIO(html_content.encode()),
+            media_type="text/html",
+            headers={"Content-Disposition": f"attachment; filename=oferta_{offer.get('reference_number', offer_id)}.html"}
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ===== STATISTICI =====
+
+@app.get("/api/offers/{client_id}/statistics")
+async def get_offer_statistics(client_id: str):
+    """Obține statisticile ofertelor"""
+    try:
+        system = PricingOffersSystem(client_id)
+        space = system.get_client_space()
+        
+        # Statistici detaliate
+        pipeline = [
+            {"$match": {"client_id": client_id}},
+            {"$group": {
+                "_id": "$status",
+                "count": {"$sum": 1},
+                "total_value": {"$sum": "$total"}
+            }}
+        ]
+        
+        from pricing_offers_system import offers_collection
+        status_stats = list(offers_collection.aggregate(pipeline))
+        
+        # Statistici pe categorii
+        category_pipeline = [
+            {"$match": {"client_id": client_id}},
+            {"$group": {
+                "_id": "$category",
+                "count": {"$sum": 1},
+                "total_value": {"$sum": "$total"}
+            }}
+        ]
+        category_stats = list(offers_collection.aggregate(category_pipeline))
+        
+        # Statistici pe lună
+        monthly_pipeline = [
+            {"$match": {"client_id": client_id}},
+            {"$group": {
+                "_id": {
+                    "year": {"$year": "$created_at"},
+                    "month": {"$month": "$created_at"}
+                },
+                "count": {"$sum": 1},
+                "total_value": {"$sum": "$total"}
+            }},
+            {"$sort": {"_id.year": -1, "_id.month": -1}},
+            {"$limit": 12}
+        ]
+        monthly_stats = list(offers_collection.aggregate(monthly_pipeline))
+        
+        return {
+            "ok": True,
+            "statistics": space.get("statistics", {}) if space else {},
+            "by_status": {s["_id"]: {"count": s["count"], "value": s["total_value"]} for s in status_stats},
+            "by_category": {s["_id"]: {"count": s["count"], "value": s["total_value"]} for s in category_stats},
+            "monthly": [{"year": s["_id"]["year"], "month": s["_id"]["month"], "count": s["count"], "value": s["total_value"]} for s in monthly_stats]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

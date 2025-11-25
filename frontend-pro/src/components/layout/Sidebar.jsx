@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Home, Bot, BarChart3, FileText, Settings, LogOut, Activity, Server, Brain, Zap, Bell, Network, DollarSign, ListChecks, Building2, Sparkles } from 'lucide-react'
+import { Home, Bot, BarChart3, FileText, Settings, LogOut, Activity, Server, Brain, Zap, Bell, Network, DollarSign, ListChecks, Building2, Sparkles, Receipt } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { cn } from '@/utils/cn'
 
@@ -21,6 +21,7 @@ const Sidebar = () => {
     { to: '/intelligence', icon: BarChart3, label: 'Intelligence' },
     { to: '/reports', icon: FileText, label: 'Reports' },
     { to: '/industry', icon: Building2, label: 'Industry Transform' },
+    { to: '/offers', icon: Receipt, label: 'Oferte Preț' },
     { to: '/settings', icon: Settings, label: 'Settings' },
   ]
 

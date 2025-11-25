@@ -30,6 +30,7 @@ import ClientChat from './pages/ClientChat'
 import ClientRecommendations from './pages/ClientRecommendations'
 import AIConsulting from './pages/AIConsulting'
 import BusinessIntelligence from './pages/BusinessIntelligence'
+import PricingOffers from './pages/PricingOffers'
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -84,6 +85,9 @@ function App() {
           <Route path="intelligence" element={<Intelligence />} />
           <Route path="reports" element={<Reports />} />
           <Route path="industry" element={<IndustryTransformation />} />
+          <Route path="offers" element={<PricingOffers />} />
+          <Route path="offers/:clientId" element={<PricingOffers />} />
+          <Route path="offers/:clientId/:offerId" element={<PricingOffers />} />
           <Route path="settings" element={<Settings />} />
         </Route>
 
