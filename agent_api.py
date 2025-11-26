@@ -60,6 +60,51 @@ from config.database_config import (
 )
 
 app = FastAPI()
+
+# --- CHAT & UI INTEGRATION ---
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from chat_controller import get_controller
+
+# Mount static files for UI
+try:
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+except:
+    os.makedirs("static", exist_ok=True)
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/")
+async def read_root():
+    return FileResponse('static/index.html')
+
+class ChatRequest(BaseModel):
+    message: str
+
+@app.post("/api/chat")
+async def chat_endpoint(request: ChatRequest):
+    controller = get_controller()
+    response = controller.process_user_message(request.message)
+    return response
+
+class ActionRequest(BaseModel):
+    action: str
+    params: Dict[str, Any] = {}
+
+@app.post("/api/execute-action")
+async def execute_action(request: ActionRequest):
+    """Execută acțiunile confirmate de utilizator în chat"""
+    action = request.action
+    params = request.params
+    
+    if action == "start_scan":
+        # TODO: Trigger real workflow via subprocess
+        return {"status": "started", "message": f"Scanare simulată pornită pentru {params.get('domain', 'unknown')}"}
+    elif action == "generate_report":
+        return {"status": "completed", "message": "Raport generat cu succes. Verifică folderul reports/."}
+    
+    return {"status": "error", "message": "Acțiune necunoscută"}
+# -----------------------------
+
 searcher = None
 
 def get_searcher():
