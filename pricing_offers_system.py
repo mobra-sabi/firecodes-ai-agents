@@ -116,3 +116,7 @@ if __name__ == "__main__":
     # 3. Optimizare ofertă
     offer = system.analyze_and_optimize_offer("tehnica-antifoc.ro", "Oferta ignifugare pod 200mp cu vopsea standard. Pret total 2000 EUR.")
     print(json.dumps(offer, indent=2, ensure_ascii=False))
+
+class OfferPDFGenerator:
+    pass
+

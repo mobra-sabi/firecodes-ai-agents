@@ -318,55 +318,29 @@ class ConstructionAgentCreator:
         }
 
     def scrape_single_page(self, url: str, headers: dict, max_retries: int = 2) -> Optional[Dict]:
-        """Scraping RAPID - direct primul, ScraperAPI doar ca fallback"""
-        resp = None
+        """Scraping RAPID - HIBRID (Local Playwright -> ScraperAPI fallback)"""
         
-        # STRATEGIA: Direct PRIMUL (rapid), ScraperAPI doar pentru site-uri problematice
-        FAST_TIMEOUT = 5  # Timeout agresiv pentru viteză
-        
-        # 1. ÎNCEARCĂ DIRECT (RAPID)
+        # Importăm scraper-ul hibrid (Local first)
         try:
-            resp = requests.get(url, headers=headers, timeout=FAST_TIMEOUT, allow_redirects=True)
-            if resp.status_code == 200:
-                print(f"  ⚡ Direct OK: {url[:55]}...")
-            elif resp.status_code == 403 or resp.status_code == 429:
-                # Site blochează - folosește ScraperAPI
-                resp = None
-            else:
-                resp = None
-        except requests.exceptions.Timeout:
-            # Timeout - skip sau încearcă ScraperAPI
-            resp = None
-        except Exception:
-            resp = None
-        
-        # 2. FALLBACK la ScraperAPI doar dacă direct a eșuat
-        if resp is None and self.use_scraperapi:
+            from adapters.hybrid_scraper import get_hybrid_scraper
+            scraper = get_hybrid_scraper()
+            
+            # Rulăm scraper-ul async într-un context sync (suntem într-un thread worker)
+            import asyncio
             try:
-                scraperapi_url = f"http://api.scraperapi.com?api_key={self.scraperapi_key}&url={requests.utils.quote(url)}"
-                resp = requests.get(scraperapi_url, timeout=10, allow_redirects=True)
-                if resp.status_code == 200:
-                    print(f"  🔧 ScraperAPI OK: {url[:50]}...")
-                else:
-                    resp = None
-            except Exception:
-                resp = None
-        
-        # 3. Dacă tot nu merge, skip rapid (nu pierde timp)
-        if resp is None:
-            return None
-        
-        # Verifică dacă avem un răspuns valid
-        if resp is None or resp.status_code != 200:
-            return None
-        
-        try:
-                
-            # Verifică dacă răspunsul este valid HTML
-            if not resp.content or len(resp.content) < 100:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            
+            # Dacă suntem deja într-un loop (puțin probabil în ThreadPoolExecutor dar posibil), folosim run_coroutine_threadsafe
+            # Dar aici suntem safe să folosim loop.run_until_complete pentru că suntem într-un thread dedicat
+            html_content = loop.run_until_complete(scraper.fetch_page(url))
+            
+            if not html_content:
                 return None
                 
-            soup = BeautifulSoup(resp.content, 'html.parser')
+            soup = BeautifulSoup(html_content, 'html.parser')
             
             # Extract title
             title = soup.find('title')
