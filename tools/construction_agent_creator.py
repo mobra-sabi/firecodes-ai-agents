@@ -266,9 +266,9 @@ class ConstructionAgentCreator:
             'despre', 'contact', 'preturi', 'oferta'
         ]
         
-        # 100 pagini max, 15 workeri paraleli
-        MAX_PAGES = 100
-        MAX_WORKERS = 15
+        # 50 pagini max (optimizat pentru viteză), 40 workeri paraleli
+        MAX_PAGES = 50
+        MAX_WORKERS = 40
         
         with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
             while queue and len(pages_data) < MAX_PAGES:
