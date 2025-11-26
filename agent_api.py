@@ -8533,3 +8533,172 @@ async def get_offer_statistics(client_id: str):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# ==========================================
+# 🔔 NOTIFICATIONS / INSIGHTS API
+# ==========================================
+
+class NotificationUpdate(BaseModel):
+    is_read: bool
+
+@app.get("/api/notifications")
+async def get_notifications(
+    domain: Optional[str] = None, 
+    limit: int = 20, 
+    unread_only: bool = False
+):
+    """Returnează notificările/hints pentru un domeniu"""
+    try:
+        query = {}
+        if domain:
+            query["domain"] = domain
+        if unread_only:
+            query["is_read"] = False
+            
+        # Conectare la colecția client_notifications
+        mongo = MongoClient(MONGODB_URI)
+        notifications_coll = mongo[MONGODB_DATABASE]["client_notifications"]
+        
+        cursor = notifications_coll.find(query).sort("created_at", -1).limit(limit)
+        notifications = []
+        
+        for notif in cursor:
+            notifications.append({
+                "id": str(notif["_id"]),
+                "domain": notif.get("domain"),
+                "type": notif.get("type"),
+                "message": notif.get("message"),
+                "action_item": notif.get("action_item"),
+                "priority": notif.get("priority", "medium"),
+                "is_read": notif.get("is_read", False),
+                "created_at": notif.get("created_at").isoformat() if notif.get("created_at") else None
+            })
+            
+        return {
+            "ok": True,
+            "count": len(notifications),
+            "notifications": notifications
+        }
+    except Exception as e:
+        print(f"Error fetching notifications: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/notifications/{notification_id}/read")
+async def mark_notification_read(notification_id: str, update: NotificationUpdate):
+    """Marchează o notificare ca citită"""
+    try:
+        mongo = MongoClient(MONGODB_URI)
+        notifications_coll = mongo[MONGODB_DATABASE]["client_notifications"]
+        
+        result = notifications_coll.update_one(
+            {"_id": ObjectId(notification_id)},
+            {"": {"is_read": update.is_read}}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Notification not found")
+            
+        return {"ok": True, "message": "Updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ==========================================
+# 💼 CLIENT PROFILE & OFFERS API
+# ==========================================
+
+class ClientProfile(BaseModel):
+    employees: int
+    materials: List[str]
+    suppliers: List[str]
+    margin: float = 0.20
+
+class OfferRequest(BaseModel):
+    offer_text: str
+
+@app.post("/api/client/profile")
+async def update_profile(domain: str, profile: ClientProfile):
+    """Actualizează profilul operațional al clientului"""
+    try:
+        from pricing_offers_system import PricingOffersSystem
+        system = PricingOffersSystem()
+        system.update_client_profile(domain, profile.dict())
+        return {"ok": True, "message": "Profile updated"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/client/suppliers")
+async def get_suppliers(material: str):
+    """Caută furnizori alternativi în baza de date"""
+    try:
+        from pricing_offers_system import PricingOffersSystem
+        system = PricingOffersSystem()
+        suppliers = system.find_better_suppliers(material)
+        return {"ok": True, "count": len(suppliers), "suppliers": suppliers}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/client/analyze-offer")
+async def analyze_offer(domain: str, request: OfferRequest):
+    """Analizează și optimizează o ofertă text"""
+    try:
+        from pricing_offers_system import PricingOffersSystem
+        system = PricingOffersSystem()
+        result = system.analyze_and_optimize_offer(domain, request.offer_text)
+        return {"ok": True, "result": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ==========================================
+# 🧠 DEEP BUSINESS INTELLIGENCE API
+# ==========================================
+
+class ProjectData(BaseModel):
+    project_name: str
+    offer_value: float
+    collected_value: float
+    costs: float
+    category: str
+    date: Optional[str] = None
+
+class ActionRequest(BaseModel):
+    action_type: str
+    details: Dict[str, Any]
+
+@app.post("/api/business/project")
+async def add_project(domain: str, project: ProjectData):
+    """Adaugă un proiect în istoricul financiar"""
+    try:
+        from business_intelligence_advanced import BusinessIntelligenceAdvanced
+        bi = BusinessIntelligenceAdvanced()
+        bi.add_project_history(domain, project.dict())
+        return {"ok": True, "message": "Project saved"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/business/analysis")
+async def get_analysis(domain: str):
+    """Obține analiza financiară și planul de dezvoltare"""
+    try:
+        from business_intelligence_advanced import BusinessIntelligenceAdvanced
+        bi = BusinessIntelligenceAdvanced()
+        analysis = bi.analyze_financial_health(domain)
+        
+        # Încercăm să generăm planul doar dacă avem analiză validă
+        plan = "Planul se generează..."
+        if isinstance(analysis, dict):
+            plan = bi.generate_growth_plan(domain, analysis)
+            
+        return {"ok": True, "analysis": analysis, "growth_plan": plan}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/business/execute")
+async def execute_action(domain: str, request: ActionRequest):
+    """Generează asset-uri de implementare (emailuri, documente)"""
+    try:
+        from business_intelligence_advanced import BusinessIntelligenceAdvanced
+        bi = BusinessIntelligenceAdvanced()
+        result = bi.generate_action_assets(domain, request.action_type, request.details)
+        return {"ok": True, "generated_content": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

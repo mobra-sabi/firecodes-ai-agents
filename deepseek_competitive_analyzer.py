@@ -21,7 +21,7 @@ class DeepSeekCompetitiveAnalyzer:
     """
     
     def __init__(self):
-        self.mongo_client = MongoClient("mongodb://localhost:27017/")
+        self.mongo_client = MongoClient("mongodb://localhost:27018/")
         self.db = self.mongo_client["ai_agents_db"]
         self.context_enhancer = get_context_enhancer()
         self.llm = get_orchestrator()  # 🎭 LLM Orchestrator cu DeepSeek + fallback

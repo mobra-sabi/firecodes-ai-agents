@@ -31,7 +31,7 @@ class GoogleCompetitorDiscovery:
     }
     
     def __init__(self):
-        self.mongo_client = MongoClient("mongodb://localhost:27017/")
+        self.mongo_client = MongoClient("mongodb://localhost:27018/")
         self.db = self.mongo_client["ai_agents_db"]
         
         # Google Custom Search API (opțional - dacă ai API key)
