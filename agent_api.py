@@ -96,11 +96,22 @@ async def execute_action(request: ActionRequest):
     action = request.action
     params = request.params
     
+    controller = get_controller()
+
     if action == "start_scan":
         # TODO: Trigger real workflow via subprocess
         return {"status": "started", "message": f"Scanare simulată pornită pentru {params.get('domain', 'unknown')}"}
     elif action == "generate_report":
         return {"status": "completed", "message": "Raport generat cu succes. Verifică folderul reports/."}
+    elif action == "start_briefing_trigger":
+        # Activează modul Briefing în Controller
+        controller.briefing_mode = True
+        controller.briefing_step = 0
+        controller.client_data = {}
+        return {
+            "status": "completed", 
+            "message": "Briefing strategic activat. DeepSeek preia controlul."
+        }
     
     return {"status": "error", "message": "Acțiune necunoscută"}
 # -----------------------------
@@ -7997,6 +8008,80 @@ async def get_notification_settings(agent_id: str):
 from fastapi.responses import StreamingResponse
 import io
 
+class ManualCompetitor(BaseModel):
+    url: str
+    master_agent_id: str
+
+@app.post("/api/competitors/add")
+async def add_manual_competitor(data: ManualCompetitor):
+    """Adaugă manual un competitor în sistem"""
+    try:
+        from tools.construction_agent_creator import ConstructionAgentCreator
+        creator = ConstructionAgentCreator()
+        
+        # Folosește funcția async corectă
+        result = await creator.create_agent_from_url(
+            site_url=data.url,
+            master_agent_id=data.master_agent_id,
+            gpu_id=0 # Folosește GPU 0 pentru procesare rapidă
+        )
+        
+        return result
+    except Exception as e:
+        logger.error(f"Error adding manual competitor: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/competitors/map-data")
+async def get_map_data(master_agent_id: str):
+    """Returnează datele pentru Harta Interactivă (War Map)"""
+    try:
+        master_oid = ObjectId(master_agent_id)
+        
+        # Ia toți competitorii (sclavi)
+        slaves = list(db.site_agents.find(
+            {"master_agent_id": master_oid, "agent_type": "slave"},
+            {"domain": 1, "site_url": 1, "agent_config": 1, "pages_indexed": 1, "chunks_indexed": 1}
+        ))
+        
+        # Ia master-ul
+        master = db.site_agents.find_one({"_id": master_oid})
+        
+        points = []
+        
+        # Adaugă Master (punct central)
+        if master:
+            points.append({
+                "name": master.get("domain"),
+                "url": master.get("site_url"),
+                "type": "master",
+                "x": master.get("pages_indexed", 0), # Volum conținut
+                "y": master.get("chunks_indexed", 0), # Profunzime
+                "score": 100,
+                "color": "#3b82f6" # Blue
+            })
+            
+        # Adaugă Sclavi
+        for slave in slaves:
+            # Calculăm scor simplu bazat pe conținut
+            pages = slave.get("pages_indexed", 0)
+            chunks = slave.get("chunks_indexed", 0)
+            
+            points.append({
+                "name": slave.get("domain"),
+                "url": slave.get("site_url"),
+                "type": "competitor",
+                "x": pages,
+                "y": chunks,
+                "score": (pages * 10 + chunks) / 100, # Scor estimativ
+                "color": "#ef4444" # Red
+            })
+            
+        return {"ok": True, "points": points}
+        
+    except Exception as e:
+        logger.error(f"Error getting map data: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/agents/{agent_id}/business-intelligence/report/generate")
 async def generate_bi_report(agent_id: str, format: str = Query("json")):
     """📄 Generează raport Business Intelligence complet"""
@@ -8149,6 +8234,72 @@ async def generate_bi_report(agent_id: str, format: str = Query("json")):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# ==========================================
+# 🔌 INTEGRATIONS API
+# ==========================================
+
+class IntegrationRequest(BaseModel):
+    service: str
+
+@app.get("/api/integrations/status")
+async def get_integrations_status():
+    """Returnează starea conexiunilor externe"""
+    try:
+        # TODO: Extrage din DB pentru utilizatorul curent (hardcoded for now for single-tenant)
+        profile = db.client_profiles.find_one({}, sort=[("created_at", -1)])
+        integrations = profile.get("integrations", {}) if profile else {}
+        
+        # Default structure
+        status = {
+            "google_ads": integrations.get("google_ads", {}).get("connected", False),
+            "facebook": integrations.get("facebook", {}).get("connected", False),
+            "tiktok": integrations.get("tiktok", {}).get("connected", False),
+            "analytics": integrations.get("analytics", {}).get("connected", False),
+            "email": integrations.get("email", {}).get("connected", False)
+        }
+        return {"ok": True, "status": status}
+    except Exception as e:
+        logger.error(f"Integrations status error: {e}")
+        return {"ok": False, "error": str(e)}
+
+@app.post("/api/integrations/connect")
+async def connect_integration(data: IntegrationRequest):
+    """Conectează un serviciu extern (Simulare OAuth)"""
+    try:
+        service = data.service
+        
+        # Actualizează în DB
+        db.client_profiles.update_one(
+            {}, # Update last profile
+            {"$set": {
+                f"integrations.{service}": {
+                    "connected": True,
+                    "connected_at": datetime.now(timezone.utc),
+                    "status": "active"
+                }
+            }},
+            upsert=True
+        )
+        
+        return {"ok": True, "message": f"{service} connected"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/integrations/disconnect")
+async def disconnect_integration(data: IntegrationRequest):
+    """Deconectează un serviciu extern"""
+    try:
+        service = data.service
+        
+        db.client_profiles.update_one(
+            {}, 
+            {"$set": {f"integrations.{service}.connected": False}}
+        )
+        
+        return {"ok": True, "message": f"{service} disconnected"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ==================== PRICING OFFERS SYSTEM ====================
 # Sistem de Management Oferte de Preț
