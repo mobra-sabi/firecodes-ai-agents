@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Status - AI Agents</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .agent-selector {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .agent-selector select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 1.1em;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        
+        .agent-selector select:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+        
+        .status-container {
+            padding: 30px;
+        }
+        
+        .status-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .status-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-left: 5px solid;
+            transition: transform 0.3s;
+        }
+        
+        .status-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .status-card.healthy {
+            border-left-color: #28a745;
+        }
+        
+        .status-card.warning {
+            border-left-color: #ffc107;
+        }
+        
+        .status-card.error {
+            border-left-color: #dc3545;
+        }
+        
+        .status-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        
+        .status-card.healthy .status-icon {
+            color: #28a745;
+        }
+        
+        .status-card.warning .status-icon {
+            color: #ffc107;
+        }
+        
+        .status-card.error .status-icon {
+            color: #dc3545;
+        }
+        
+        .status-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .status-value {
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .status-description {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .checks-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+        
+        .check-item {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border-left: 4px solid;
+        }
+        
+        .check-item.healthy {
+            border-left-color: #28a745;
+        }
+        
+        .check-item.warning {
+            border-left-color: #ffc107;
+        }
+        
+        .check-item.error {
+            border-left-color: #dc3545;
+        }
+        
+        .check-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .check-name {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #333;
+        }
+        
+        .check-status {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .check-status.healthy {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .check-status.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .check-status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .check-message {
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .check-data {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #495057;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+        
+        .loading .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4facfe;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .refresh-btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: transform 0.3s;
+            margin-top: 20px;
+        }
+        
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Agent Status Monitor</h1>
+            <p>Verifică statusul și conexiunile agenților AI</p>
+        </div>
+        
+        <div class="agent-selector">
+            <select id="agentSelect">
+                <option value="">Selectează un agent...</option>
+            </select>
+        </div>
+        
+        <div class="status-container" id="statusContainer">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Selectează un agent pentru a vedea statusul...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let agents = [];
+        
+        // Încarcă lista de agenți
+        async function loadAgents() {
+            try {
+                const response = await fetch('/api/agents');
+                const data = await response.json();
+                agents = data.agents || [];
+                
+                const select = document.getElementById('agentSelect');
+                select.innerHTML = '<option value="">Selectează un agent...</option>';
+                
+                agents.forEach(agent => {
+                    const option = document.createElement('option');
+                    option.value = agent._id;
+                    option.textContent = `${agent.name || 'Unnamed Agent'} (${agent.domain || 'No domain'})`;
+                    select.appendChild(option);
+                });
+                
+                // Adaugă event listener
+                select.addEventListener('change', function() {
+                    if (this.value) {
+                        loadAgentStatus(this.value);
+                    } else {
+                        showLoading();
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Error loading agents:', error);
+                showError('Eroare la încărcarea agenților');
+            }
+        }
+        
+        // Încarcă statusul unui agent
+        async function loadAgentStatus(agentId) {
+            showLoading();
+            
+            try {
+                const response = await fetch(`/agent/${agentId}/health`);
+                const data = await response.json();
+                
+                if (data.ok) {
+                    displayAgentStatus(data.health);
+                } else {
+                    showError(data.error || 'Eroare la verificarea statusului agentului');
+                }
+                
+            } catch (error) {
+                console.error('Error loading agent status:', error);
+                showError('Eroare la încărcarea statusului agentului');
+            }
+        }
+        
+        // Afișează statusul agentului
+        function displayAgentStatus(health) {
+            const container = document.getElementById('statusContainer');
+            
+            const statusIcon = {
+                'healthy': '✅',
+                'warning': '⚠️',
+                'error': '❌'
+            };
+            
+            const statusColor = {
+                'healthy': 'healthy',
+                'warning': 'warning',
+                'error': 'error'
+            };
+            
+            container.innerHTML = `
+                <div class="status-overview">
+                    <div class="status-card ${statusColor[health.status]}">
+                        <div class="status-icon">${statusIcon[health.status]}</div>
+                        <div class="status-title">Status General</div>
+                        <div class="status-value">${health.status.toUpperCase()}</div>
+                        <div class="status-description">${health.agent_name || 'Unknown Agent'}</div>
+                    </div>
+                    
+                    <div class="status-card healthy">
+                        <div class="status-icon">📊</div>
+                        <div class="status-title">Verificări</div>
+                        <div class="status-value">${health.summary.total_checks}</div>
+                        <div class="status-description">Total verificări</div>
+                    </div>
+                    
+                    <div class="status-card healthy">
+                        <div class="status-icon">✅</div>
+                        <div class="status-title">Sănătoase</div>
+                        <div class="status-value">${health.summary.healthy}</div>
+                        <div class="status-description">Verificări OK</div>
+                    </div>
+                    
+                    <div class="status-card ${health.summary.warnings > 0 ? 'warning' : 'healthy'}">
+                        <div class="status-icon">⚠️</div>
+                        <div class="status-title">Avertismente</div>
+                        <div class="status-value">${health.summary.warnings}</div>
+                        <div class="status-description">Verificări cu probleme minore</div>
+                    </div>
+                    
+                    <div class="status-card ${health.summary.errors > 0 ? 'error' : 'healthy'}">
+                        <div class="status-icon">❌</div>
+                        <div class="status-title">Erori</div>
+                        <div class="status-value">${health.summary.errors}</div>
+                        <div class="status-description">Verificări cu probleme critice</div>
+                    </div>
+                </div>
+                
+                <div class="checks-container">
+                    <h3>🔍 Verificări Detaliate</h3>
+                    ${Object.entries(health.checks).map(([checkName, checkData]) => `
+                        <div class="check-item ${checkData.status}">
+                            <div class="check-header">
+                                <div class="check-name">${getCheckDisplayName(checkName)}</div>
+                                <div class="check-status ${checkData.status}">${checkData.status}</div>
+                            </div>
+                            <div class="check-message">${checkData.message}</div>
+                            ${checkData.data ? `
+                                <div class="check-data">
+                                    <pre>${JSON.stringify(checkData.data, null, 2)}</pre>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <button class="refresh-btn" onclick="loadAgentStatus('${health.agent_id}')">
+                    🔄 Actualizează Statusul
+                </button>
+            `;
+        }
+        
+        // Obține numele de afișare pentru verificări
+        function getCheckDisplayName(checkName) {
+            const names = {
+                'agent_data': '📋 Date Agent',
+                'qdrant_collections': '🗄️ Colecții Qdrant',
+                'qwen_connection': '🤖 Conexiune Qwen',
+                'site_data': '🌐 Date Site'
+            };
+            return names[checkName] || checkName;
+        }
+        
+        // Afișează loading
+        function showLoading() {
+            document.getElementById('statusContainer').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Se verifică statusul agentului...</p>
+                </div>
+            `;
+        }
+        
+        // Afișează eroare
+        function showError(message) {
+            document.getElementById('statusContainer').innerHTML = `
+                <div class="error-message">
+                    <strong>Eroare:</strong> ${message}
+                </div>
+            `;
+        }
+        
+        // Încarcă agenții la pornirea paginii
+        document.addEventListener('DOMContentLoaded', loadAgents);
+    </script>
+</body>
+</html>

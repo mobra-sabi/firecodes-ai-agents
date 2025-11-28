@@ -103,14 +103,14 @@ async def execute_action(request: ActionRequest):
         return {"status": "started", "message": f"Scanare simulată pornită pentru {params.get('domain', 'unknown')}"}
     elif action == "generate_report":
         return {"status": "completed", "message": "Raport generat cu succes. Verifică folderul reports/."}
-    elif action == "start_briefing_trigger":
+    elif action == "start_briefing_trigger" or action == "start_briefing":
         # Activează modul Briefing în Controller
         controller.briefing_mode = True
         controller.briefing_step = 0
         controller.client_data = {}
         return {
             "status": "completed", 
-            "message": "Briefing strategic activat. DeepSeek preia controlul."
+            "message": "Briefing strategic activat. DeepSeek preia controlul. Te rog să răspunzi la întrebarea de mai jos."
         }
     
     return {"status": "error", "message": "Acțiune necunoscută"}
@@ -6331,6 +6331,81 @@ async def industry_chat(data: dict):
         }
 
 # ============================================================================
+# CRAWLER LIVE STATUS API
+# ============================================================================
+
+@app.get("/api/crawler/stats")
+async def get_crawler_stats():
+    """Returnează statisticile live ale crawler-ului, inclusiv activitate recentă"""
+    try:
+        # Conectare la ro_index_db pe portul 27018
+        from config.database_config import MONGODB_URI
+        from pymongo import MongoClient, DESCENDING, ASCENDING
+        client_crawler = MongoClient(MONGODB_URI)
+        db_crawler = client_crawler["ro_index_db"]
+        
+        # Basic Counts
+        stats = {
+            "completed": db_crawler.crawl_queue.count_documents({"status": "completed"}),
+            "pending": db_crawler.crawl_queue.count_documents({"status": "pending"}),
+            "failed": db_crawler.crawl_queue.count_documents({"status": "failed"}),
+            "scraped_sites": db_crawler.crawled_sites.count_documents({}),
+            "workers_active": 8
+        }
+
+        # Start Time & Duration
+        first_entry = db_crawler.crawl_queue.find_one({}, sort=[("added_at", ASCENDING)])
+        stats["started_at"] = first_entry["added_at"].isoformat() if first_entry and "added_at" in first_entry else None
+        
+        # Data Volume (Approximate)
+        stats["estimated_data_size_gb"] = round((stats["completed"] * 0.0001), 2)
+
+        # Recent Scraped Sites (Ce a strans pana acum)
+        recent_cursor = db_crawler.crawled_sites.find({}, {"domain": 1, "title": 1, "scraped_at": 1}).sort("scraped_at", DESCENDING).limit(7)
+        stats["recent_sites"] = []
+        for site in recent_cursor:
+            stats["recent_sites"].append({
+                "domain": site.get("domain"),
+                "title": (site.get("title") or "No Title")[:50],
+                "time": site.get("scraped_at").isoformat() if site.get("scraped_at") else None
+            })
+
+        # Next in Queue (Ce urmeaza)
+        next_cursor = db_crawler.crawl_queue.find({"status": "pending"}, {"url": 1, "domain": 1}).limit(7)
+        stats["next_queue"] = []
+        for item in next_cursor:
+            stats["next_queue"].append({
+                "url": item.get("url"),
+                "domain": item.get("domain")
+            })
+
+        client_crawler.close()
+        return {"ok": True, "stats": stats}
+    except Exception as e:
+        logger.error(f"Error getting crawler stats: {e}")
+        return {"ok": False, "error": str(e)}
+
+        return {"ok": False, "error": str(e)}
+
+@app.get("/api/crawler/logs")
+async def get_crawler_logs(lines: int = 50):
+    """Returnează ultimele linii din log-ul crawler-ului"""
+    try:
+        import os
+        log_path = "/srv/hf/ro_index/logs/crawler.log"
+        if not os.path.exists(log_path):
+            return {"ok": False, "error": "Log file not found"}
+            
+        # Citim ultimele N linii folosind tail
+        import subprocess
+        result = subprocess.run(["tail", "-n", str(lines), log_path], capture_output=True, text=True)
+        
+        return {"ok": True, "logs": result.stdout}
+    except Exception as e:
+        logger.error(f"Error getting crawler logs: {e}")
+        return {"ok": False, "error": str(e)}
+
+# ============================================================================
 # INDUSTRY TRANSFORMATION BACKGROUND LOGIC
 # ============================================================================
 
@@ -8898,3 +8973,73 @@ async def execute_action(domain: str, request: ActionRequest):
         return {"ok": True, "generated_content": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# --- SAAS INTEGRATION ---
+from saas_core import get_saas_manager
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+    email: Optional[str] = None
+
+class SiteClaim(BaseModel):
+    username: str
+    domain: str
+
+@app.get("/dashboard.html")
+async def read_dashboard():
+    return FileResponse("static/dashboard.html")
+
+@app.get("/admin.html")
+async def read_admin():
+    return FileResponse("static/admin.html")
+
+@app.post("/api/auth/register")
+async def register_user(user: UserLogin):
+    saas = get_saas_manager()
+    result = saas.create_user(user.username, user.password, user.email) 
+    return result
+
+@app.post("/api/auth/login")
+async def login_user(user: UserLogin):
+    saas = get_saas_manager()
+    profile = saas.get_user_profile(user.username)
+    # Mock login check
+    if profile:
+        return {"ok": True, "access_token": "mock_token_" + user.username, "user": profile}
+    return {"ok": False, "detail": "Invalid credentials"}
+
+@app.get("/api/saas/me")
+async def get_current_user(request: Request):
+    auth = request.headers.get("Authorization")
+    saas = get_saas_manager()
+    # Simple mock: extract username from token "mock_token_USERNAME"
+    username = "client_drona" # Default fallback
+    if auth and "Bearer mock_token_" in auth:
+        username = auth.split("mock_token_")[1]
+    
+    user = saas.get_user_profile(username)
+    if not user:
+         saas.create_user(username, "password", f"{username}@example.com")
+         user = saas.get_user_profile(username)
+    
+    return {
+        "user": user,
+        "limits": saas.check_subscription_limits(username)
+    }
+
+@app.post("/api/saas/claim-site")
+async def claim_site(claim: SiteClaim, request: Request):
+    # Get username from token to be secure
+    auth = request.headers.get("Authorization")
+    username = claim.username
+    if auth and "Bearer mock_token_" in auth:
+        token_user = auth.split("mock_token_")[1]
+        if token_user != username:
+            username = token_user # Force use of token user
+
+    saas = get_saas_manager()
+    result = saas.add_master_site(username, claim.domain)
+    if not result["ok"]:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result

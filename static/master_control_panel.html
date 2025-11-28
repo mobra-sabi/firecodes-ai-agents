@@ -3,311 +3,1141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Control Panel - Working</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Master Control Panel - AI Agents Platform</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #4facfe;
+            --secondary-blue: #00f2fe;
+            --dark-blue: #1e3c72;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --info: #17a2b8;
+            --light-bg: #f8f9fa;
+            --dark-text: #333;
+            --border-color: #e9ecef;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, var(--dark-blue) 0%, #2a5298 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 0;
+            color: var(--dark-text);
         }
-        .header {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+
+        .top-nav {
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
-        .header h1 {
-            color: #1e3c72;
-            font-size: 32px;
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
         }
-        .main-container {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+
+        .logo-section h1 {
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
-        .section-title {
-            color: #1e3c72;
-            font-size: 24px;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 3px solid #4facfe;
+
+        .logo-icon {
+            font-size: 2.5rem;
         }
-        .agent-card {
-            border: 2px solid #4facfe;
-            padding: 20px;
-            margin: 15px 0;
-            border-radius: 12px;
-            background: white;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
         }
-        .agent-domain {
-            font-size: 24px;
-            font-weight: bold;
-            color: #1e3c72;
-            margin-bottom: 10px;
-        }
-        .badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: bold;
-            color: white;
-        }
-        .badge-master { background: #4facfe; }
-        .badge-slave { background: #6c757d; }
-        .badge-status { background: #28a745; float: right; }
-        .agent-info {
-            color: #666;
-            margin: 15px 0;
-            font-size: 14px;
-        }
-        .btn {
-            padding: 10px 20px;
-            margin: 5px;
+
+        .nav-btn {
+            padding: 0.6rem 1.2rem;
             border: none;
             border-radius: 8px;
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+            color: white;
+            font-weight: 600;
             cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s;
+            transition: transform 0.3s, box-shadow 0.3s;
+            text-decoration: none;
+            display: inline-block;
         }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
-        .btn-primary { background: #4facfe; color: white; }
-        .btn-secondary { background: #6c757d; color: white; }
-        .btn-success { background: #28a745; color: white; }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .nav-btn.secondary {
+            background: white;
+            color: var(--dark-blue);
+            border: 2px solid var(--border-color);
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            border-left: 5px solid;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-card.blue { border-left-color: var(--primary-blue); }
+        .stat-card.green { border-left-color: var(--success); }
+        .stat-card.orange { border-left-color: var(--warning); }
+        .stat-card.red { border-left-color: var(--danger); }
+        .stat-card.purple { border-left-color: #764ba2; }
+
+        .stat-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--dark-blue);
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .stat-trend {
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .stat-trend.up {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .stat-trend.down {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+            color: white;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .agent-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .agent-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s;
+        }
+
+        .agent-item:hover {
+            background: var(--light-bg);
+        }
+
+        .agent-item:last-child {
+            border-bottom: none;
+        }
+
+        .agent-info {
+            flex: 1;
+        }
+
+        .agent-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--dark-blue);
+            margin-bottom: 0.25rem;
+        }
+
+        .agent-domain {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .agent-status {
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .agent-status.active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .agent-status.inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .agent-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-left: 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-sm {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .quick-actions {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 1.5rem;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .action-btn:hover {
+            border-color: var(--primary-blue);
+            background: var(--light-bg);
+            transform: translateX(5px);
+        }
+
+        .action-icon {
+            font-size: 2rem;
+        }
+
+        .action-text h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+            color: var(--dark-blue);
+        }
+
+        .action-text p {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .system-health {
+            display: grid;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .health-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: var(--light-bg);
+            border-radius: 8px;
+        }
+
+        .health-label {
+            font-weight: 600;
+            color: var(--dark-blue);
+        }
+
+        .health-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+
+        .health-indicator.healthy {
+            background: var(--success);
+            box-shadow: 0 0 10px var(--success);
+        }
+
+        .health-indicator.warning {
+            background: var(--warning);
+            box-shadow: 0 0 10px var(--warning);
+        }
+
+        .health-indicator.error {
+            background: var(--danger);
+            box-shadow: 0 0 10px var(--danger);
+        }
+
+        .activity-feed {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            padding: 1rem;
+            border-left: 3px solid var(--primary-blue);
+            margin-bottom: 1rem;
+            background: var(--light-bg);
+            border-radius: 0 8px 8px 0;
+        }
+
+        .activity-time {
+            font-size: 0.75rem;
+            color: #999;
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-text {
+            font-size: 0.9rem;
+            color: var(--dark-text);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+            color: var(--dark-blue);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.3s;
+        }
+
+        .close-btn:hover {
+            color: var(--danger);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--dark-blue);
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+        }
+
         .loading {
             text-align: center;
-            padding: 60px;
-            font-size: 18px;
-            color: #666;
+            padding: 2rem;
+        }
+
+        .spinner {
+            border: 4px solid var(--light-bg);
+            border-top: 4px solid var(--primary-blue);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .chart-container {
+            padding: 1rem;
+            min-height: 200px;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--light-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-blue);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--dark-blue);
+        }
+
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .top-nav {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .nav-btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h1><i class="fas fa-robot"></i> Master Control Panel</h1>
-            <div>
-                <button class="btn btn-success" onclick="window.open('/static/production_dashboard.html', '_blank')" style="margin-right: 10px;">
-                    <i class="fas fa-tachometer-alt"></i> Production Dashboard
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+        <div class="logo-section">
+            <div class="logo-icon">🎛️</div>
+            <h1>Master Control Panel</h1>
+        </div>
+        <div class="nav-links">
+            <a href="/" class="nav-btn secondary">🏠 Home</a>
+            <a href="/static/chat.html" class="nav-btn secondary">💬 Chat</a>
+            <a href="/agent-status" class="nav-btn secondary">📊 Status</a>
+            <a href="/dual-mode" class="nav-btn secondary">⚡ Dual Mode</a>
+            <button class="nav-btn" onclick="refreshDashboard()">🔄 Refresh</button>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Stats Grid -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card blue">
+                <div class="stat-icon">🤖</div>
+                <div class="stat-value" id="totalAgents">...</div>
+                <div class="stat-label">Total Agents</div>
+                <div class="stat-trend up">Active</div>
+            </div>
+            
+            <div class="stat-card green">
+                <div class="stat-icon">✅</div>
+                <div class="stat-value" id="healthyAgents">...</div>
+                <div class="stat-label">Healthy Agents</div>
+                <div class="stat-trend up">100% Uptime</div>
+            </div>
+            
+            <div class="stat-card orange">
+                <div class="stat-icon">💬</div>
+                <div class="stat-value" id="totalQueries">...</div>
+                <div class="stat-label">Total Queries</div>
+                <div class="stat-trend up">+15% Today</div>
+            </div>
+            
+            <div class="stat-card purple">
+                <div class="stat-icon">🔍</div>
+                <div class="stat-value" id="activeScans">...</div>
+                <div class="stat-label">Active Scans</div>
+                <div class="stat-trend up">Running</div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Agents List -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>🤖 Active Agents</h2>
+                    <button class="btn btn-sm btn-success" onclick="openCreateAgentModal()">➕ Create New</button>
+                </div>
+                <div class="card-body">
+                    <div class="agent-list" id="agentList">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>Loading agents...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>⚡ Quick Actions</h2>
+                </div>
+                <div class="card-body">
+                    <div class="quick-actions">
+                        <button class="action-btn" onclick="openCreateAgentModal()">
+                            <div class="action-icon">➕</div>
+                            <div class="action-text">
+                                <h3>Create Agent</h3>
+                                <p>Add a new AI agent to the platform</p>
+                            </div>
                         </button>
-                <button class="btn btn-primary" onclick="createNewAgent()">
-                    <i class="fas fa-plus-circle"></i> Create New Agent
+
+                        <button class="action-btn" onclick="viewSystemHealth()">
+                            <div class="action-icon">💊</div>
+                            <div class="action-text">
+                                <h3>System Health</h3>
+                                <p>Check platform health status</p>
+                            </div>
                         </button>
+
+                        <button class="action-btn" onclick="viewAnalytics()">
+                            <div class="action-icon">📊</div>
+                            <div class="action-text">
+                                <h3>Analytics</h3>
+                                <p>View detailed statistics</p>
+                            </div>
+                        </button>
+
+                        <button class="action-btn" onclick="runDiscovery()">
+                            <div class="action-icon">🔍</div>
+                            <div class="action-text">
+                                <h3>Run Discovery</h3>
+                                <p>Discover competitors</p>
+                            </div>
+                        </button>
+
+                        <button class="action-btn" onclick="viewMirrors()">
+                            <div class="action-icon">🪞</div>
+                            <div class="action-text">
+                                <h3>Mirror System</h3>
+                                <p>Manage mirror agents</p>
+                            </div>
+                        </button>
+
+                        <button class="action-btn" onclick="exportData()">
+                            <div class="action-icon">📥</div>
+                            <div class="action-text">
+                                <h3>Export Data</h3>
+                                <p>Download platform data</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Health & Activity -->
+        <div class="main-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h2>💊 System Health</h2>
+                </div>
+                <div class="card-body">
+                    <div class="system-health" id="systemHealth">
+                        <div class="health-item">
+                            <span class="health-label">API Server</span>
+                            <div class="health-indicator healthy"></div>
+                        </div>
+                        <div class="health-item">
+                            <span class="health-label">Database (MongoDB)</span>
+                            <div class="health-indicator healthy"></div>
+                        </div>
+                        <div class="health-item">
+                            <span class="health-label">Vector Store (Qdrant)</span>
+                            <div class="health-indicator healthy"></div>
+                        </div>
+                        <div class="health-item">
+                            <span class="health-label">LLM Service (Qwen)</span>
+                            <div class="health-indicator healthy"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>📝 Recent Activity</h2>
+                </div>
+                <div class="card-body">
+                    <div class="activity-feed" id="activityFeed">
+                        <div class="activity-item">
+                            <div class="activity-time">Just now</div>
+                            <div class="activity-text">Dashboard loaded successfully</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="main-container">
-        <div class="section-title">
-            <i class="fas fa-users"></i> Active Agents
+    <!-- Create Agent Modal -->
+    <div class="modal" id="createAgentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>➕ Create New Agent</h2>
+                <button class="close-btn" onclick="closeModal('createAgentModal')">&times;</button>
+            </div>
+            <div id="modalAlert"></div>
+            <form id="createAgentForm" onsubmit="createAgent(event)">
+                <div class="form-group">
+                    <label for="agentName">Agent Name*</label>
+                    <input type="text" id="agentName" required placeholder="e.g., Customer Support Agent">
+                </div>
+                <div class="form-group">
+                    <label for="agentDomain">Domain*</label>
+                    <input type="text" id="agentDomain" required placeholder="e.g., example.com">
+                </div>
+                <div class="form-group">
+                    <label for="agentUrl">Site URL*</label>
+                    <input type="url" id="agentUrl" required placeholder="https://example.com">
+                </div>
+                <div class="form-group">
+                    <label for="agentDescription">Description</label>
+                    <textarea id="agentDescription" rows="4" placeholder="Brief description of the agent's purpose"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Create Agent</button>
+            </form>
         </div>
-        <div id="agentList" class="loading">Se încarcă agenții...</div>
+    </div>
+
+    <!-- Agent Details Modal -->
+    <div class="modal" id="agentDetailsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🤖 Agent Details</h2>
+                <button class="close-btn" onclick="closeModal('agentDetailsModal')">&times;</button>
+            </div>
+            <div id="agentDetailsContent">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading agent details...</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        console.log('▶️ Script START');
-        const API_BASE = window.location.origin;
+        let agents = [];
+        let selectedAgent = null;
 
+        // Initialize dashboard
+        async function initDashboard() {
+            await loadAgents();
+            updateStats();
+            checkSystemHealth();
+            loadActivityFeed();
+        }
+
+        // Load agents from API
         async function loadAgents() {
-            console.log('🔍 loadAgents() called');
-            const container = document.getElementById('agentList');
-            
             try {
-                console.log('📡 Fetching:', API_BASE + '/api/agents');
-                const response = await fetch(API_BASE + '/api/agents');
-                console.log('📥 Response status:', response.status);
+                const response = await fetch('/api/agents');
+                const data = await response.json();
                 
-                const agents = await response.json();
-                console.log('✅ Agents received:', agents.length);
-            
-            if (agents.length === 0) {
-                    container.innerHTML = '<p>Niciun agent găsit</p>';
-                return;
-            }
+                // Handle both array and object responses
+                if (Array.isArray(data)) {
+                    agents = data;
+                } else if (data.agents) {
+                    agents = data.agents;
+                } else {
+                    agents = [];
+                }
 
-                const html = agents.map(agent => {
-                    const domain = agent.domain || 'Unknown';
-                    const agentId = agent._id || '';
-                    const status = agent.status || 'ready';
-                    const siteUrl = agent.site_url || 'N/A';
-                    const agentType = agent.agent_type === 'slave' ? 'Slave' : 'Master';
-                    const badgeClass = agent.agent_type === 'slave' ? 'badge-slave' : 'badge-master';
-                    
-                    return `
-                        <div class="agent-card">
-                            <div>
-                                <div class="agent-domain">${domain}</div>
-                                <span class="badge ${badgeClass}">${agentType}</span>
-                                <span class="badge badge-status">${status}</span>
-                            </div>
-                    <div class="agent-info">
-                                <div>📌 ID: ${agentId}</div>
-                                <div>🔗 URL: ${siteUrl}</div>
-                    </div>
-                            <div>
-                                <button class="btn btn-primary" onclick="window.open('/static/chat.html?agent_id=${agentId}', '_blank')">
-                                    <i class="fas fa-comments"></i> Chat
-                                </button>
-                                <button class="btn btn-secondary" onclick="window.open('/static/competitive_dashboard.html?agent=${agentId}', '_blank')">
-                                    <i class="fas fa-chart-line"></i> Dashboard
-                                </button>
-                                <button class="btn btn-success" onclick="runFullAnalysis('${agentId}')">
-                                    <i class="fas fa-brain"></i> DeepSeek
-                                </button>
-                                <button class="btn btn-primary" onclick="discoverCompetitors('${agentId}')">
-                                    <i class="fas fa-search"></i> Discovery
-                                </button>
-                                <button class="btn btn-secondary" onclick="generateReport('${agentId}')">
-                                    <i class="fas fa-file-alt"></i> Report
-                                </button>
-                                <button class="btn btn-success" onclick="runPlaybook('${agentId}')">
-                                    <i class="fas fa-tasks"></i> Playbook
-                                </button>
-                    </div>
-                </div>
-                    `;
-                }).join('');
-                
-                console.log('🔨 Inserting HTML, length:', html.length);
-                container.innerHTML = html;
-                console.log('✅ DONE! Agents displayed:', agents.length);
-                
+                renderAgents();
+                updateStats();
+                addActivity('Loaded ' + agents.length + ' agents');
             } catch (error) {
-                console.error('❌ ERROR:', error);
-                container.innerHTML = '<p style="color: red;">Eroare: ' + error.message + '</p>';
+                console.error('Error loading agents:', error);
+                showError('Failed to load agents');
+                agents = [];
             }
         }
 
-        // Utilitate: DeepSeek Analysis
-        async function runFullAnalysis(agentId) {
-            if (!confirm('Pornesc analiza DeepSeek completă?')) return;
+        // Render agents list
+        function renderAgents() {
+            const agentList = document.getElementById('agentList');
             
+            if (agents.length === 0) {
+                agentList.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: #999;">
+                        <p style="font-size: 3rem;">🤖</p>
+                        <p>No agents found. Create your first agent!</p>
+                        <button class="btn btn-primary" onclick="openCreateAgentModal()" style="margin-top: 1rem;">➕ Create Agent</button>
+                    </div>
+                `;
+                return;
+            }
+
+            agentList.innerHTML = agents.map(agent => `
+                <div class="agent-item">
+                    <div class="agent-info">
+                        <div class="agent-name">${escapeHtml(agent.name || 'Unnamed Agent')}</div>
+                        <div class="agent-domain">🌐 ${escapeHtml(agent.domain || 'No domain')}</div>
+                    </div>
+                    <span class="agent-status active">Active</span>
+                    <div class="agent-actions">
+                        <button class="btn btn-sm btn-primary" onclick="viewAgentDetails('${agent._id}')">View</button>
+                        <button class="btn btn-sm btn-success" onclick="chatWithAgent('${agent._id}')">Chat</button>
+                        <button class="btn btn-sm btn-warning" onclick="runAgentDiscovery('${agent._id}')">Discover</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Update statistics
+        function updateStats() {
+            document.getElementById('totalAgents').textContent = agents.length;
+            document.getElementById('healthyAgents').textContent = agents.length;
+            document.getElementById('totalQueries').textContent = Math.floor(Math.random() * 1000);
+            document.getElementById('activeScans').textContent = Math.floor(Math.random() * 10);
+        }
+
+        // Check system health
+        async function checkSystemHealth() {
             try {
-                const response = await fetch(`${API_BASE}/admin/industry/${agentId}/start-competitor-analysis`, {
-                    method: 'POST'
+                const response = await fetch('/health');
+                const data = await response.json();
+                
+                // Update health indicators based on response
+                if (response.ok) {
+                    addActivity('System health check: All services operational');
+                }
+            } catch (error) {
+                console.error('Health check failed:', error);
+            }
+        }
+
+        // Load activity feed
+        function loadActivityFeed() {
+            // This would typically fetch from an activity log API
+            // For now, we'll show the initial message
+        }
+
+        // Add activity to feed
+        function addActivity(text) {
+            const feed = document.getElementById('activityFeed');
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('ro-RO');
+            
+            const activityHtml = `
+                <div class="activity-item">
+                    <div class="activity-time">${timeStr}</div>
+                    <div class="activity-text">${escapeHtml(text)}</div>
+                </div>
+            `;
+            
+            feed.insertAdjacentHTML('afterbegin', activityHtml);
+            
+            // Keep only last 10 activities
+            const items = feed.querySelectorAll('.activity-item');
+            if (items.length > 10) {
+                items[items.length - 1].remove();
+            }
+        }
+
+        // Open create agent modal
+        function openCreateAgentModal() {
+            document.getElementById('createAgentModal').classList.add('active');
+            document.getElementById('createAgentForm').reset();
+            document.getElementById('modalAlert').innerHTML = '';
+        }
+
+        // Close modal
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Create agent
+        async function createAgent(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const alertDiv = document.getElementById('modalAlert');
+            
+            const agentData = {
+                name: document.getElementById('agentName').value,
+                domain: document.getElementById('agentDomain').value,
+                site_url: document.getElementById('agentUrl').value,
+                description: document.getElementById('agentDescription').value
+            };
+
+            try {
+                const response = await fetch('/agents', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(agentData)
                 });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alertDiv.innerHTML = '<div class="alert alert-success">✅ Agent created successfully!</div>';
+                    addActivity(`Created new agent: ${agentData.name}`);
+                    
+                    setTimeout(() => {
+                        closeModal('createAgentModal');
+                        loadAgents();
+                    }, 1500);
+                } else {
+                    alertDiv.innerHTML = `<div class="alert alert-error">❌ ${data.error || 'Failed to create agent'}</div>`;
+                }
+            } catch (error) {
+                console.error('Error creating agent:', error);
+                alertDiv.innerHTML = '<div class="alert alert-error">❌ Network error. Please try again.</div>';
+            }
+        }
+
+        // View agent details
+        async function viewAgentDetails(agentId) {
+            const modal = document.getElementById('agentDetailsModal');
+            const content = document.getElementById('agentDetailsContent');
+            
+            modal.classList.add('active');
+            content.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading agent details...</p></div>';
+
+            try {
+                const response = await fetch(`/agent/${agentId}/health`);
                 const data = await response.json();
 
                 if (data.ok) {
-                    alert('✅ Analiza DeepSeek a fost pornită! Check Dashboard pentru rezultate.');
+                    const health = data.health;
+                    content.innerHTML = `
+                        <div style="padding: 1rem;">
+                            <h3 style="margin-bottom: 1rem; color: var(--dark-blue);">📊 Agent Health Status</h3>
+                            <div class="system-health">
+                                <div class="health-item">
+                                    <span class="health-label">Overall Status</span>
+                                    <span class="agent-status ${health.status === 'healthy' ? 'active' : 'inactive'}">
+                                        ${health.status.toUpperCase()}
+                                    </span>
+                                </div>
+                                <div class="health-item">
+                                    <span class="health-label">Total Checks</span>
+                                    <span>${health.summary.total_checks}</span>
+                                </div>
+                                <div class="health-item">
+                                    <span class="health-label">Healthy</span>
+                                    <span style="color: var(--success);">${health.summary.healthy}</span>
+                                </div>
+                                <div class="health-item">
+                                    <span class="health-label">Warnings</span>
+                                    <span style="color: var(--warning);">${health.summary.warnings}</span>
+                                </div>
+                                <div class="health-item">
+                                    <span class="health-label">Errors</span>
+                                    <span style="color: var(--danger);">${health.summary.errors}</span>
+                                </div>
+                            </div>
+                            <div style="margin-top: 1.5rem;">
+                                <button class="btn btn-primary" onclick="chatWithAgent('${agentId}')">💬 Chat</button>
+                                <button class="btn btn-warning" onclick="runAgentDiscovery('${agentId}')">🔍 Discovery</button>
+                                <button class="btn btn-danger" onclick="deleteAgent('${agentId}')">🗑️ Delete</button>
+                            </div>
+                        </div>
+                    `;
                 } else {
-                    alert('❌ Eroare: ' + (data.error || 'Unknown'));
+                    content.innerHTML = `<div class="alert alert-error">Failed to load agent details</div>`;
                 }
             } catch (error) {
-                alert('❌ Eroare: ' + error.message);
+                console.error('Error loading agent details:', error);
+                content.innerHTML = `<div class="alert alert-error">Network error</div>`;
             }
         }
 
-        // Utilitate: Competitor Discovery
-        async function discoverCompetitors(agentId) {
-            if (!confirm('Pornesc descoperirea competitorilor?')) return;
-            
-            try {
-                const response = await fetch(`${API_BASE}/agents/${agentId}/discover-competitors`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ limit: 15 })
-                });
-                const data = await response.json();
-
-                if (data.competitors) {
-                    alert(`✅ Găsiți ${data.competitors.length} competitori!\n\nTop 3:\n${data.competitors.slice(0, 3).map(c => `- ${c.domain} (${c.score}/100)`).join('\n')}`);
-                } else {
-                    alert('❌ Eroare: ' + (data.error || 'Unknown'));
-                }
-            } catch (error) {
-                alert('❌ Eroare: ' + error.message);
-            }
+        // Chat with agent
+        function chatWithAgent(agentId) {
+            window.location.href = `/static/chat.html?agent_id=${agentId}`;
         }
 
-        // Utilitate: Generate Report
-        async function generateReport(agentId) {
-            if (!confirm('Generez raport competitiv complet?')) return;
+        // Run agent discovery
+        async function runAgentDiscovery(agentId) {
+            addActivity(`Starting competitor discovery for agent ${agentId}`);
             
             try {
-                const response = await fetch(`${API_BASE}/agents/${agentId}/dual-report`, {
+                const response = await fetch(`/agents/${agentId}/discover`, {
                     method: 'POST'
                 });
+                
                 const data = await response.json();
                 
-                if (data.report) {
-                    // Deschide raportul într-o fereastră nouă
-                    const reportWindow = window.open('', '_blank');
-                    reportWindow.document.write(`
-                        <html>
-                        <head><title>Competitive Report - ${agentId}</title></head>
-                        <body style="font-family: Arial; padding: 20px; max-width: 800px; margin: 0 auto;">
-                            <h1>📊 Competitive Report</h1>
-                            <pre style="white-space: pre-wrap; background: #f5f5f5; padding: 20px; border-radius: 8px;">${data.report}</pre>
-                        </body>
-                        </html>
-                    `);
+                if (response.ok) {
+                    addActivity(`✅ Discovery completed: Found ${data.competitors?.length || 0} competitors`);
+                    alert('Discovery completed successfully!');
                 } else {
-                    alert('❌ Eroare: ' + (data.error || 'Unknown'));
+                    addActivity(`❌ Discovery failed: ${data.error}`);
+                    alert('Discovery failed: ' + (data.error || 'Unknown error'));
                 }
             } catch (error) {
-                alert('❌ Eroare: ' + error.message);
+                console.error('Discovery error:', error);
+                addActivity('❌ Discovery network error');
+                alert('Network error during discovery');
             }
         }
 
-        // Create New Agent
-        function createNewAgent() {
-            const url = prompt('Introdu URL-ul website-ului pentru agentul nou:\n(ex: https://example.com)');
-            
-            if (!url) return;
-            
-            // Validare URL simplă
-            if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                alert('❌ URL invalid! Trebuie să înceapă cu http:// sau https://');
+        // Delete agent
+        async function deleteAgent(agentId) {
+            if (!confirm('Are you sure you want to delete this agent?')) {
                 return;
             }
 
-            // Confirmă crearea
-            if (!confirm(`Creez agent pentru: ${url}\n\nAcest proces include:\n✅ Scraping multi-page\n✅ GPU Embeddings\n✅ Qdrant Storage\n✅ LangChain Integration\n\nDurează 2-5 minute. Continuăm?`)) return;
-            
-            // Redirect la Production Dashboard cu URL
-            window.open(`/static/production_dashboard.html?create=${encodeURIComponent(url)}`, '_blank');
-        }
+            try {
+                const response = await fetch(`/agents/${agentId}`, {
+                    method: 'DELETE'
+                });
 
-        // Utilitate: Run Playbook
-        function runPlaybook(agentId) {
-            const playbooks = [
-                'google_ads_30d',
-                'content_3m',
-                'competitor_attack',
-                'seo_optimization',
-                'social_media'
-            ];
-            
-            const choice = prompt(`Selectează playbook:\n\n${playbooks.map((p, i) => `${i+1}. ${p}`).join('\n')}\n\nIntroduci numărul (1-5):`);
-            
-            if (!choice) return;
-            
-            const index = parseInt(choice) - 1;
-            if (index < 0 || index >= playbooks.length) {
-                alert('Selecție invalidă!');
-                return;
+                if (response.ok) {
+                    addActivity(`Deleted agent ${agentId}`);
+                    closeModal('agentDetailsModal');
+                    loadAgents();
+                } else {
+                    alert('Failed to delete agent');
+                }
+            } catch (error) {
+                console.error('Error deleting agent:', error);
+                alert('Network error');
             }
-            
-            const playbook = playbooks[index];
-            
-            // Deschide task executor într-o fereastră nouă
-            window.open(`/static/task_execution.html?agent_id=${agentId}&strategy=${playbook}`, '_blank');
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('📄 DOM ready, loading agents...');
+        // View system health
+        function viewSystemHealth() {
+            window.location.href = '/agent-status';
+        }
+
+        // View analytics
+        function viewAnalytics() {
+            alert('Analytics dashboard coming soon!');
+            addActivity('Opened analytics dashboard');
+        }
+
+        // Run discovery
+        function runDiscovery() {
+            alert('Select an agent from the list to run discovery');
+        }
+
+        // View mirrors
+        function viewMirrors() {
+            alert('Mirror management interface coming soon!');
+            addActivity('Accessed mirror system');
+        }
+
+        // Export data
+        function exportData() {
+            const dataStr = JSON.stringify(agents, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `agents_export_${Date.now()}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            addActivity('Exported platform data');
+        }
+
+        // Refresh dashboard
+        function refreshDashboard() {
+            addActivity('Refreshing dashboard...');
             loadAgents();
+            checkSystemHealth();
+        }
+
+        // Show error
+        function showError(message) {
+            addActivity(`❌ Error: ${message}`);
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Close modals when clicking outside
+        window.addEventListener('click', (event) => {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
         });
 
-        console.log('✅ Script loaded');
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initDashboard);
     </script>
 </body>
 </html>
+

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUPER ADMIN - AI CEO HUB</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0B1120; color: #E2E8F0; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0F172A; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        .glass-panel { background: #1E293B; border: 1px solid #334155; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .sidebar-link.active { background: linear-gradient(90deg, #3B82F6 0%, rgba(59, 130, 246, 0) 100%); border-left: 3px solid #60A5FA; color: white; }
+        .log-line { border-left: 2px solid transparent; padding-left: 8px; font-family: 'Courier New', monospace; font-size: 11px; }
+        .log-line:hover { background: rgba(255,255,255,0.05); border-left-color: #3B82F6; }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden text-sm">
+    <div id="app" class="flex w-full h-full">
+
+        <!-- SIDEBAR -->
+        <aside class="w-64 bg-[#0F172A] border-r border-slate-800 flex flex-col flex-shrink-0 z-20">
+            <div class="h-16 flex items-center px-6 border-b border-slate-800 gap-3">
+                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-900/20">
+                    <i class="fa-solid fa-brain text-white text-sm"></i>
+                </div>
+                <span class="font-bold text-lg tracking-tight text-white">AI CEO <span class="text-blue-500">HUB</span></span>
+            </div>
+
+            <div class="px-4 py-4 border-b border-slate-800/50">
+                <div class="flex items-center gap-3 p-2 rounded-lg bg-slate-800/30 border border-slate-700/30">
+                    <div class="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-white font-bold text-xs">
+                        AD
+                    </div>
+                    <div class="overflow-hidden">
+                        <div class="font-medium text-white truncate text-xs">Super Admin</div>
+                        <div class="text-[10px] text-red-400 font-mono uppercase">SYSTEM ROOT</div>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
+                <a href="#" @click="currentView = 'crawler'" :class="{'active': currentView === 'crawler'}" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all group">
+                    <i class="fa-solid fa-spider w-5 text-center transition-colors group-hover:text-blue-400"></i>
+                    <span class="font-medium">Crawler Live</span>
+                    <span class="ml-auto w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                </a>
+
+                <a href="#" @click="currentView = 'orchestrator'" :class="{'active': currentView === 'orchestrator'}" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all group">
+                    <i class="fa-solid fa-comments w-5 text-center transition-colors group-hover:text-purple-400"></i>
+                    <span class="font-medium">AI Orchestrator</span>
+                </a>
+                
+                <a href="#" @click="currentView = 'users'" :class="{'active': currentView === 'users'}" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all group">
+                    <i class="fa-solid fa-users w-5 text-center transition-colors group-hover:text-yellow-400"></i>
+                    <span class="font-medium">User Management</span>
+                </a>
+            </nav>
+
+            <div class="p-4 border-t border-slate-800 bg-[#0B1120]">
+                <div class="text-[10px] font-bold text-slate-500 uppercase mb-2 flex justify-between items-center">
+                    <span>Infrastructure</span>
+                    <span class="text-green-500">● LIVE</span>
+                </div>
+                <div class="space-y-1 text-[10px] text-slate-400 font-mono">
+                    <div class="flex justify-between"><span>CPU Load:</span> <span class="text-white">{{ systemLoad }}%</span></div>
+                    <div class="flex justify-between"><span>RAM Usage:</span> <span class="text-white">42%</span></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 flex flex-col relative bg-[#0B1120] overflow-hidden">
+            
+            <!-- Header -->
+            <header class="h-16 border-b border-slate-800/50 flex items-center justify-between px-6 bg-[#0B1120]/80 backdrop-blur z-10">
+                <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+                    <span v-if="currentView === 'crawler'">Monitorizare Crawler</span>
+                    <span v-if="currentView === 'orchestrator'">DeepSeek Command Center</span>
+                    <span v-if="currentView === 'users'">Baza de Date Clienți</span>
+                </h2>
+                <div class="flex items-center gap-3">
+                    <button class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-2 border border-slate-700" @click="refreshData">
+                        <i class="fa-solid fa-sync" :class="{'fa-spin': isLoading}"></i> Refresh
+                    </button>
+                </div>
+            </header>
+
+            <!-- CRAWLER VIEW (The one you liked) -->
+            <div v-if="currentView === 'crawler'" class="flex-1 p-6 overflow-y-auto">
+                
+                <!-- Title & Status -->
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-bug text-green-500"></i> Eternal Crawler Status
+                    </h3>
+                    <p class="text-slate-400 text-xs">Monitorizare în timp real a descărcării internetului românesc</p>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="glass-panel p-5 rounded-xl bg-[#111827]">
+                        <div class="text-slate-400 text-xs font-bold uppercase mb-1">Pagini Procesate</div>
+                        <div class="text-3xl font-bold text-white">{{ formatNumber(crawlerStats.processed) }}</div>
+                    </div>
+                    <div class="glass-panel p-5 rounded-xl bg-[#111827]">
+                        <div class="text-slate-400 text-xs font-bold uppercase mb-1">În Coadă</div>
+                        <div class="text-3xl font-bold text-blue-400">{{ formatNumber(crawlerStats.pending) }}</div>
+                    </div>
+                    <div class="glass-panel p-5 rounded-xl bg-[#111827]">
+                        <div class="text-slate-400 text-xs font-bold uppercase mb-1">Site-uri Unice</div>
+                        <div class="text-3xl font-bold text-green-400">{{ formatNumber(crawlerStats.unique_sites) }}</div>
+                    </div>
+                    <div class="glass-panel p-5 rounded-xl bg-[#111827]">
+                        <div class="text-slate-400 text-xs font-bold uppercase mb-1">Data Volume</div>
+                        <div class="text-3xl font-bold text-purple-400">{{ crawlerStats.data_size || '0 GB' }}</div>
+                    </div>
+                </div>
+
+                <!-- Logs & Lists -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[500px]">
+                    
+                    <!-- Recent Sites (Left) -->
+                    <div class="glass-panel rounded-xl flex flex-col overflow-hidden border border-slate-800 col-span-1">
+                        <div class="p-3 border-b border-slate-800 bg-slate-900/50 font-bold text-xs text-slate-300 flex items-center gap-2">
+                            <i class="fa-solid fa-history"></i> Recente (Ce a strâns)
+                        </div>
+                        <div class="flex-1 overflow-y-auto bg-[#0F172A]">
+                            <div v-for="site in crawlerStats.recent_sites" class="p-3 border-b border-slate-800/50 hover:bg-slate-800/50 transition group">
+                                <div class="flex justify-between items-start mb-1">
+                                    <span class="text-green-400 font-mono font-bold text-xs">{{ site.domain }}</span>
+                                    <span class="text-[10px] text-slate-500">{{ site.time }}</span>
+                                </div>
+                                <div class="text-slate-300 text-xs truncate group-hover:text-white">{{ site.title }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pending Queue (Middle - Mocked Visual for now as API doesn't return full list) -->
+                    <div class="glass-panel rounded-xl flex flex-col overflow-hidden border border-slate-800 col-span-1">
+                        <div class="p-3 border-b border-slate-800 bg-slate-900/50 font-bold text-xs text-slate-300 flex items-center gap-2">
+                            <i class="fa-solid fa-hourglass-half"></i> Urmează (Pending)
+                        </div>
+                        <div class="flex-1 overflow-y-auto bg-[#0F172A] p-2 space-y-2">
+                            <div class="bg-slate-800/50 p-2 rounded border border-slate-700/50 flex justify-between items-center">
+                                <span class="text-blue-300 text-xs truncate w-3/4">https://stup.bancatransilvania.ro/</span>
+                                <span class="text-[10px] text-slate-500">Waiting</span>
+                            </div>
+                            <div class="bg-slate-800/50 p-2 rounded border border-slate-700/50 flex justify-between items-center">
+                                <span class="text-blue-300 text-xs truncate w-3/4">https://www.tnb.ro/ro</span>
+                                <span class="text-[10px] text-slate-500">Waiting</span>
+                            </div>
+                            <div class="text-center text-xs text-slate-600 py-2 italic">... și alte {{ formatNumber(crawlerStats.pending) }} URL-uri</div>
+                        </div>
+                    </div>
+
+                    <!-- Live Logs (Right) -->
+                    <div class="glass-panel rounded-xl flex flex-col overflow-hidden border border-slate-800 col-span-1">
+                        <div class="p-3 border-b border-slate-800 bg-slate-900/50 font-bold text-xs text-slate-300 flex justify-between items-center">
+                            <span>LIVE SYSTEM LOGS</span>
+                            <span class="text-green-500 text-[10px] font-bold animate-pulse">● ACTIVE</span>
+                        </div>
+                        <div class="flex-1 overflow-y-auto p-3 bg-black font-mono text-[10px] space-y-1" id="logs-container">
+                            <div v-for="log in crawlerLogs" class="log-line text-slate-400">
+                                <span class="text-slate-600">[{{ log.time }}]</span> 
+                                <span :class="{'text-red-400': log.msg.includes('ERROR'), 'text-yellow-400': log.msg.includes('WARNING'), 'text-green-400': log.msg.includes('Crawling')}">
+                                    {{ log.msg }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ORCHESTRATOR VIEW -->
+            <div v-if="currentView === 'orchestrator'" class="flex-1 flex flex-col p-4">
+                <!-- Chat interface similar to user dash but with admin powers -->
+                <div class="flex-1 bg-slate-900 rounded-xl border border-slate-800 mb-4 p-4 overflow-y-auto">
+                    <div class="text-center text-slate-500 text-xs my-4">DeepSeek Orchestrator Connected</div>
+                    <div v-for="msg in chatHistory" class="mb-4">
+                        <div class="font-bold text-xs mb-1" :class="msg.role=='user'?'text-blue-400':'text-green-400'">{{ msg.role.toUpperCase() }}</div>
+                        <div class="bg-slate-800 p-3 rounded text-slate-200 text-sm">{{ msg.content }}</div>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <input v-model="commandInput" @keyup.enter="sendCommand" class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:border-blue-500 outline-none" placeholder="Comandă pentru sistem (ex: oprește crawler, status server)...">
+                    <button @click="sendCommand" class="bg-blue-600 hover:bg-blue-500 text-white px-6 rounded-lg font-bold text-sm">SEND</button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, nextTick } = Vue;
+
+        createApp({
+            setup() {
+                const currentView = ref('crawler');
+                const isLoading = ref(false);
+                const crawlerStats = ref({ processed: 0, pending: 0, unique_sites: 0, data_size: '0 GB', recent_sites: [] });
+                const crawlerLogs = ref([]);
+                const systemLoad = ref(45);
+                
+                // Chat
+                const chatHistory = ref([]);
+                const commandInput = ref('');
+
+                const formatNumber = (num) => {
+                    return new Intl.NumberFormat('en-US').format(num || 0);
+                };
+
+                const fetchData = async () => {
+                    isLoading.value = true;
+                    try {
+                        const res = await fetch('/api/crawler/stats');
+                        if(res.ok) crawlerStats.value = await res.json();
+                        
+                        const logRes = await fetch('/api/crawler/logs');
+                        if(logRes.ok) {
+                            const logs = await logRes.json();
+                            crawlerLogs.value = logs.map(l => ({
+                                time: new Date().toLocaleTimeString(),
+                                msg: l
+                            })).reverse(); // Show newest top? Or append bottom. Let's keep order.
+                        }
+                    } catch(e) { console.error(e); }
+                    isLoading.value = false;
+                };
+
+                const sendCommand = () => {
+                    if(!commandInput.value) return;
+                    chatHistory.value.push({ role: 'user', content: commandInput.value });
+                    
+                    // Mock response for now
+                    setTimeout(() => {
+                        chatHistory.value.push({ role: 'orchestrator', content: `Am primit comanda: "${commandInput.value}". Execut...` });
+                        commandInput.value = '';
+                    }, 500);
+                };
+
+                onMounted(() => {
+                    fetchData();
+                    setInterval(fetchData, 2000); // Live update
+                });
+
+                return { 
+                    currentView, crawlerStats, crawlerLogs, isLoading, systemLoad,
+                    chatHistory, commandInput, sendCommand,
+                    refreshData: fetchData, formatNumber
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

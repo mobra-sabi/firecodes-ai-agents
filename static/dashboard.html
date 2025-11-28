@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI CEO HUB - Client Workspace</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body { background-color: #0B1120; color: #E2E8F0; font-family: sans-serif; }
+        .msg-enter-active, .msg-leave-active { transition: all 0.3s ease; }
+        .msg-enter-from, .msg-leave-to { opacity: 0; transform: translateY(10px); }
+        
+        /* Map Styles */
+        .competitor-dot { width: 12px; height: 12px; border-radius: 50%; position: absolute; cursor: pointer; transition: all 0.3s; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        .competitor-dot:hover { transform: scale(1.5); z-index: 10; }
+        .competitor-label { position: absolute; top: -25px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 2px 6px; border-radius: 4px; font-size: 10px; white-space: nowrap; display: none; }
+        .competitor-dot:hover .competitor-label { display: block; }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden">
+
+    <div id="app" class="flex w-full h-full">
+        
+        <!-- Sidebar -->
+        <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col">
+            <div class="h-16 flex items-center px-6 border-b border-slate-800 gap-3">
+                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-900/20">
+                    <i class="fa-solid fa-brain text-white text-sm"></i>
+                </div>
+                <span class="font-bold text-white text-lg">AI CEO HUB</span>
+            </div>
+            
+            <div class="p-4">
+                <div class="bg-slate-800 p-3 rounded-lg mb-6 flex items-center gap-3 border border-slate-700">
+                    <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center font-bold text-white text-xs">
+                        {{ userInitials }}
+        </div>
+                    <div class="overflow-hidden">
+                        <div class="font-bold text-white text-sm truncate">{{ user.username }}</div>
+                        <div class="text-[10px] text-blue-400 uppercase font-mono">{{ user.tier }} PLAN</div>
+                    </div>
+                </div>
+
+                <nav class="space-y-1">
+                    <button @click="currentView='chat'" :class="currentView=='chat' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'" class="w-full text-left px-3 py-2.5 rounded-lg flex items-center gap-3 transition">
+                        <i class="fa-solid fa-comments w-5 text-center"></i> Strategic Chat
+                    </button>
+                    <button @click="currentView='map'" :class="currentView=='map' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'" class="w-full text-left px-3 py-2.5 rounded-lg flex items-center gap-3 transition">
+                        <i class="fa-solid fa-map w-5 text-center"></i> War Map
+                    </button>
+                    <button @click="currentView='integrations'" :class="currentView=='integrations' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'" class="w-full text-left px-3 py-2.5 rounded-lg flex items-center gap-3 transition">
+                        <i class="fa-solid fa-plug w-5 text-center"></i> Integrations
+                    </button>
+                </nav>
+                </div>
+
+            <div class="mt-auto p-4 border-t border-slate-800">
+                <div class="mb-4">
+                    <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+                        <span>Agents Usage</span>
+                        <span>{{ mySites.length }} / {{ limits.max_sites }}</span>
+                    </div>
+                    <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                        <div class="bg-blue-500 h-full" :style="{width: (mySites.length / Math.max(limits.max_sites, 1) * 100) + '%'}"></div>
+                    </div>
+                </div>
+                <button @click="logout" class="text-slate-500 hover:text-white text-xs flex items-center gap-2 w-full py-2 hover:bg-slate-800 rounded transition justify-center">
+                    <i class="fa-solid fa-sign-out"></i> Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col bg-slate-950 relative">
+            
+            <!-- Header -->
+            <header class="h-16 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-900/50 backdrop-blur z-10">
+                <h2 class="font-bold text-white flex items-center gap-2">
+                    <span v-if="currentView === 'chat'">Strategic Briefing</span>
+                    <span v-else-if="currentView === 'map'">Competitor Landscape</span>
+                    <span v-else>Integrations</span>
+                </h2>
+                <div class="flex gap-3">
+                    <button class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 flex items-center justify-center transition">
+                        <i class="fa-regular fa-bell"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Chat View -->
+            <div v-if="currentView === 'chat'" class="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth" id="chat-container">
+                <!-- Welcome Block -->
+                <div class="flex gap-4 max-w-3xl mx-auto w-full">
+                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex-shrink-0 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                        <i class="fa-solid fa-robot text-white text-xs"></i>
+                    </div>
+                    <div class="bg-slate-800/80 border border-slate-700 p-5 rounded-2xl rounded-tl-none text-slate-200 shadow-xl w-full">
+                        <p class="mb-3">Salut {{ user.username }}! Sistemul este online. Monitorizez {{ mySites.length }} agenți activi.</p>
+                        <p class="text-sm text-slate-400 mb-4">Pot analiza noi competitori sau putem discuta strategia pentru site-urile existente.</p>
+                        
+                        <div class="flex flex-wrap gap-2">
+                            <button @click="promptNewSite" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium transition flex items-center gap-2">
+                                <i class="fa-solid fa-plus"></i> Adaugă Site Nou
+                            </button>
+                            <button @click="currentView='map'" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs font-medium transition flex items-center gap-2 border border-slate-600">
+                                <i class="fa-solid fa-map"></i> Vezi Harta
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Messages -->
+                <transition-group name="msg">
+                    <div v-for="(msg, idx) in chatHistory" :key="idx" class="flex gap-4 max-w-3xl mx-auto w-full" :class="msg.role === 'user' ? 'flex-row-reverse' : ''">
+                        <div class="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center shadow-lg" 
+                             :class="msg.role === 'user' ? 'bg-slate-700' : 'bg-blue-600'">
+                            <i :class="msg.role === 'user' ? 'fa-solid fa-user' : 'fa-solid fa-robot'" class="text-white text-xs"></i>
+                        </div>
+                        <div class="p-4 rounded-2xl text-slate-200 shadow-xl max-w-[80%]" 
+                             :class="msg.role === 'user' ? 'bg-blue-600 rounded-tr-none' : 'bg-slate-800/80 border border-slate-700 rounded-tl-none'">
+                            <div v-html="formatMessage(msg.content)"></div>
+                        </div>
+                    </div>
+                </transition-group>
+
+                <div v-if="isTyping" class="flex gap-4 max-w-3xl mx-auto w-full">
+                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex-shrink-0 flex items-center justify-center">
+                        <i class="fa-solid fa-robot text-white text-xs"></i>
+                    </div>
+                    <div class="bg-slate-800/80 border border-slate-700 p-4 rounded-2xl rounded-tl-none text-slate-200 shadow-xl">
+                        <div class="flex gap-1">
+                            <div class="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"></div>
+                            <div class="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                            <div class="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+
+            <!-- Input Area -->
+            <div v-if="currentView === 'chat'" class="p-4 border-t border-slate-800 bg-slate-900 z-20">
+                <div class="relative max-w-3xl mx-auto">
+                    <div v-if="inputMode === 'new_site'" class="absolute -top-10 left-0 bg-blue-600 text-white text-xs px-3 py-1 rounded-t-lg font-bold flex items-center gap-2">
+                        <i class="fa-solid fa-globe"></i> INTRODU DOMENIUL SITE-ULUI
+                        <button @click="inputMode='chat'" class="ml-2 hover:text-blue-200"><i class="fa-solid fa-times"></i></button>
+                    </div>
+                    
+                    <input v-model="userInput" @keyup.enter="sendMessage" type="text" 
+                           :placeholder="inputMode === 'new_site' ? 'ex: firma-mea.ro' : 'Scrie un mesaj...'" 
+                           class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition shadow-lg pl-10">
+                    
+                    <i class="fa-solid fa-paperclip absolute left-3.5 top-4 text-slate-500"></i>
+                    
+                    <button @click="sendMessage" class="absolute right-2 top-2 p-1.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-white transition shadow-lg shadow-blue-600/20">
+                        <i class="fa-solid fa-paper-plane w-4 h-4 flex items-center justify-center"></i>
+                    </button>
+                </div>
+                <div class="text-center mt-2">
+                    <span class="text-[10px] text-slate-600">AI CEO Hub v2.1 • Connected to Mainframe</span>
+                </div>
+            </div>
+
+            <!-- War Map View -->
+            <div v-if="currentView === 'map'" class="flex-1 relative overflow-hidden bg-slate-950 flex items-center justify-center">
+                <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(#3b82f6 1px, transparent 1px); background-size: 30px 30px;"></div>
+                
+                <!-- Radar Effect -->
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div class="w-[600px] h-[600px] border border-slate-700 rounded-full opacity-30"></div>
+                    <div class="w-[400px] h-[400px] border border-slate-700 rounded-full opacity-30 absolute"></div>
+                    <div class="w-[200px] h-[200px] border border-slate-700 rounded-full opacity-30 absolute"></div>
+                    <div class="w-[600px] h-[2px] bg-slate-800 absolute"></div>
+                    <div class="h-[600px] w-[2px] bg-slate-800 absolute"></div>
+                </div>
+
+                <!-- Competitor Dots (Mock for visual) -->
+                <div class="relative w-[600px] h-[600px]">
+                    <!-- Central Business (You) -->
+                    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-blue-500 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.8)] z-20 flex items-center justify-center">
+                        <div class="w-full h-full rounded-full bg-blue-500 animate-ping absolute opacity-50"></div>
+                        <i class="fa-solid fa-home text-[10px] text-white relative z-10"></i>
+                    </div>
+
+                    <!-- Competitors -->
+                    <div v-for="(comp, idx) in competitors" :key="idx" 
+                         class="competitor-dot" 
+                         :style="{ top: comp.y + '%', left: comp.x + '%', backgroundColor: comp.color }">
+                        <div class="competitor-label">{{ comp.name }} ({{ comp.score }}%)</div>
+                    </div>
+                </div>
+
+                <div class="absolute bottom-8 left-8 bg-slate-900/90 p-4 rounded-xl border border-slate-700 shadow-xl backdrop-blur w-64">
+                    <h4 class="text-xs font-bold text-white uppercase mb-2 border-b border-slate-700 pb-2">Radar Status</h4>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-xs text-slate-400">
+                            <span>Competitors Found:</span> <span class="text-white">{{ competitors.length }}</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-400">
+                            <span>Sector Analysis:</span> <span class="text-green-400">Active</span>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
+            <!-- Integrations View -->
+            <div v-if="currentView === 'integrations'" class="flex-1 p-8 overflow-y-auto">
+                <h3 class="text-xl font-bold text-white mb-6">Active Integrations</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl hover:border-blue-600 transition cursor-pointer group">
+                        <div class="flex justify-between items-start mb-4">
+                            <i class="fa-brands fa-google text-3xl text-white group-hover:text-blue-500 transition"></i>
+                            <span class="bg-green-900 text-green-300 text-[10px] px-2 py-0.5 rounded font-bold">CONNECTED</span>
+                        </div>
+                        <h4 class="font-bold text-white">Google Search Console</h4>
+                        <p class="text-xs text-slate-400 mt-2">Sync keywords and ranking data directly.</p>
+                </div>
+
+                    <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl hover:border-blue-600 transition cursor-pointer group opacity-60">
+                        <div class="flex justify-between items-start mb-4">
+                            <i class="fa-brands fa-linkedin text-3xl text-white group-hover:text-blue-500 transition"></i>
+                            <span class="bg-slate-800 text-slate-400 text-[10px] px-2 py-0.5 rounded font-bold">SOON</span>
+                    </div>
+                        <h4 class="font-bold text-white">LinkedIn Intelligence</h4>
+                        <p class="text-xs text-slate-400 mt-2">Monitor competitor hiring and posts.</p>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, nextTick } = Vue;
+
+        createApp({
+            setup() {
+                const currentView = ref('chat');
+                const user = ref({ username: 'Guest', tier: 'free' });
+                const mySites = ref([]);
+                const limits = ref({ max_sites: 1 });
+                const chatHistory = ref([]);
+                const userInput = ref('');
+                const isTyping = ref(false);
+                const inputMode = ref('chat');
+                
+                // Mock Competitors for Map
+                const competitors = ref([
+                    { name: "Competitor A", x: 20, y: 30, score: 85, color: "#ef4444" },
+                    { name: "Competitor B", x: 70, y: 60, score: 65, color: "#f59e0b" },
+                    { name: "Competitor C", x: 40, y: 80, score: 45, color: "#10b981" },
+                    { name: "Niche Player", x: 80, y: 20, score: 90, color: "#ef4444" },
+                ]);
+
+                const userInitials = computed(() => {
+                    return (user.value.username || 'GU').substring(0, 2).toUpperCase();
+                });
+
+                const loadUser = async () => {
+                    const token = localStorage.getItem('auth_token');
+                    if(!token) { window.location.href = '/index.html'; return; }
+                    try {
+                        const res = await fetch('/api/saas/me', { headers: { 'Authorization': `Bearer ${token}` }});
+                        if(res.ok) {
+                            const data = await res.json();
+                            user.value = data.user || user.value;
+                            mySites.value = data.user.master_sites || [];
+                            limits.value = data.limits || limits.value;
+                        }
+                    } catch(e) { console.log("API Error", e); }
+                };
+
+                const promptNewSite = () => {
+                    inputMode.value = 'new_site';
+                    chatHistory.value.push({ role: 'ai', content: 'Te rog introdu URL-ul site-ului nou.' });
+                    nextTick(() => document.querySelector('input').focus());
+                };
+
+                const formatMessage = (text) => {
+                    // Simple markdown-ish formatter
+                    return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                               .replace(/\n/g, '<br>');
+                };
+
+                const sendMessage = async () => {
+                    if(!userInput.value.trim()) return;
+                    const msg = userInput.value;
+                    chatHistory.value.push({ role: 'user', content: msg });
+                    userInput.value = '';
+                    isTyping.value = true;
+                    nextTick(() => scrollToBottom());
+
+                    if(inputMode.value === 'new_site') {
+                        await handleAddSite(msg);
+                        inputMode.value = 'chat';
+                return;
+                    }
+
+                    // Call API Chat
+                    try {
+                        // Mocking API response for now to ensure UI works
+                        setTimeout(() => {
+                            isTyping.value = false;
+                            chatHistory.value.push({ role: 'ai', content: `Am înțeles întrebarea despre **"${msg}"**. Analizez datele disponibile...` });
+                            scrollToBottom();
+                        }, 1000);
+                    } catch(e) {
+                        isTyping.value = false;
+                    }
+                };
+
+                const handleAddSite = async (url) => {
+                    const token = localStorage.getItem('auth_token');
+                    try {
+                        const res = await fetch('/api/saas/claim-site', {
+                    method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ username: user.value.username, domain: url })
+                        });
+                        const data = await res.json();
+                        isTyping.value = false;
+                        if(res.ok) {
+                            mySites.value.push(url);
+                            chatHistory.value.push({ role: 'ai', content: `✅ **Succes!** Agentul pentru ${url} a fost inițializat.` });
+                } else {
+                            chatHistory.value.push({ role: 'ai', content: `❌ Eroare: ${data.detail || 'Nu s-a putut adăuga.'}` });
+                        }
+                    } catch(e) {
+                        isTyping.value = false;
+                        chatHistory.value.push({ role: 'ai', content: `❌ Eroare de conexiune.` });
+                    }
+                    scrollToBottom();
+                };
+
+                const scrollToBottom = () => {
+                    const container = document.getElementById('chat-container');
+                    if(container) container.scrollTop = container.scrollHeight;
+                };
+
+                const logout = () => {
+                    localStorage.removeItem('auth_token');
+                    window.location.href = '/index.html';
+                };
+
+                onMounted(() => loadUser());
+
+                return { 
+                    currentView, user, userInitials, mySites, limits, 
+                    chatHistory, userInput, isTyping, inputMode, competitors,
+                    sendMessage, promptNewSite, logout, formatMessage
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

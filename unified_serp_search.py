@@ -287,11 +287,11 @@ def search(
     for provider in available:
         try:
             if provider == "brave":
-                results = _search_brave(query, num_results)
+                results = _search_brave(query, num_results, country_code)
             elif provider == "serpapi":
-                results = _search_serpapi(query, num_results)
+                results = _search_serpapi(query, num_results, country_code)
             elif provider == "bing":
-                results = _search_bing(query, num_results)
+                results = _search_bing(query, num_results, country_code)
             else:
                 continue
             

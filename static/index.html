@@ -3,483 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI CEO DASHBOARD - DeepSeek Intelligence</title>
+    <title>AI CEO Dashboard - Login</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/markdown-it@13.0.1/dist/markdown-it.min.js"></script>
     <style>
-        body { background-color: #0f172a; color: #e2e8f0; font-family: 'Inter', sans-serif; }
-        .cyber-card { background-color: #1e293b; border: 1px solid #334155; transition: all 0.3s ease; }
-        .cyber-card:hover { border-color: #3b82f6; box-shadow: 0 0 15px rgba(59, 130, 246, 0.1); }
-        
-        .sidebar-link { display: flex; items-center; gap: 12px; padding: 12px 16px; border-radius: 8px; color: #94a3b8; transition: all 0.2s; cursor: pointer; }
-        .sidebar-link:hover { background: #1e293b; color: #fff; }
-        .sidebar-link.active { background: #3b82f6; color: #fff; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
-        
-        /* Social Colors */
-        .btn-google { background: #DB4437; color: white; }
-        .btn-facebook { background: #4267B2; color: white; }
-        .btn-tiktok { background: #000000; color: white; border: 1px solid #333; }
-        .btn-instagram { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); color: white; }
-        
-        .message-user { background-color: #3b82f6; color: white; border-radius: 12px 12px 0 12px; }
-        .message-ai { background-color: #1e293b; border: 1px solid #334155; border-radius: 12px 12px 12px 0; }
-        
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-        
-        .quick-btn {
-            background: #1e293b; border: 1px solid #334155; color: #94a3b8;
-            transition: all 0.2s;
-        }
-        .quick-btn:hover {
-            background: #334155; color: white; border-color: #64748b;
-            transform: translateY(-2px);
-        }
+        body { background-color: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); transition: all 0.3s; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+        .input-field { background: #0f172a; border: 1px solid #334155; transition: border-color 0.3s; }
+        .input-field:focus { border-color: #3b82f6; outline: none; }
     </style>
 </head>
-<body class="h-screen flex overflow-hidden">
-    <div id="app" class="flex w-full h-full">
+<body class="min-h-screen flex items-center justify-center bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop')] bg-cover bg-center bg-no-repeat">
+    <div class="absolute inset-0 bg-slate-900/90"></div>
+
+    <div id="app" class="relative z-10 w-full max-w-md p-6">
         
-        <!-- SIDEBAR -->
-        <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col p-4 z-20">
-            <div class="flex items-center gap-3 mb-8 px-2">
-                <div class="w-8 h-8 rounded bg-blue-600 flex items-center justify-center">
-                    <i class="fa-solid fa-brain text-white"></i>
+        <!-- Auth Container -->
+        <div v-if="!isAuthenticated" class="glass-panel rounded-2xl p-8 shadow-2xl animate-fade-in">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl shadow-lg shadow-blue-500/20">
+                    🤖
                 </div>
-                <h1 class="font-bold text-lg text-white tracking-tight">AI CEO <span class="text-blue-500">HUB</span></h1>
+                <h1 class="text-2xl font-bold text-white">AI CEO Platform</h1>
+                <p class="text-slate-400 text-sm mt-2">Autentificare în sistemul central</p>
             </div>
 
-            <nav class="flex-1 space-y-2">
-                <div @click="currentView = 'chat'" :class="['sidebar-link', currentView === 'chat' ? 'active' : '']">
-                    <i class="fa-solid fa-comments w-5"></i>
-                    <span>Strategic Chat</span>
-                </div>
-                <div @click="currentView = 'integrations'" :class="['sidebar-link', currentView === 'integrations' ? 'active' : '']">
-                    <i class="fa-solid fa-plug w-5"></i>
-                    <span>Integrations</span>
-                </div>
-                <div @click="currentView = 'competitors'" :class="['sidebar-link', currentView === 'competitors' ? 'active' : '']">
-                    <i class="fa-solid fa-crosshairs w-5"></i>
-                    <span>Competitor War Map</span>
-                </div>
-            </nav>
-
-            <div class="p-4 bg-slate-800/50 rounded-lg border border-slate-700 mt-auto">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs text-slate-400">SYSTEM STATUS</span>
-                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                </div>
-                <div class="text-xs text-slate-500 font-mono">
-                    Core: Qwen-72B<br>
-                    Scrapers: Active (Hybrid)<br>
-                    Agents: 279 Live
-                </div>
-            </div>
-        </aside>
-
-        <!-- MAIN CONTENT -->
-        <main class="flex-1 flex flex-col relative bg-slate-950 overflow-hidden">
-            
-            <!-- HEADER -->
-            <header class="h-16 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-900/50 backdrop-blur-sm">
-                <h2 class="text-lg font-semibold text-white">
-                    <span v-if="currentView === 'chat'">Briefing & Strategie</span>
-                    <span v-if="currentView === 'integrations'">Conectare Surse Date</span>
-                    <span v-if="currentView === 'competitors'">Analiză Competitivă</span>
-                </h2>
-                <div class="flex items-center gap-4">
-                    <div class="relative">
-                        <button @click="showNotifications = !showNotifications" class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center hover:bg-slate-700 transition">
-                            <i class="fa-solid fa-bell text-slate-400"></i>
-                            <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
-                        </button>
-                        
-                        <!-- Notifications Dropdown -->
-                        <div v-if="showNotifications" class="absolute right-0 mt-2 w-80 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl p-4 z-50 animate-fade-in">
-                            <h3 class="text-sm font-bold text-white mb-3">Notificări Zilnice (Daily Hints)</h3>
-                            <div class="space-y-3">
-                                <div class="p-3 bg-slate-700/50 rounded-lg text-sm border-l-4 border-blue-500">
-                                    <div class="font-semibold text-blue-400 mb-1">🚀 Oportunitate SEO</div>
-                                    <p class="text-slate-300">Competitorul 'milucon.ro' a crescut prețul. E momentul să promovezi oferta ta.</p>
-                                    <button class="mt-2 text-xs text-blue-400 hover:text-blue-300">Vezi detalii <i class="fa-solid fa-arrow-right"></i></button>
-                                </div>
-                                <div class="p-3 bg-slate-700/50 rounded-lg text-sm border-l-4 border-yellow-500">
-                                    <div class="font-semibold text-yellow-400 mb-1">⚠️ Trafic Scăzut</div>
-                                    <p class="text-slate-300">Campania Google Ads are CTR sub 2%. Sugerez schimbarea titlului.</p>
-                                </div>
-                            </div>
+            <!-- Login Form -->
+            <div v-if="view === 'login'">
+                <form @submit.prevent="login" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Email / Username</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-user absolute left-3 top-3 text-slate-500"></i>
+                            <input v-model="form.username" type="text" class="input-field w-full rounded-lg py-2.5 pl-10 pr-4 text-white" placeholder="Enter your username" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Parolă</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-lock absolute left-3 top-3 text-slate-500"></i>
+                            <input v-model="form.password" type="password" class="input-field w-full rounded-lg py-2.5 pl-10 pr-4 text-white" placeholder="Enter your password" required>
                         </div>
                     </div>
                     
-                    <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 border-2 border-slate-900"></div>
-                </div>
-            </header>
+                    <div v-if="error" class="text-red-400 text-xs text-center bg-red-900/20 p-2 rounded">{{ error }}</div>
 
-            <!-- VIEW: CHAT -->
-            <div v-if="currentView === 'chat'" class="flex-1 flex flex-col overflow-hidden">
-                
-                <!-- Chat Messages Area -->
-                <div class="flex-1 overflow-y-auto p-6 space-y-6" ref="chatContainer">
-                    
-                    <!-- Welcome / Empty State -->
-                    <div v-if="messages.length === 0" class="flex flex-col items-center justify-center py-10 animate-fade-in">
-                        <div class="inline-block p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 mb-6">
-                            <i class="fa-solid fa-robot text-4xl text-blue-500"></i>
-                        </div>
-                        
-                        <h1 class="text-3xl font-bold text-white mb-2 text-center">Salut! Sunt CEO Copilot-ul tău.</h1>
-                        <p class="text-slate-400 text-center max-w-lg mb-8">
-                            Am acces la datele competitorilor și la piață. Ce vrei să facem azi?
-                        </p>
-
-                        <!-- Quick Action Buttons (In Chat) -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl">
-                            <button @click="sendMessage('Vreau să configurez compania (Briefing)')" class="quick-btn p-4 rounded-xl flex items-center gap-3 text-left group">
-                                <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition">
-                                    <i class="fa-solid fa-rocket"></i>
-                                </div>
-                                <div>
-                                    <div class="font-semibold text-white group-hover:text-blue-400">Start Setup</div>
-                                    <div class="text-xs opacity-70">Configurează profilul firmei tale</div>
-                                </div>
-                            </button>
-
-                            <button @click="sendMessage('Analizează un competitor nou')" class="quick-btn p-4 rounded-xl flex items-center gap-3 text-left group">
-                                <div class="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center group-hover:bg-purple-500 group-hover:text-white transition">
-                                    <i class="fa-solid fa-magnifying-glass"></i>
-                                </div>
-                                <div>
-                                    <div class="font-semibold text-white group-hover:text-purple-400">Analiză Competitor</div>
-                                    <div class="text-xs opacity-70">Spionează un site anume</div>
-                                </div>
-                            </button>
-
-                            <button @click="sendMessage('Ce idei de postări ai pentru azi?')" class="quick-btn p-4 rounded-xl flex items-center gap-3 text-left group">
-                                <div class="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center group-hover:bg-green-500 group-hover:text-white transition">
-                                    <i class="fa-solid fa-pen-nib"></i>
-                                </div>
-                                <div>
-                                    <div class="font-semibold text-white group-hover:text-green-400">Social Media</div>
-                                    <div class="text-xs opacity-70">Generează conținut viral</div>
-                                </div>
-                            </button>
-
-                            <button @click="sendMessage('Generează o ofertă de preț')" class="quick-btn p-4 rounded-xl flex items-center gap-3 text-left group">
-                                <div class="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center group-hover:bg-orange-500 group-hover:text-white transition">
-                                    <i class="fa-solid fa-file-invoice-dollar"></i>
-                                </div>
-                                <div>
-                                    <div class="font-semibold text-white group-hover:text-orange-400">Ofertare</div>
-                                    <div class="text-xs opacity-70">Creează oferte PDF</div>
-                                </div>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Messages Loop -->
-                    <div v-for="(msg, index) in messages" :key="index" class="flex flex-col gap-1" :class="msg.role === 'user' ? 'items-end' : 'items-start'">
-                        <div class="flex items-end gap-3 max-w-[85%]">
-                            <div v-if="msg.role === 'ai'" class="w-8 h-8 rounded bg-slate-700 flex-shrink-0 flex items-center justify-center border border-slate-600">
-                                <i class="fa-solid fa-robot text-xs text-blue-400"></i>
-                            </div>
-                            <div :class="['p-4 text-sm leading-relaxed shadow-md', msg.role === 'user' ? 'message-user' : 'message-ai']">
-                                <div v-html="renderMarkdown(msg.content)" class="prose prose-invert max-w-none text-sm"></div>
-                                
-                                <!-- AI Action Chips -->
-                                <div v-if="msg.role === 'ai' && msg.actions && msg.actions.length > 0" class="mt-4 flex flex-wrap gap-2">
-                                    <button v-for="action in msg.actions" @click="executeAction(action)"
-                                            class="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded shadow-lg transition flex items-center gap-2">
-                                        <i class="fa-solid fa-bolt"></i> {{ action.label }}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <span class="text-[10px] text-slate-600 px-12 opacity-50">{{ formatTime(msg.timestamp) }}</span>
-                    </div>
-
-                    <div v-if="isLoading" class="flex items-start gap-3">
-                        <div class="w-8 h-8 rounded bg-slate-700 flex items-center justify-center"><i class="fa-solid fa-robot text-xs text-blue-400"></i></div>
-                        <div class="message-ai p-4 flex items-center gap-1">
-                            <div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
-                            <div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-                            <div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Chat Input (Always Visible) -->
-                <div class="p-4 border-t border-slate-800 bg-slate-900 z-20">
-                    <div class="relative max-w-4xl mx-auto">
-                        <div class="absolute left-3 top-3 flex items-center gap-2 text-slate-500">
-                            <button class="hover:text-white transition"><i class="fa-solid fa-paperclip"></i></button>
-                        </div>
-                        <input v-model="inputMessage" @keydown.enter="sendMessage(inputMessage)" type="text" 
-                               placeholder="Întreabă-mă orice despre business-ul tău..." 
-                               class="w-full bg-slate-800 text-white rounded-xl pl-12 pr-12 py-4 border border-slate-700 focus:border-blue-500 focus:outline-none shadow-inner">
-                        <button @click="sendMessage(inputMessage)" 
-                                :disabled="!inputMessage.trim() || isLoading"
-                                class="absolute right-2 top-2 w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition">
-                            <i class="fa-solid fa-paper-plane text-sm"></i>
-                        </button>
-                    </div>
-                    <p class="text-center text-slate-600 text-xs mt-2">AI poate greși. Verifică informațiile importante.</p>
+                    <button type="submit" :disabled="loading" class="btn-primary w-full py-3 rounded-lg font-bold text-white mt-2 flex justify-center items-center gap-2">
+                        <span v-if="loading" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+                        {{ loading ? 'Se autentifică...' : 'Log In' }}
+                    </button>
+                </form>
+                <div class="mt-6 text-center text-sm text-slate-400">
+                    Nu ai cont? <a href="#" @click="view = 'register'" class="text-blue-400 hover:text-blue-300 font-bold">Creează cont</a>
                 </div>
             </div>
 
-            <!-- VIEW: INTEGRATIONS -->
-            <div v-if="currentView === 'integrations'" class="flex-1 overflow-y-auto p-8">
-                <div class="mb-8">
-                    <h2 class="text-2xl font-bold text-white">Surse de Date Live</h2>
-                    <p class="text-slate-400">Conectează conturile companiei pentru ca AI-ul să optimizeze campaniile în timp real.</p>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Google Ads -->
-                    <div class="cyber-card rounded-xl p-6 flex flex-col">
-                        <div class="flex justify-between items-start mb-4">
-                            <div class="w-12 h-12 rounded-lg bg-white flex items-center justify-center">
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c7/Google_Ads_logo.svg" class="w-8 h-8">
-                            </div>
-                            <div v-if="integrations.google_ads" class="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full border border-green-500/30">Connected</div>
-                            <div v-else class="px-2 py-1 bg-slate-700 text-slate-400 text-xs rounded-full">Disconnected</div>
-                        </div>
-                        <h3 class="text-lg font-bold text-white mb-1">Google Ads</h3>
-                        <p class="text-sm text-slate-400 mb-6">Importă costuri, CPC și conversii pentru optimizare ROI.</p>
-                        <button @click="toggleIntegration('google_ads')" 
-                                :class="integrations.google_ads ? 'bg-slate-700 hover:bg-slate-600' : 'btn-google hover:opacity-90'"
-                                class="mt-auto py-2 px-4 rounded-lg font-medium transition flex items-center justify-center gap-2">
-                            <i :class="integrations.google_ads ? 'fa-solid fa-unlink' : 'fa-brands fa-google'"></i>
-                            {{ integrations.google_ads ? 'Deconectează' : 'Conectează Cont' }}
-                        </button>
+            <!-- Register Form -->
+            <div v-if="view === 'register'">
+                <form @submit.prevent="register" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Username</label>
+                        <input v-model="form.username" type="text" class="input-field w-full rounded-lg py-2.5 px-4 text-white" placeholder="Alege un username unic" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Email</label>
+                        <input v-model="form.email" type="email" class="input-field w-full rounded-lg py-2.5 px-4 text-white" placeholder="Email-ul tău" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Parolă</label>
+                        <input v-model="form.password" type="password" class="input-field w-full rounded-lg py-2.5 px-4 text-white" placeholder="Minim 6 caractere" required>
                     </div>
 
-                    <!-- Facebook / Meta -->
-                    <div class="cyber-card rounded-xl p-6 flex flex-col">
-                        <div class="flex justify-between items-start mb-4">
-                            <div class="w-12 h-12 rounded-lg bg-[#1877F2] flex items-center justify-center">
-                                <i class="fa-brands fa-facebook-f text-white text-2xl"></i>
-                            </div>
-                            <div v-if="integrations.facebook" class="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full border border-green-500/30">Connected</div>
-                            <div v-else class="px-2 py-1 bg-slate-700 text-slate-400 text-xs rounded-full">Disconnected</div>
-                        </div>
-                        <h3 class="text-lg font-bold text-white mb-1">Meta Ads & Social</h3>
-                        <p class="text-sm text-slate-400 mb-6">Analiză audiență și performanță reclame Facebook/Instagram.</p>
-                        <button @click="toggleIntegration('facebook')"
-                                :class="integrations.facebook ? 'bg-slate-700 hover:bg-slate-600' : 'btn-facebook hover:opacity-90'"
-                                class="mt-auto py-2 px-4 rounded-lg font-medium transition flex items-center justify-center gap-2">
-                            <i :class="integrations.facebook ? 'fa-solid fa-unlink' : 'fa-brands fa-facebook'"></i>
-                            {{ integrations.facebook ? 'Deconectează' : 'Conectează Cont' }}
-                        </button>
-                    </div>
+                    <div v-if="error" class="text-red-400 text-xs text-center bg-red-900/20 p-2 rounded">{{ error }}</div>
 
-                    <!-- TikTok -->
-                    <div class="cyber-card rounded-xl p-6 flex flex-col">
-                        <div class="flex justify-between items-start mb-4">
-                            <div class="w-12 h-12 rounded-lg bg-black border border-slate-700 flex items-center justify-center">
-                                <i class="fa-brands fa-tiktok text-white text-2xl"></i>
-                            </div>
-                            <div v-if="integrations.tiktok" class="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full border border-green-500/30">Connected</div>
-                            <div v-else class="px-2 py-1 bg-slate-700 text-slate-400 text-xs rounded-full">Disconnected</div>
-                        </div>
-                        <h3 class="text-lg font-bold text-white mb-1">TikTok Business</h3>
-                        <p class="text-sm text-slate-400 mb-6">Viral trends tracking și analiză campanii video.</p>
-                        <button @click="toggleIntegration('tiktok')"
-                                :class="integrations.tiktok ? 'bg-slate-700 hover:bg-slate-600' : 'btn-tiktok hover:opacity-90'"
-                                class="mt-auto py-2 px-4 rounded-lg font-medium transition flex items-center justify-center gap-2">
-                            <i :class="integrations.tiktok ? 'fa-solid fa-unlink' : 'fa-brands fa-tiktok'"></i>
-                            {{ integrations.tiktok ? 'Deconectează' : 'Conectează Cont' }}
-                        </button>
-                    </div>
-
-                    <!-- Google Analytics -->
-                    <div class="cyber-card rounded-xl p-6 flex flex-col">
-                        <div class="flex justify-between items-start mb-4">
-                            <div class="w-12 h-12 rounded-lg bg-orange-500 flex items-center justify-center">
-                                <i class="fa-solid fa-chart-simple text-white text-2xl"></i>
-                            </div>
-                            <div v-if="integrations.analytics" class="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full border border-green-500/30">Connected</div>
-                            <div v-else class="px-2 py-1 bg-slate-700 text-slate-400 text-xs rounded-full">Disconnected</div>
-                        </div>
-                        <h3 class="text-lg font-bold text-white mb-1">Google Analytics 4</h3>
-                        <p class="text-sm text-slate-400 mb-6">Trafic site, conversii și comportament utilizatori.</p>
-                        <button @click="toggleIntegration('analytics')"
-                                :class="integrations.analytics ? 'bg-slate-700 hover:bg-slate-600' : 'bg-orange-600 hover:opacity-90 text-white'"
-                                class="mt-auto py-2 px-4 rounded-lg font-medium transition flex items-center justify-center gap-2">
-                            <i :class="integrations.analytics ? 'fa-solid fa-unlink' : 'fa-brands fa-google'"></i>
-                            {{ integrations.analytics ? 'Deconectează' : 'Conectează Cont' }}
-                        </button>
-                    </div>
-
-                    <!-- Email / CRM -->
-                    <div class="cyber-card rounded-xl p-6 flex flex-col">
-                        <div class="flex justify-between items-start mb-4">
-                            <div class="w-12 h-12 rounded-lg bg-blue-500 flex items-center justify-center">
-                                <i class="fa-solid fa-envelope text-white text-2xl"></i>
-                            </div>
-                            <div v-if="integrations.email" class="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full border border-green-500/30">Connected</div>
-                            <div v-else class="px-2 py-1 bg-slate-700 text-slate-400 text-xs rounded-full">Disconnected</div>
-                        </div>
-                        <h3 class="text-lg font-bold text-white mb-1">Email & CRM</h3>
-                        <p class="text-sm text-slate-400 mb-6">Analiză oferte trimise și rata de răspuns.</p>
-                        <button @click="toggleIntegration('email')"
-                                :class="integrations.email ? 'bg-slate-700 hover:bg-slate-600' : 'bg-blue-600 hover:opacity-90 text-white'"
-                                class="mt-auto py-2 px-4 rounded-lg font-medium transition flex items-center justify-center gap-2">
-                            <i :class="integrations.email ? 'fa-solid fa-unlink' : 'fa-solid fa-envelope'"></i>
-                            {{ integrations.email ? 'Deconectează' : 'Conectează Cont' }}
-                        </button>
-                    </div>
+                    <button type="submit" :disabled="loading" class="btn-primary w-full py-3 rounded-lg font-bold text-white mt-2 flex justify-center items-center gap-2">
+                        <span v-if="loading" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+                        {{ loading ? 'Se creează contul...' : 'Creează Cont' }}
+                    </button>
+                </form>
+                <div class="mt-6 text-center text-sm text-slate-400">
+                    Ai deja cont? <a href="#" @click="view = 'login'" class="text-blue-400 hover:text-blue-300 font-bold">Log In</a>
                 </div>
             </div>
+        </div>
 
-            <!-- VIEW: COMPETITORS (Placeholder) -->
-            <div v-if="currentView === 'competitors'" class="flex-1 flex flex-col items-center justify-center text-slate-500">
-                <i class="fa-solid fa-map-location-dot text-6xl mb-4 text-slate-700"></i>
-                <h3 class="text-xl font-bold">War Map Loading...</h3>
-                <p>Se încarcă datele de la cei 279 agenți...</p>
-            </div>
+        <!-- Dashboard Loading State -->
+        <div v-else class="text-center text-white animate-pulse">
+            <div class="text-2xl font-bold mb-2">Se încarcă Dashboard-ul...</div>
+            <div class="text-slate-400">Te redirecționăm către panoul de control.</div>
+        </div>
 
-        </main>
     </div>
 
     <script>
-        const { createApp, ref, onMounted, nextTick } = Vue;
-        const md = window.markdownit();
+        const { createApp, ref } = Vue;
 
         createApp({
             setup() {
-                const currentView = ref('chat');
-                const messages = ref([]);
-                const inputMessage = ref("");
-                const heroInput = ref("");
-                const isLoading = ref(false);
-                const chatContainer = ref(null);
-                const showNotifications = ref(false);
-                
-                const integrations = ref({
-                    google_ads: false,
-                    facebook: false,
-                    tiktok: false,
-                    analytics: false,
-                    email: false
-                });
+                const view = ref('login'); // login, register
+                const form = ref({ username: '', password: '', email: '' });
+                const loading = ref(false);
+                const error = ref('');
+                const isAuthenticated = ref(false);
 
-                // --- INTEGRATIONS LOGIC ---
-                const fetchIntegrations = async () => {
+                // Check local storage for token
+                const token = localStorage.getItem('auth_token');
+                if (token) {
+                    // Validate token (simplified for UI demo, should verify with backend)
+                    isAuthenticated.value = true;
+                    window.location.href = '/dashboard.html'; // Redirect to main dashboard
+                }
+
+                const login = async () => {
+                    loading.value = true;
+                    error.value = '';
                     try {
-                        const res = await fetch('/api/integrations/status');
-                        const data = await res.json();
-                        if(data.ok) integrations.value = data.status;
-                    } catch(e) { console.error(e); }
-                };
-
-                const toggleIntegration = async (service) => {
-                    const newState = !integrations.value[service];
-                    integrations.value[service] = newState;
-                    try {
-                        const endpoint = newState ? '/api/integrations/connect' : '/api/integrations/disconnect';
-                        await fetch(endpoint, {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({ service: service })
-                        });
-                        if(newState) {
-                            messages.value.push({
-                                role: 'ai',
-                                content: `✅ **${service.toUpperCase().replace('_', ' ')}** conectat cu succes! Acum pot analiza datele live.`,
-                                timestamp: new Date()
-                            });
-                        }
-                    } catch(e) {
-                        integrations.value[service] = !newState;
-                        alert("Eroare conexiune: " + e);
-                    }
-                };
-
-                // --- CHAT LOGIC ---
-                const scrollToBottom = () => {
-                    nextTick(() => {
-                        if (chatContainer.value) chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
-                    });
-                };
-
-                const formatTime = (date) => {
-                    return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                };
-
-                const renderMarkdown = (text) => md.render(text || "");
-
-                const sendMessage = async (text) => {
-                    if (!text.trim() || isLoading.value) return;
-                    const userMsg = text;
-                    inputMessage.value = "";
-                    heroInput.value = "";
-                    
-                    messages.value.push({ role: 'user', content: userMsg, timestamp: new Date() });
-                    scrollToBottom();
-                    isLoading.value = true;
-
-                    try {
-                        const response = await fetch('/api/chat', {
+                        const response = await fetch('/api/auth/login', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ message: userMsg })
-                        });
-                        const data = await response.json();
-                        messages.value.push({
-                            role: 'ai',
-                            content: data.text,
-                            actions: data.suggested_actions || [],
-                            timestamp: new Date()
+                            body: JSON.stringify({
+                                username: form.value.username,
+                                password: form.value.password
+                            })
                         });
                         
-                    } catch (error) {
-                        messages.value.push({ role: 'ai', content: "❌ Eroare conexiune.", timestamp: new Date() });
+                        const data = await response.json();
+                        
+                        if (!response.ok) throw new Error(data.detail || 'Login failed');
+                        
+                        localStorage.setItem('auth_token', data.access_token);
+                        localStorage.setItem('user_info', JSON.stringify(data.user));
+                        
+                        isAuthenticated.value = true;
+                        
+                        // Check for admin
+                        if (data.user && data.user.is_admin) {
+                            window.location.href = '/admin.html';
+                        } else {
+                            window.location.href = '/dashboard.html';
+                        }
+
+                    } catch (err) {
+                        error.value = err.message;
                     } finally {
-                        isLoading.value = false;
-                        scrollToBottom();
+                        loading.value = false;
                     }
                 };
-                
-                const startAnalysis = () => {
-                    if (!heroInput.value.trim()) return;
-                    sendMessage(`Vreau să configurez compania pentru site-ul: ${heroInput.value}`);
-                };
-                
-                const executeAction = async (action) => {
-                    messages.value.push({ role: 'user', content: `Confirmed: ${action.label}`, timestamp: new Date() });
+
+                const register = async () => {
+                    loading.value = true;
+                    error.value = '';
                     try {
-                        const response = await fetch('/api/execute-action', {
+                        const response = await fetch('/api/auth/register', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ action: action.action, params: action.params || {} })
+                            body: JSON.stringify({
+                                username: form.value.username,
+                                password: form.value.password,
+                                email: form.value.email
+                            })
                         });
-                        const result = await response.json();
-                        messages.value.push({
-                            role: 'ai',
-                            content: `✅ **${result.status.toUpperCase()}**: ${result.message}`,
-                            timestamp: new Date()
-                        });
-                        if (result.trigger_refresh) {
-                            // Logic to refresh UI if needed
-                        }
-                    } catch(e) {
-                        messages.value.push({ role: 'ai', content: "Eroare execuție.", timestamp: new Date() });
+
+                        const data = await response.json();
+                        
+                        if (!response.ok) throw new Error(data.detail || 'Registration failed');
+
+                        alert('Cont creat cu succes! Te rugăm să te autentifici.');
+                        view.value = 'login';
+                        form.value.password = ''; // Clear password for safety
+                        
+                    } catch (err) {
+                        error.value = err.message;
+                    } finally {
+                        loading.value = false;
                     }
                 };
 
-                onMounted(() => {
-                    fetchIntegrations();
-                });
-
-                return {
-                    currentView, messages, inputMessage, heroInput, isLoading, chatContainer,
-                    showNotifications, integrations, toggleIntegration,
-                    sendMessage, startAnalysis, executeAction, renderMarkdown, formatTime
-                };
+                return { view, form, loading, error, login, register, isAuthenticated };
             }
         }).mount('#app');
     </script>
